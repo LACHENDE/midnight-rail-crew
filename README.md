@@ -1,10 +1,16 @@
-# Midnight Rail Crew (greybox)
+# 銀河鉄道 Galaxy Rail Crew (greybox)
 
-A co-op Japanese-learning train game prototype. Two crew run around one night train: the cab (coal, firebox, coloured valves, brake), the cargo car (water pump, lamps) and the roof (junction signs + lever), plus a driver's seat (speed + 3 tracks to dodge hordes and wrecks). Spooky-cute zombies climb aboard wearing a colour word: bonk them with the matching-colour mop. Both players see and hear every single-word Japanese order; it starts calm and gets crazy busy (あか / あお / きいろ / せきたん / みず / ランプ / ブレーキ / あさひ / あおば / さくら) and must act on them. Talk to each other in any language.
+A co-op Japanese-learning game prototype. Two crew run one train flying through the stars:
+- **Cab:** coal → firebox, coloured valves, brake, and the 🚂 driver's seat (speed + 3 sky lanes to dodge meteors and yokai swarms; only the driver sees what's ahead).
+- **Cargo car:** water pump (みず), lamps (ランプ).
+- **Roof:** junction signs (あさひ / あおば / さくら) and the lever.
+- **Yokai** (おばけ, かっぱ, たぬき) sneak aboard wearing a colour word (あか / あお / きいろ). Take the お札 charm of that colour and SHOO them.
 
-- **Play:** open `index.html` from any static host (GitHub Pages works). Landscape phone.
-- **Online:** Create a room → share the 4-letter code → your friend taps Join. Online play uses PeerJS (free public broker) outside claude.ai, and the claude.ai room inside claude.ai.
+Both players see and hear every single-word Japanese order. An invisible **Director** (like Left 4 Dead's) paces it in waves: calm → build → peak → breather, holding back when the crew is swamped.
+
+- **Play:** https://lachende.github.io/midnight-rail-crew/ (landscape phone).
+- **Online:** Create a room → share the 4-letter code → Join. PeerJS (free public broker) outside claude.ai; the claude.ai room inside claude.ai.
 - **Local test:** both crew on one device, with a Switch button.
-- **Controls:** joystick (or WASD/arrows) to walk, big button (or Space/E) to use the nearest thing. Hold it on the brake wheel.
+- **Controls:** joystick (or WASD/arrows) to walk or drive; big button (or Space/E) to use the nearest thing. Hold it on the brake and the pump.
 
 Built with Phaser 3.80.1 (cdnjs) and PeerJS 1.5.4 (unpkg). No build step.
