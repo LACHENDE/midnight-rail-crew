@@ -19,7 +19,7 @@ button,input{touch-action:manipulation}
 [hidden]{display:none!important}
 .hud{position:fixed;inset:0;pointer-events:none;z-index:2}
 .top{position:absolute;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
-.meters{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;max-width:330px}
+.meters{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;max-width:min(330px,calc(50vw - 140px))}
 .meter{display:flex;align-items:center;gap:6px;font:900 11px Nunito,sans-serif;letter-spacing:.06em}
 .meter span{width:44px;flex:none}
 .bar{flex:1;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink);overflow:hidden}
@@ -50,6 +50,14 @@ button,input{touch-action:manipulation}
 .act.off{background:#55607A;color:#A9B3E0}
 .act.held{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
 .switch{pointer-events:auto;font:900 13px Nunito,sans-serif;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:12px;box-shadow:0 3px 0 var(--ink);padding:6px 10px;cursor:pointer}
+.wind{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);width:min(250px,28vw);display:flex;flex-direction:column;gap:4px;align-items:center}
+.lanes{position:relative;width:100%;height:110px;border:3px solid var(--ink);border-radius:12px;background:linear-gradient(#141A44,#24324A);display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}
+.lanes i{border-right:2px dashed rgba(201,207,240,.35);position:relative}.lanes i:last-child{border-right:0}
+.lanes i.me{background:rgba(255,178,62,.22)}
+.lanes i.me::after{content:"🚂";position:absolute;left:50%;bottom:2px;transform:translateX(-50%);font-size:22px}
+.lanes .ob{position:absolute;transform:translate(-50%,-50%);font-size:24px;line-height:1}
+.thr{font:900 12px Nunito,sans-serif;text-align:center;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:10px;padding:3px 8px;line-height:1.2}
+.thr b{font-size:16px;color:var(--amber)}.thr small{font-size:10px;color:var(--dim)}
 .toast{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
 .toast.ok{background:var(--green)}.toast.bad{background:#FF8A7E}.toast.go{background:var(--amber)}
 .card{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.78)}
@@ -86,9 +94,10 @@ input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:
       <div class="meter"><span>WATER</span><div class="bar water" id="waterBar"><i></i></div></div>
       <div class="meter"><span>TRIP</span><div class="trip" id="trip"></div></div>
     </div>
-    <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
+    <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge" id="driveBadge">🚂 nobody driving</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
   </div>
   <div class="orders" id="orders"></div>
+  <div class="wind" id="wind" hidden><div class="lanes" id="lanes"><i></i><i></i><i></i></div><div class="thr"><b id="thrN">×1.0</b><small>▲ faster · ▼ slower<br>◀ ▶ change track</small></div></div>
   <div class="stick" id="stick"><i id="knob"></i></div>
   <button class="act off" id="actBtn">—</button>
   <div class="toast" id="toast"></div>
@@ -119,7 +128,13 @@ const VALVE={ aka:{x:850,y:160,c:0xE04A3C}, ao:{x:850,y:290,c:0x3B6FE0}, kiiro:{
 const SPOT={ bin:{x:150,y:440,a:'cab'}, fire:{x:150,y:180,a:'cab'}, brake:{x:470,y:465,a:'cab'}, ladder:{x:620,y:110,a:'cab'},
   hatch:{x:300,y:ROOFY+300,a:'roof'}, lever:{x:830,y:ROOFY+170,a:'roof'},
   door:{x:85,y:310,a:'cab'}, back:{x:875,y:CARGOY+310,a:'cargo'}, pump:{x:300,y:CARGOY+180,a:'cargo'},
-  lampA:{x:620,y:CARGOY+130,a:'cargo'}, lampB:{x:620,y:CARGOY+450,a:'cargo'} };
+  lampA:{x:620,y:CARGOY+130,a:'cargo'}, lampB:{x:620,y:CARGOY+450,a:'cargo'}, seat:{x:760,y:115,a:'cab'} };
+// mop racks: one per room, a red, blue and yellow mop each (colour only, no words: the zombie's tag says which)
+const RACK={ cab:{x:340,y:105,a:'cab'}, cargo:{x:450,y:CARGOY+115,a:'cargo'}, roof:{x:170,y:ROOFY+140,a:'roof'} };
+const MOPS=[]; Object.entries(RACK).forEach(([r,s])=>COLORS.forEach((c,i)=>MOPS.push({c, x:s.x+(i-1)*52, y:s.y, a:s.a})));
+// where zombies climb in, and what they go for once inside
+const ZIN={ cab:[[210,100],[480,100],[95,230]], cargo:[[200,CARGOY+100],[700,CARGOY+100],[860,CARGOY+470]], roof:[[100,ROOFY+130],[880,ROOFY+320],[520,ROOFY+125]] };
+const ZGOAL={ cab:['fire','brake','valve'], cargo:['pump','lampA','lampB'], roof:['lever'] };
 const REACH=80;
 // journey (distance units ≈ seconds at full speed): 3 junctions, then the station
 const JUNC=[45,95,145], STATION=185;          // ~3 minutes: a calm start, then it gets busy
@@ -132,7 +147,9 @@ function tone(f,at,d,type,v,f2){ if(!AC) return; const t=AC.currentTime+(at||0),
   g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v||.15,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.02); }
 const SND={ ok(){ tone(784,0,.12,'triangle',.2); tone(1175,.08,.18,'triangle',.16); }, bad(){ tone(140,0,.3,'square',.12); tone(95,.05,.3,'sawtooth',.08); },
   pick(){ tone(300,0,.08,'square',.08); }, fire(){ tone(180,0,.25,'sawtooth',.1,520); }, order(){ tone(988,0,.08,'square',.06); tone(1319,.08,.12,'square',.06); },
-  whistle(){ tone(880,0,.5,'sine',.14); tone(1108,0,.5,'sine',.1); }, clack(v){ tone(90,0,.05,'square',.03*v); } };
+  whistle(){ tone(880,0,.5,'sine',.14); tone(1108,0,.5,'sine',.1); },
+  groan(){ tone(160,0,.5,'sawtooth',.07,110); tone(120,.15,.45,'sawtooth',.05,90); }, chomp(){ tone(220,0,.08,'square',.06); tone(180,.1,.08,'square',.06); },
+  bonk(){ tone(520,0,.06,'square',.12); tone(260,.03,.25,'triangle',.18,90); }, lane(){ tone(660,0,.06,'triangle',.08); }, dodge(){ tone(880,0,.08,'triangle',.08); tone(1175,.06,.1,'triangle',.07); }, clack(v){ tone(90,0,.05,'square',.03*v); } };
 function getVoice(){ if(!jaVoice){ try{ jaVoice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} } return jaVoice; }
 function say(word){ try{ const u=new SpeechSynthesisUtterance(W[word].k); u.lang='ja-JP'; u.rate=.85; const v=getVoice(); if(v) u.voice=v;
   if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
@@ -144,7 +161,8 @@ const LOCAL={ actN:0, acts:[], seen:{h:0,g:0}, hinted:{}, heard:{}, ready:false 
 const pos={ h:{x:300,y:300,a:'cab'}, g:{x:420,y:330,a:'cab'} };   // where each crew member is drawn
 function freshState(){
   const signs=JUNC.map(()=>{ const pair=shuffle(STATIONS).slice(0,2); const dest=pair[Math.random()<.5?0:1]; return {L:pair[0], R:pair[1], dest}; });
-  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, water:90, lamps:{A:1,B:1}, nextL:30, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
+  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, water:90, lamps:{A:1,B:1}, nextL:30,
+    driver:null, thr:.5, lane:1, obs:[], nextO:22, zs:[], zid:0, nextZ:28, knock:null, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
     stopped:false, brakeHold:0, detour:0, jn:0, signs, sign:null, orders:[], oid:0, nextV:6, jres:[], ev:{n:0},
     stats:{done:0, missed:0, wrong:0, hints:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
 }
@@ -165,7 +183,7 @@ function hostTick(dt){
   const f=Math.min(1, S.t/100);
   S.power=Math.max(0, S.power-(1.5+1.9*f)*dt); S.water=Math.max(0, S.water-(.8+1.7*f)*dt);
   if(S.water<=0) S.hp-=4*dt;                                                    // dry boiler: the train takes damage until someone pumps
-  let sp = S.power>25 ? 1 : .3+.7*S.power/25; if(S.detour>0){ S.detour-=dt; sp*=.3; }
+  let sp = (S.power>25 ? 1 : .3+.7*S.power/25)*(.5+S.thr); if(S.detour>0){ S.detour-=dt; sp*=.3; } // throttle .5 = normal, 1 = 1.5×
   S.speed += (sp-S.speed)*Math.min(1,dt*2); S.dist+=S.speed*dt;
   // orders: coloured valves every ~10 s, coal when the fire runs low, the junction word before each junction, brake before the station
   if(S.t>=S.nextV && S.dist<STATION-14){ addOrder('all', 'valve', pick(COLORS), 16-6*f); S.nextV=S.t+(11-7.5*f)+Math.random()*3*(1-f); }
@@ -183,8 +201,41 @@ function hostTick(dt){
   if(!S.arriveT && S.brakeHold>=1.5 && S.dist>=STATION-14){ const o=active('brake')[0]; if(o) finish(o, true); S.arriveT=S.t; ev('ok','到着! Arrived'); }
   else if(!S.arriveT && S.dist>=STATION+4){ const o=active('brake')[0]; if(o) finish(o, false); S.hp-=15; S.arriveT=S.t; ev('bad','Overran the station!'); }
   for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; if(o.kind==='lamp') S.lamps[o.target]=1; ev('bad','Missed: '+W[o.word].k); }
+  zombiesTick(dt, f);
   if(S.hp<=0){ S.hp=30; S.detour=3; ev('bad','Breakdown! Patching up…'); }      // recoverable: never a restart
   S.hp=Math.max(0,Math.min(100,S.hp));
+}
+// ---------- hazards on the track (only the driver sees them) + zombies on board ----------
+function spawnZombie(area, force){
+  if(S.zs.length>=7) return; if(!force && S.speed>1.3 && Math.random()<.6){ ev('dodge','Too fast! A zombie fell off'); return; }
+  const [x,y]=pick(ZIN[area]), c=pick(COLORS), goal=pick(ZGOAL[area]); S.zid++;
+  S.zs.push({id:S.zid, x, y, a:area, c, goal, vc: goal==='valve' ? pick(COLORS) : null, wt:0});
+  addOrder('all', 'zombie', c, 0, S.zid); ev('zombie','');
+}
+function zombiesTick(dt, f){
+  // hazards: a horde or a wreck in one of 3 tracks, coming closer; the train must be on another track when it arrives
+  if(S.t>=S.nextO && S.dist<STATION-15){ S.obs.push({id:S.t, lane:Math.floor(Math.random()*3), z:1, kind:pick(['horde','wreck'])}); S.nextO=S.t+(12-6*f)+Math.random()*3; }
+  S.obs.forEach(o=>o.z-=dt*S.speed/4.5);
+  S.obs=S.obs.filter(o=>{ if(o.z>0) return true;
+    if(o.lane!==S.lane) ev('dodge','Dodged!');
+    else if(o.kind==='wreck'){ S.hp-=18; S.detour=1.5; ev('bad','Crash! Wreck on the track'); }
+    else { S.hp-=6; ev('bad','Zombie horde! They\'re climbing on!'); spawnZombie(pick(['cab','cargo','roof']), true); spawnZombie(pick(['cab','cargo','roof']), true); }
+    return false; });
+  // boarding: calm at first, then often; going fast shakes some off
+  if(S.t>=S.nextZ && S.dist<STATION-10){ spawnZombie(pick(['cab','cab','cargo','roof'])); S.nextZ=S.t+(16-10*f)+Math.random()*4; }
+  // zombies wobble to their goal and wreck it every 3 s; each one aboard also wears the train down a little
+  const spd=50+35*f;
+  for(const z of S.zs){
+    const g = z.goal==='valve' ? {...VALVE[z.vc], a:'cab'} : SPOT[z.goal], dx=g.x-z.x, dy=g.y-z.y, d=Math.hypot(dx,dy);
+    if(d>38){ z.x+=dx/d*spd*dt; z.y+=dy/d*spd*dt; }
+    else if((z.wt+=dt)>=3){ z.wt=0;
+      if(z.goal==='fire') S.power=Math.max(0,S.power-15); else if(z.goal==='pump') S.water=Math.max(0,S.water-15);
+      else if(z.goal==='lampA'||z.goal==='lampB'){ const k=z.goal.slice(-1); if(S.lamps[k]){ S.lamps[k]=0; addOrder('all','lamp','lamp',18-6*f,k); } }
+      else if(z.goal==='lever') S.lever = S.lever==='L' ? 'R' : 'L';
+      else if(z.goal==='valve') S.valves[z.vc]^=1;
+      S.hp-=5; ev('chomp',''); }
+    S.hp-=.5*dt;
+  }
 }
 // an action from a crew member, checked against where they stand
 function hostAct(who, a){
@@ -192,8 +243,17 @@ function hostAct(who, a){
   if(MODE!=='guest' && (who==='h' || MODE==='local')){ p.x=pos[who].x; p.y=pos[who].y; p.a=pos[who].a; } // this device's crew: use where they are right now
   const near=s=>s && p.a===s.a && Math.hypot(p.x-s.x, p.y-s.y)<=REACH;
   if(a.k==='hint'){ const o=S.orders.find(o=>o.id===a.id); if(o && !o.hint){ o.hint=1; S.stats.hints++; } return; }
-  if(a.k==='bin' && near(SPOT.bin) && !p.carry){ p.carry=1; ev('pick',''); return; }
-  if(a.k==='fire' && near(SPOT.fire) && p.carry){ p.carry=0; S.power=Math.min(100, S.power+35); ev('fire',''); active('coal').forEach(o=>finish(o,true)); return; }
+  if(a.k==='seat' && near(SPOT.seat) && !S.driver){ S.driver=who; ev('seat',''); return; }
+  if(a.k==='leave' && S.driver===who){ S.driver=null; return; }
+  if(a.k==='thr' && S.driver===who && typeof a.v==='number'){ S.thr=Math.max(0,Math.min(1,a.v)); return; }
+  if(a.k==='lane' && S.driver===who){ S.lane=Math.max(0,Math.min(2,S.lane+(a.d>0?1:-1))); ev('lane',''); return; }
+  if(a.k==='mop'){ const m=MOPS.find(m=>m.c===a.c && m.a===p.a && Math.hypot(p.x-m.x,p.y-m.y)<=REACH); if(m){ p.carry=a.c; ev('pick',''); } return; }
+  if(a.k==='bonk' && COLORS.includes(p.carry)){ const z=S.zs.find(z=>z.id===a.id && z.a===p.a && Math.hypot(p.x-z.x,p.y-z.y)<=REACH+10); if(!z) return;
+    if(z.c===p.carry){ S.zs=S.zs.filter(x=>x!==z); S.knock={n:(S.knock?S.knock.n:0)+1, x:z.x, y:z.y, c:z.c}; const o=S.orders.find(o=>o.kind==='zombie' && o.target===z.id && !o.done); if(o) finish(o,true); ev('ok','ばいばい! 🧟'); }
+    else { S.stats.wrong++; ev('bad','Wrong mop! It needs '+W[z.c].k); }
+    return; }
+  if(a.k==='bin' && near(SPOT.bin) && p.carry!=='coal'){ p.carry='coal'; ev('pick',''); return; }
+  if(a.k==='fire' && near(SPOT.fire) && p.carry==='coal'){ p.carry=0; S.power=Math.min(100, S.power+35); ev('fire',''); active('coal').forEach(o=>finish(o,true)); return; }
   if(a.k==='brake' && near(SPOT.brake)){ S.brakeHold+=.3; if(S.dist<STATION-14) S.speed*=.97; return; }
   if(a.k==='pump' && near(SPOT.pump)){ S.water=Math.min(100, S.water+8); if(S.water>=85 && active('water').length){ active('water').forEach(o=>finish(o,true)); ev('ok','OK! '+W.mizu.k); } return; }
   if(a.k==='lamp' && (a.id==='A'||a.id==='B') && near(SPOT['lamp'+a.id]) && !S.lamps[a.id]){ S.lamps[a.id]=1; const o=S.orders.find(o=>!o.done && o.kind==='lamp' && o.target===a.id); if(o) finish(o,true); ev('ok','OK! '+W.lamp.k); return; }
@@ -218,9 +278,13 @@ function doAct(a){
 }
 function nearest(){ // the closest thing I can use, for the action button
   const p=pos[ME], list=[];
-  const add=(k,s,label,extra)=>{ if(s.a===p.a){ const d=Math.hypot(p.x-s.x,p.y-s.y); if(d<=REACH) list.push({k,d,label,...extra}); } };
+  const add=(k,s,label,extra)=>{ if(s.a===p.a){ const d=Math.hypot(p.x-s.x,p.y-s.y); if(d<=REACH) list.push({k,d,label,sx:s.x,sy:s.y,...extra}); } };
   const carry=S && S.players[ME].carry;
-  if(!carry) add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
+  if(S && S.driver===ME) return {k:'leave', d:0, label:'LEAVE\nSEAT', sx:SPOT.seat.x, sy:SPOT.seat.y};
+  if(S && COLORS.includes(carry)){ let best=null; S.zs.forEach(z=>{ if(z.a===p.a){ const d=Math.hypot(p.x-z.x,p.y-z.y); if(d<=REACH+10 && (!best||d<best.d)) best={k:'bonk', d:0, id:z.id, label:'BONK!', sx:z.x, sy:z.y}; } }); if(best) return best; }
+  if(carry!=='coal') add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
+  MOPS.forEach(m=>{ if(carry!==m.c) add('mop', m, 'TAKE\nMOP', {c:m.c}); });
+  if(S && !S.driver) add('seat', SPOT.seat, 'DRIVE');
   COLORS.forEach(c=>add('valve', {...VALVE[c], a:'cab'}, 'TURN', {c}));
   add('brake', SPOT.brake, 'BRAKE\n(hold)'); add('ladder', SPOT.ladder, 'CLIMB\nUP'); add('hatch', SPOT.hatch, 'CLIMB\nDOWN');
   add('lever', SPOT.lever, 'LEVER'); add('door', SPOT.door, 'CARGO\nCAR ◀'); add('back', SPOT.back, 'CAB ▶'); add('pump', SPOT.pump, 'PUMP\n(hold)');
@@ -285,7 +349,7 @@ function lobby(msg){
 }
 function practice(){
   card(`<h2>10 words<small>Tap to hear · your orders use these</small></h2>${WORDS_HTML()}
-    <p>Valve orders are colours. せきたん = carry coal to the fire. みず = pump water in the cargo car. ランプ = light the dark lamp there. Station names = pull the roof lever toward that sign. ブレーキ = hold the brake wheel at the station. Everyone hears every order. It starts calm… it won't stay calm.</p>
+    <p>Valve orders are colours. せきたん = carry coal to the fire. みず = pump water in the cargo car. ランプ = light the dark lamp there. Station names = pull the roof lever toward that sign. ブレーキ = hold the brake wheel at the station. 🧟 Zombies wear a colour word: grab the mop of that colour from a rack and BONK. Sit in the 🚂 seat to drive: ▲▼ speed, ◀▶ change track to dodge what's coming. Everyone hears every order. It starts calm… it won't stay calm.</p>
     <div class="row"><button class="btn" data-a="ready">Ready ▶</button></div>`);
 }
 function results(){
@@ -305,8 +369,8 @@ function hudFrame(){
     else if(S.ph==='over'){ results(); } }
   if(S.ph==='ready' && LOCAL.ready && $('#card .words')) card(`<h2>Waiting…<small>for your crewmate</small></h2>`);
   if(S.ev.n>evSeen){ evSeen=S.ev.n; const e=S.ev;
-    if(e.kind==='ok'){ SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
-    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
+    if(e.kind==='ok'){ if(/ばいばい/.test(e.txt)) SND.bonk(); SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
+    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='zombie') SND.groan(); else if(e.kind==='chomp') SND.chomp(); else if(e.kind==='lane'||e.kind==='seat') SND.lane(); else if(e.kind==='dodge'){ SND.dodge(); if(e.txt) toast(e.txt,'ok'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
   const set=(id,v,low)=>{ const b=$(id); b.firstElementChild.style.transform=`scaleX(${Math.max(0,v/100).toFixed(3)})`; b.classList.toggle('low', !!low); };
   set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25); set('#waterBar', S.water, S.water<25);
   const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=JUNC.map((j,i)=>`<em style="left:${j/STATION*100}%"></em>`).join('')+`<em style="left:100%;border-radius:3px"></em><b></b>`;
@@ -318,10 +382,15 @@ function hudFrame(){
   const box=$('#orders'), key=mine.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
   if(box.dataset.k!==key){ box.dataset.k=key;
     box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">
-      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
+      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${o.kind==='zombie'?'🧟':''}${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
       ${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button>`}${o.life&&!o.done?`<span class="t" data-t="${o.id}"></span>`:''}</div>`).join(''); }
   mine.forEach(o=>{ if(!orderSeen[o.id]){ orderSeen[o.id]=1; if(!o.done){ SND.order(); setTimeout(()=>say(o.word), 180); } } });
   box.querySelectorAll('[data-t]').forEach(el=>{ const o=S.orders.find(x=>x.id==el.dataset.t); if(o) el.style.transform=`scaleX(${Math.max(0,(o.until-S.t)/o.life).toFixed(3)})`; });
+  const drv=S.driver; $('#driveBadge').textContent = drv ? `🚂 ${drv==='h'?'P1':'P2'} driving` : (S.obs.length ? '⚠ nobody driving!' : '🚂 nobody driving');
+  const wind=$('#wind'), iDrive = drv===ME; wind.hidden=!iDrive;
+  if(iDrive){ document.querySelectorAll('#lanes i').forEach((e,i)=>e.classList.toggle('me', i===S.lane)); $('#thrN').textContent='×'+(.5+S.thr).toFixed(1);
+    const L=$('#lanes'), want=S.obs.map(o=>o.id+'').join(','); if(L.dataset.k!==want){ L.dataset.k=want; L.querySelectorAll('.ob').forEach(e=>e.remove()); S.obs.forEach(o=>L.insertAdjacentHTML('beforeend', `<span class="ob" data-o="${o.id}">${o.kind==='wreck'?'🪨':'🧟🧟'}</span>`)); }
+    S.obs.forEach(o=>{ const e=L.querySelector(`[data-o="${o.id}"]`); if(e){ e.style.left=((o.lane+.5)/3*100)+'%'; e.style.top=((1-o.z)*85+5)+'%'; e.style.fontSize=(14+16*(1-o.z))+'px'; } }); }
   const n=nearest(), btn=$('#actBtn'); const lbl=n ? (n.k==='lever' ? `LEVER\n${S.lever==='L'?'◀':S.lever==='R'?'▶':'·'}` : n.label) : '—';
   if(btn.dataset.l!==lbl){ btn.dataset.l=lbl; btn.innerHTML=esc(lbl).replace('\n','<br>'); btn.classList.toggle('off', !n); }
 }
@@ -414,13 +483,28 @@ class Train extends Phaser.Scene{
     // doors between the cab and the cargo car
     g.fillStyle(0x5A3E2E); g.fillRect(52,SPOT.door.y-50,22,100); g.fillRect(886,SPOT.back.y-50,22,100); this.label(105,SPOT.door.y-70,'◀🚪'); this.label(855,SPOT.back.y-70,'🚪▶');
     this.label(SPOT.pump.x-15, CARGOY+70+0, '💧');
+    // driver's seat + console, and the mop racks (one per room)
+    g.fillStyle(0x3A3A44); g.fillRoundedRect(SPOT.seat.x-40,SPOT.seat.y-50,80,34,8); g.lineStyle(4,0x2A211B); g.strokeRoundedRect(SPOT.seat.x-40,SPOT.seat.y-50,80,34,8);
+    g.fillStyle(0x7FD7FF); g.fillRect(SPOT.seat.x-30,SPOT.seat.y-45,60,20); g.fillStyle(0x8B2E2A); g.fillRoundedRect(SPOT.seat.x-26,SPOT.seat.y-8,52,44,10); g.strokeRoundedRect(SPOT.seat.x-26,SPOT.seat.y-8,52,44,10);
+    this.label(SPOT.seat.x+58,SPOT.seat.y-30,'🚂');
+    Object.values(RACK).forEach(r=>{ g.fillStyle(0x5A3E2E); g.fillRect(r.x-85,r.y-40,170,10); g.lineStyle(3,0x2A211B); g.strokeRect(r.x-85,r.y-40,170,10); });
+    MOPS.forEach(m=>{ g.fillStyle(0xB07A47); g.fillRect(m.x-3,m.y-40,6,48); g.fillStyle(VALVE[m.c].c); g.fillRoundedRect(m.x-14,m.y+4,28,22,6); g.lineStyle(3,0x2A211B); g.strokeRoundedRect(m.x-14,m.y+4,28,22,6); });
+    this.zm={};
     // ---- crew ----
     this.crew={}; ['h','g'].forEach(w=>{ const s=this.add.image(0,0,'shiba').setDisplaySize(64,79); if(w==='g') s.setTint(0x9DB8FF);
       const tag=this.add.text(0,-56,w==='h'?'P1':'P2',{fontFamily:'Nunito',fontStyle:'900',fontSize:'16px',color:'#2A211B',backgroundColor:w==='h'?'#FFB23E':'#7FD7FF',padding:{x:6,y:2}}).setOrigin(.5);
-      const coal=this.add.circle(0,-36,11,0x1C1C22).setStrokeStyle(2,0x55555F).setVisible(false); const c=this.add.container(0,0,[s,coal,tag]); this.crew[w]={c,coal,drawn:{x:0,y:0}}; });
+      const coal=this.add.circle(0,-36,11,0x1C1C22).setStrokeStyle(2,0x55555F).setVisible(false);
+      const mop=this.add.container(30,-6,[this.add.rectangle(0,-10,6,52,0xB07A47), this.add.rectangle(0,20,26,18,0xFFFFFF).setStrokeStyle(3,0x2A211B)]).setVisible(false); mop.angle=20;
+      const c=this.add.container(0,0,[s,coal,mop,tag]); this.crew[w]={c,coal,mop,drawn:{x:0,y:0}}; });
     this.ring=this.add.circle(0,0,REACH*.55,0xFFFFFF,0).setStrokeStyle(4,0xFFE14D,.9);
     this.follow();
   }
+  zombie(z){ // spooky-cute: a wobbly green blob with arms out and a kana tag saying its colour
+    const body=this.add.container(0,0,[ this.add.rectangle(-26,-2,26,9,0x7BB86F).setStrokeStyle(3,0x2A211B), this.add.rectangle(26,-2,26,9,0x7BB86F).setStrokeStyle(3,0x2A211B),
+      this.add.ellipse(0,8,46,52,0x8BCB7A).setStrokeStyle(4,0x2A211B), this.add.circle(-9,-2,7,0xFFFFFF).setStrokeStyle(2,0x2A211B), this.add.circle(9,-4,5,0xFFFFFF).setStrokeStyle(2,0x2A211B),
+      this.add.circle(-8,-1,2.5,0x2A211B), this.add.circle(9,-3,2,0x2A211B), this.add.rectangle(0,16,14,4,0x2A211B) ]);
+    const tag=this.add.text(0,-34,W[z.c].k,{fontFamily:'"Zen Maru Gothic"',fontStyle:'900',fontSize:'20px',color:'#2A211B',backgroundColor:'#FFF8EE',padding:{x:6,y:1}}).setOrigin(.5);
+    const c=this.add.container(z.x,z.y,[body,tag]); return {c, body, tx:z.x, ty:z.y}; }
   sign(x, txt){ const c=this.add.container(x,0); const b=this.add.rectangle(0,0,140,58,0xFFFFFF).setStrokeStyle(5,0x2A211B); const t=this.add.text(0,-2,txt,{fontFamily:'"Zen Maru Gothic"',fontStyle:'900',fontSize:'32px',color:'#2A211B'}).setOrigin(.5);
     const ar=this.add.text(0,30,'',{fontFamily:'Nunito',fontStyle:'900',fontSize:'18px',color:'#FFE14D'}).setOrigin(.5); c.add([b,t,ar]); c.t=t; c.ar=ar; return c; }
   label(x,y,t){ this.add.text(x,y,t,{fontSize:'22px'}).setOrigin(.5); }
@@ -433,18 +517,28 @@ class Train extends Phaser.Scene{
     // move me (joystick or keys), kept inside the area I'm in
     const k=IN.keys; let dx=IN.dx+((k.arrowright||k.d)?1:0)-((k.arrowleft||k.a)?1:0), dy=IN.dy+((k.arrowdown||k.s)?1:0)-((k.arrowup||k.w)?1:0);
     const L=Math.hypot(dx,dy); if(L>1){ dx/=L; dy/=L; }
-    if(S && S.ph==='run'){ const p=pos[ME], A=AREA[p.a]; p.x=Math.max(A.x0,Math.min(A.x1,p.x+dx*240*dt)); p.y=Math.max(A.y0,Math.min(A.y1,p.y+dy*240*dt)); }
+    const driving = S && S.ph==='run' && S.driver===ME;
+    if(driving){ pos[ME]={x:SPOT.seat.x, y:SPOT.seat.y+8, a:'cab'};          // seated: the joystick drives instead of walking
+      if(Math.abs(dy)>.35){ this.thrL=Math.max(0,Math.min(1,(this.thrL??S.thr)-dy*.7*dt)); if(time-(this._thrT||0)>160){ this._thrT=time; doAct({k:'thr', v:+this.thrL.toFixed(2)}); } } else this.thrL=S.thr;
+      const fl = Math.abs(dx)>.6 ? Math.sign(dx) : 0; if(fl && fl!==this._flick) doAct({k:'lane', d:fl}); this._flick=fl; }
+    else if(S && S.ph==='run'){ const p=pos[ME], A=AREA[p.a]; p.x=Math.max(A.x0,Math.min(A.x1,p.x+dx*240*dt)); p.y=Math.max(A.y0,Math.min(A.y1,p.y+dy*240*dt)); }
     if(MODE==='host' || MODE==='local'){ hostTick(dt); if(MODE==='host' && S) pushState(); }
     if(MODE==='guest') sendGuest();
     if(!S) return;
     // draw the crew: me where I am, my crewmate smoothed toward their last known place
     ['h','g'].forEach(w=>{ const c=this.crew[w], target = (w===ME || MODE==='local') ? pos[w] : (MODE==='host' ? pos.g : pos.h), ty=target.a==='roof'?target.y:target.y;
       const snap = w===ME || Math.abs(c.drawn.y-ty)>200; c.drawn.x = snap ? target.x : c.drawn.x+(target.x-c.drawn.x)*.25; c.drawn.y = snap ? ty : c.drawn.y+(ty-c.drawn.y)*.25;
-      c.c.setPosition(c.drawn.x, c.drawn.y); c.coal.setVisible(!!S.players[w].carry); c.c.setDepth(c.drawn.y); });
+      c.c.setPosition(c.drawn.x, c.drawn.y); const cr=S.players[w].carry; c.coal.setVisible(cr==='coal'); c.mop.setVisible(COLORS.includes(cr)); if(COLORS.includes(cr)) c.mop.list[1].setFillStyle(VALVE[cr].c); c.c.setDepth(c.drawn.y); });
     // the camera keeps to the area I'm in
     const cam=this.cameras.main, a=pos[ME].a, top={cab:0, roof:ROOFY, cargo:CARGOY}[a], z=Math.max(.55, Math.min(1.5, this.scale.height/470)); if(Math.abs(cam.zoom-z)>.01) cam.setZoom(z); // fit the room's height on any phone
     if(cam._a!==a){ cam._a=a; cam.setBounds(0, top, 960, a==='roof'?480:560); }
-    const n=nearest(); this.ring.setVisible(!!n); if(n){ const s = n.k==='valve' ? VALVE[n.c] : n.k==='lamp' ? SPOT['lamp'+n.id] : SPOT[n.k]; this.ring.setPosition(s.x, s.y); this.ring.setScale(1+.06*Math.sin(time/120)); }
+    // zombies: one sprite per zombie, wobbling toward where the host says it is; a bonked one spins off
+    const live={}; (S.zs||[]).forEach(z=>{ live[z.id]=1; let o=this.zm[z.id]; if(!o){ o=this.zm[z.id]=this.zombie(z); } o.tx=z.x; o.ty=z.y;
+      o.c.x+=(o.tx-o.c.x)*.2; o.c.y+=(o.ty-o.c.y)*.2; o.body.y=Math.sin(time/180+z.id)*3; o.c.angle=Math.sin(time/260+z.id)*6; o.c.setDepth(o.c.y); });
+    Object.keys(this.zm).forEach(id=>{ if(!live[id]){ const o=this.zm[id]; delete this.zm[id];
+      this.tweens.add({targets:o.c, y:o.c.y-90, angle:540, scale:.2, alpha:0, duration:520, ease:'Cubic.easeOut', onComplete:()=>o.c.destroy()});
+      for(let i=0;i<10;i++){ const st=this.add.star(o.c.x,o.c.y,5,4,9,0xFFE14D).setDepth(5000); this.tweens.add({targets:st, x:o.c.x+(Math.random()-.5)*160, y:o.c.y-30-Math.random()*90, alpha:0, angle:200, duration:600, onComplete:()=>st.destroy()}); } } });
+    const n=nearest(); this.ring.setVisible(!!n); if(n){ this.ring.setPosition(n.sx, n.sy); this.ring.setScale(1+.06*Math.sin(time/120)); }
     // the train is moving: ground scrolls past the roof, lights slide past the windows, the fire glows with its power
     const v=(S.speed||0); this.ground.tilePositionX+=v*420*dt; this.ground2.tilePositionX+=v*420*dt;
     this.winLights.forEach(l=>{ l.x-=v*260*dt; if(l.x<150) l.x=900; });
