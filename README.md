@@ -1,6 +1,6 @@
 # Midnight Rail Crew (greybox)
 
-A co-op Japanese-learning train game prototype. Two crew run around one night train: the cab (coal, firebox, coloured valves, brake) and the roof (junction signs + lever). Each player hears their own single-word Japanese orders (あか / あお / きいろ / せきたん / ブレーキ / あさひ / あおば / さくら) and must act on them. Talk to each other in any language.
+A co-op Japanese-learning train game prototype. Two crew run around one night train: the cab (coal, firebox, coloured valves, brake), the cargo car (water pump, lamps) and the roof (junction signs + lever). Both players see and hear every single-word Japanese order; it starts calm and gets crazy busy (あか / あお / きいろ / せきたん / みず / ランプ / ブレーキ / あさひ / あおば / さくら) and must act on them. Talk to each other in any language.
 
 - **Play:** open `index.html` from any static host (GitHub Pages works). Landscape phone.
 - **Online:** Create a room → share the 4-letter code → your friend taps Join. Online play uses PeerJS (free public broker) outside claude.ai, and the claude.ai room inside claude.ai.

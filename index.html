@@ -24,7 +24,7 @@ button,input{touch-action:manipulation}
 .meter span{width:44px;flex:none}
 .bar{flex:1;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--green);transform-origin:0 50%;transition:transform .2s}
-.bar.fire i{background:var(--amber)}
+.bar.fire i{background:var(--amber)}.bar.water i{background:#5BC0FF}
 .bar.low i{background:var(--red)}
 .trip{position:relative;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink)}
 .trip b{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:4px;background:var(--amber);border:2px solid var(--ink)}
@@ -33,14 +33,15 @@ button,input{touch-action:manipulation}
 .side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto}
 .badge{font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:999px;padding:4px 10px;white-space:nowrap}
 .badge.test{background:#3A1E19;border:2px dashed var(--amber);color:#FFDDB0}
-.orders{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 74px);display:flex;flex-direction:column;gap:6px;pointer-events:auto}
-.ord{display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:4px 6px 4px 4px;box-shadow:0 3px 0 var(--ink);min-width:150px;position:relative;overflow:hidden}
+.orders{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 100px);display:flex;flex-direction:column;gap:5px;pointer-events:auto}
+.orders{max-height:calc(100% - 250px);flex-wrap:wrap;align-content:flex-start;max-width:52vw}
+.ord{display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:4px 6px 4px 4px;box-shadow:0 3px 0 var(--ink);min-width:128px;position:relative;overflow:hidden}
 .ord.new{animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
 .ord .who{font:900 10px Nunito,sans-serif;background:var(--ink);color:var(--paper);border-radius:6px;padding:2px 4px}
-.ord b{font:900 24px "Zen Maru Gothic",sans-serif;flex:1;white-space:nowrap}
+.ord b{font:900 20px "Zen Maru Gothic",sans-serif;flex:1;white-space:nowrap}
 .ord small{font:800 11px Nunito,sans-serif;color:#8C5E36;display:block;line-height:1}
-.ord button{border:2px solid var(--ink);border-radius:10px;background:#E2E6FA;font:900 13px Nunito,sans-serif;width:30px;height:30px;padding:0;cursor:pointer;color:var(--ink)}
+.ord button{border:2px solid var(--ink);border-radius:9px;background:#E2E6FA;font:900 12px Nunito,sans-serif;width:28px;height:28px;padding:0;cursor:pointer;color:var(--ink)}
 .ord .t{position:absolute;left:0;bottom:0;height:4px;background:var(--red);transform-origin:0 50%}
 .ord.done{background:#C9F2D1}.ord.fail{background:#FFD3CC}
 .stick{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 18px);width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);pointer-events:auto;touch-action:none}
@@ -49,7 +50,7 @@ button,input{touch-action:manipulation}
 .act.off{background:#55607A;color:#A9B3E0}
 .act.held{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
 .switch{pointer-events:auto;font:900 13px Nunito,sans-serif;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:12px;box-shadow:0 3px 0 var(--ink);padding:6px 10px;cursor:pointer}
-.toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
+.toast{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
 .toast.ok{background:var(--green)}.toast.bad{background:#FF8A7E}.toast.go{background:var(--amber)}
 .card{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.78)}
 .in{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 var(--ink);padding:16px 18px 14px;width:min(560px,100%);max-height:100%;overflow:auto;text-align:center}
@@ -63,7 +64,7 @@ button,input{touch-action:manipulation}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
 .code{font:900 44px Nunito,sans-serif;letter-spacing:.2em;background:var(--night);color:var(--amber);border:4px solid var(--ink);border-radius:16px;padding:4px 16px;display:inline-block;margin-top:8px}
 input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:uppercase;width:120px;text-align:center;border:3px solid var(--ink);border-radius:12px;padding:8px}
-.words{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
+.words{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:10px}
 .word{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--ink);padding:6px 2px 4px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center}
 .word b{font:900 21px "Zen Maru Gothic",sans-serif}.word small{font:800 11px Nunito,sans-serif;color:#6B5E54}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px;margin-right:3px}
@@ -82,6 +83,7 @@ input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:
     <div class="meters">
       <div class="meter"><span>TRAIN</span><div class="bar" id="hpBar"><i></i></div></div>
       <div class="meter"><span>FIRE</span><div class="bar fire" id="fireBar"><i></i></div></div>
+      <div class="meter"><span>WATER</span><div class="bar water" id="waterBar"><i></i></div></div>
       <div class="meter"><span>TRIP</span><div class="trip" id="trip"></div></div>
     </div>
     <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
@@ -105,18 +107,22 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 // ---------- words (single words only for this prototype) ----------
 const W={ aka:{k:'あか',ro:'aka',m:'red'}, ao:{k:'あお',ro:'ao',m:'blue'}, kiiro:{k:'きいろ',ro:'kiiro',m:'yellow'},
   coal:{k:'せきたん',ro:'sekitan',m:'coal'}, brake:{k:'ブレーキ',ro:'burēki',m:'brake'},
+  mizu:{k:'みず',ro:'mizu',m:'water'}, lamp:{k:'ランプ',ro:'ranpu',m:'lamp'},
   asahi:{k:'あさひ',ro:'asahi',m:'station'}, aoba:{k:'あおば',ro:'aoba',m:'station'}, sakura:{k:'さくら',ro:'sakura',m:'station'} };
 const COLORS=['aka','ao','kiiro'], STATIONS=['asahi','aoba','sakura'];
 
 // ---------- world layout ----------
 const ROOFY=760;                              // the roof sits below the cab in world space; the ladder moves you between them
-const AREA={ cab:{x0:70,x1:890,y0:90,y1:490}, roof:{x0:70,x1:890,y0:ROOFY+120,y1:ROOFY+330} };
+const CARGOY=1500;                            // the cargo car (water tank + lamps), through the cab's left door
+const AREA={ cab:{x0:70,x1:890,y0:90,y1:490}, roof:{x0:70,x1:890,y0:ROOFY+120,y1:ROOFY+330}, cargo:{x0:70,x1:890,y0:CARGOY+90,y1:CARGOY+490} };
 const VALVE={ aka:{x:850,y:160,c:0xE04A3C}, ao:{x:850,y:290,c:0x3B6FE0}, kiiro:{x:850,y:420,c:0xF2C230} };
 const SPOT={ bin:{x:150,y:440,a:'cab'}, fire:{x:150,y:180,a:'cab'}, brake:{x:470,y:465,a:'cab'}, ladder:{x:620,y:110,a:'cab'},
-  hatch:{x:300,y:ROOFY+300,a:'roof'}, lever:{x:830,y:ROOFY+170,a:'roof'} };
+  hatch:{x:300,y:ROOFY+300,a:'roof'}, lever:{x:830,y:ROOFY+170,a:'roof'},
+  door:{x:85,y:310,a:'cab'}, back:{x:875,y:CARGOY+310,a:'cargo'}, pump:{x:300,y:CARGOY+180,a:'cargo'},
+  lampA:{x:620,y:CARGOY+130,a:'cargo'}, lampB:{x:620,y:CARGOY+450,a:'cargo'} };
 const REACH=80;
 // journey (distance units ≈ seconds at full speed): 3 junctions, then the station
-const JUNC=[34,68,102], STATION=128;
+const JUNC=[45,95,145], STATION=185;          // ~3 minutes: a calm start, then it gets busy
 
 // ---------- audio: tiny synth kit + the phone's Japanese voice ----------
 let AC=null, jaVoice=null;
@@ -138,14 +144,14 @@ const LOCAL={ actN:0, acts:[], seen:{h:0,g:0}, hinted:{}, heard:{}, ready:false 
 const pos={ h:{x:300,y:300,a:'cab'}, g:{x:420,y:330,a:'cab'} };   // where each crew member is drawn
 function freshState(){
   const signs=JUNC.map(()=>{ const pair=shuffle(STATIONS).slice(0,2); const dest=pair[Math.random()<.5?0:1]; return {L:pair[0], R:pair[1], dest}; });
-  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
+  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, water:90, lamps:{A:1,B:1}, nextL:30, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
     stopped:false, brakeHold:0, detour:0, jn:0, signs, sign:null, orders:[], oid:0, nextV:6, jres:[], ev:{n:0},
     stats:{done:0, missed:0, wrong:0, hints:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
 }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 function ev(kind, txt){ S.ev={n:S.ev.n+1, kind, txt}; }
-function addOrder(who, kind, word, life){ S.oid++; S.orders.push({id:S.oid, who, kind, word, until: life ? S.t+life : 1e9, life:life||0, done:0, hint:0}); if(S.orders.length>10) S.orders.splice(0, S.orders.length-10); }
+function addOrder(who, kind, word, life, target){ S.oid++; S.orders.push({id:S.oid, who, kind, word, target, until: life ? S.t+life : 1e9, life:life||0, done:0, hint:0}); if(S.orders.length>10) S.orders.splice(0, S.orders.length-10); }
 const active=kind=>S.orders.filter(o=>!o.done && (!kind || o.kind===kind));
 function finish(o, ok){ o.done = ok ? 1 : -1; o.doneT=S.t; if(ok) S.stats.done++; else S.stats.missed++; }
 
@@ -155,23 +161,28 @@ function hostTick(dt){
   S.t+=dt; S.players.h.x=pos.h.x; S.players.h.y=pos.h.y; S.players.h.a=pos.h.a;
   if(MODE==='local'){ S.players.g.x=pos.g.x; S.players.g.y=pos.g.y; S.players.g.a=pos.g.a; }
   if(S.arriveT){ S.speed=Math.max(0,S.speed-dt*.8); if(S.t-S.arriveT>2.2) S.ph='over'; return; }
-  S.power=Math.max(0, S.power-2.1*dt);
+  // the ramp: 0 = calm start, 1 = flat-out (reached ~100 s in). Everything below scales with it.
+  const f=Math.min(1, S.t/100);
+  S.power=Math.max(0, S.power-(1.5+1.9*f)*dt); S.water=Math.max(0, S.water-(.8+1.7*f)*dt);
+  if(S.water<=0) S.hp-=4*dt;                                                    // dry boiler: the train takes damage until someone pumps
   let sp = S.power>25 ? 1 : .3+.7*S.power/25; if(S.detour>0){ S.detour-=dt; sp*=.3; }
   S.speed += (sp-S.speed)*Math.min(1,dt*2); S.dist+=S.speed*dt;
   // orders: coloured valves every ~10 s, coal when the fire runs low, the junction word before each junction, brake before the station
-  if(S.t>=S.nextV && S.dist<STATION-14){ addOrder(pick(['h','g']), 'valve', pick(COLORS), 14); S.nextV=S.t+8+Math.random()*4; }
-  if(S.power<40 && !active('coal').length) addOrder(pick(['h','g']), 'coal', 'coal', 22);
-  if(S.jn<JUNC.length && S.dist>=JUNC[S.jn]-15 && !S.sign){ S.sign={...S.signs[S.jn], jn:S.jn}; addOrder(pick(['h','g']), 'junction', S.sign.dest, 0); }
+  if(S.t>=S.nextV && S.dist<STATION-14){ addOrder('all', 'valve', pick(COLORS), 16-6*f); S.nextV=S.t+(11-7.5*f)+Math.random()*3*(1-f); }
+  if(S.power<40 && !active('coal').length) addOrder('all', 'coal', 'coal', 22-7*f);
+  if(S.water<40 && !active('water').length) addOrder('all', 'water', 'mizu', 22-7*f);
+  if(S.t>=S.nextL && S.dist<STATION-14){ const dark=['A','B'].filter(k=>S.lamps[k]); if(dark.length){ const k=pick(dark); S.lamps[k]=0; addOrder('all', 'lamp', 'lamp', 18-6*f, k); } S.nextL=S.t+(26-16*f)+Math.random()*4; }
+  if(S.jn<JUNC.length && S.dist>=JUNC[S.jn]-15 && !S.sign){ S.sign={...S.signs[S.jn], jn:S.jn}; addOrder('all', 'junction', S.sign.dest, 0); }
   if(S.sign && S.dist>=JUNC[S.sign.jn]){ // judge the junction: the lever picks the side; the sign on that side must be the word
     const o=active('junction')[0], chosen = S.lever==='L' ? S.sign.L : S.lever==='R' ? S.sign.R : null, ok=chosen===S.sign.dest;
     if(o) finish(o, ok); S.jres[S.sign.jn]=ok;
     if(ok) ev('ok','Right line! '+W[S.sign.dest].k); else { S.hp-=20; S.detour=4; S.stats.wrong++; ev('bad', S.lever ? 'Wrong line! Backing up…' : 'Nobody set the lever!'); }
     S.sign=null; S.lever=null; S.jn++; }
-  if(S.dist>=STATION-14 && !S.orders.some(o=>o.kind==='brake')) addOrder(pick(['h','g']), 'brake', 'brake', 0);
+  if(S.dist>=STATION-14 && !S.orders.some(o=>o.kind==='brake')) addOrder('all', 'brake', 'brake', 0);
   S.brakeHold=Math.max(0, S.brakeHold-dt*.5);
   if(!S.arriveT && S.brakeHold>=1.5 && S.dist>=STATION-14){ const o=active('brake')[0]; if(o) finish(o, true); S.arriveT=S.t; ev('ok','到着! Arrived'); }
   else if(!S.arriveT && S.dist>=STATION+4){ const o=active('brake')[0]; if(o) finish(o, false); S.hp-=15; S.arriveT=S.t; ev('bad','Overran the station!'); }
-  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; ev('bad','Missed: '+W[o.word].k); }
+  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; if(o.kind==='lamp') S.lamps[o.target]=1; ev('bad','Missed: '+W[o.word].k); }
   if(S.hp<=0){ S.hp=30; S.detour=3; ev('bad','Breakdown! Patching up…'); }      // recoverable: never a restart
   S.hp=Math.max(0,Math.min(100,S.hp));
 }
@@ -184,6 +195,8 @@ function hostAct(who, a){
   if(a.k==='bin' && near(SPOT.bin) && !p.carry){ p.carry=1; ev('pick',''); return; }
   if(a.k==='fire' && near(SPOT.fire) && p.carry){ p.carry=0; S.power=Math.min(100, S.power+35); ev('fire',''); active('coal').forEach(o=>finish(o,true)); return; }
   if(a.k==='brake' && near(SPOT.brake)){ S.brakeHold+=.3; if(S.dist<STATION-14) S.speed*=.97; return; }
+  if(a.k==='pump' && near(SPOT.pump)){ S.water=Math.min(100, S.water+8); if(S.water>=85 && active('water').length){ active('water').forEach(o=>finish(o,true)); ev('ok','OK! '+W.mizu.k); } return; }
+  if(a.k==='lamp' && (a.id==='A'||a.id==='B') && near(SPOT['lamp'+a.id]) && !S.lamps[a.id]){ S.lamps[a.id]=1; const o=S.orders.find(o=>!o.done && o.kind==='lamp' && o.target===a.id); if(o) finish(o,true); ev('ok','OK! '+W.lamp.k); return; }
   if(a.k==='lever' && near(SPOT.lever)){ S.lever = S.lever==='L' ? 'R' : 'L'; ev('lever',''); return; }
   if(a.k==='valve' && VALVE[a.c] && near({...VALVE[a.c], a:'cab'})){
     S.valves[a.c]^=1; const want=active('valve').filter(o=>o.word===a.c);
@@ -194,7 +207,7 @@ function hostAct(who, a){
 function hostIn(who, m){ // a guest message: absolute position + recent actions with counters
   if(!S || !m) return;
   if(m.ready && S.ph==='ready') S.ready[who]=true;
-  if(typeof m.x==='number'){ const p=S.players[who]; p.x=m.x; p.y=m.y; p.a=m.a==='roof'?'roof':'cab'; pos[who]={x:m.x,y:m.y,a:p.a}; }
+  if(typeof m.x==='number'){ const p=S.players[who]; p.x=m.x; p.y=m.y; p.a=AREA[m.a]?m.a:'cab'; pos[who]={x:m.x,y:m.y,a:p.a}; }
   (m.acts||[]).forEach(a=>{ if(a.n>LOCAL.seen[who]){ LOCAL.seen[who]=a.n; hostAct(who, a); } });
 }
 
@@ -210,14 +223,17 @@ function nearest(){ // the closest thing I can use, for the action button
   if(!carry) add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
   COLORS.forEach(c=>add('valve', {...VALVE[c], a:'cab'}, 'TURN', {c}));
   add('brake', SPOT.brake, 'BRAKE\n(hold)'); add('ladder', SPOT.ladder, 'CLIMB\nUP'); add('hatch', SPOT.hatch, 'CLIMB\nDOWN');
-  add('lever', SPOT.lever, 'LEVER');
+  add('lever', SPOT.lever, 'LEVER'); add('door', SPOT.door, 'CARGO\nCAR ◀'); add('back', SPOT.back, 'CAB ▶'); add('pump', SPOT.pump, 'PUMP\n(hold)');
+  if(S){ ['A','B'].forEach(k=>{ if(!S.lamps[k]) add('lamp', SPOT['lamp'+k], 'LIGHT', {id:k}); }); }
   list.sort((a,b)=>a.d-b.d); return list[0]||null;
 }
 function useNearest(){
   const n=nearest(); if(!n || !S || S.ph!=='run') return;
   if(n.k==='ladder'){ pos[ME]={x:SPOT.hatch.x, y:SPOT.hatch.y-50, a:'roof'}; SND.pick(); return; }
   if(n.k==='hatch'){ pos[ME]={x:SPOT.ladder.x, y:SPOT.ladder.y+60, a:'cab'}; SND.pick(); return; }
-  doAct({k:n.k, c:n.c});
+  if(n.k==='door'){ pos[ME]={x:SPOT.back.x-70, y:SPOT.back.y, a:'cargo'}; SND.pick(); return; }
+  if(n.k==='back'){ pos[ME]={x:SPOT.door.x+70, y:SPOT.door.y, a:'cab'}; SND.pick(); return; }
+  doAct({k:n.k, c:n.c, id:n.id});
 }
 
 // ---------- networking: claude.ai room (inside claude.ai) or PeerJS (anywhere else) ----------
@@ -268,8 +284,8 @@ function lobby(msg){
     <div class="row"><button class="btn alt" data-a="local">Local test · both crew on this device</button></div>`);
 }
 function practice(){
-  card(`<h2>8 words<small>Tap to hear · your orders use these</small></h2>${WORDS_HTML()}
-    <p>Valve orders are colours. せきたん = carry coal to the fire. Station names = pull the roof lever toward that sign. ブレーキ = hold the brake wheel at the station.</p>
+  card(`<h2>10 words<small>Tap to hear · your orders use these</small></h2>${WORDS_HTML()}
+    <p>Valve orders are colours. せきたん = carry coal to the fire. みず = pump water in the cargo car. ランプ = light the dark lamp there. Station names = pull the roof lever toward that sign. ブレーキ = hold the brake wheel at the station. Everyone hears every order. It starts calm… it won't stay calm.</p>
     <div class="row"><button class="btn" data-a="ready">Ready ▶</button></div>`);
 }
 function results(){
@@ -292,16 +308,16 @@ function hudFrame(){
     if(e.kind==='ok'){ SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
     else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
   const set=(id,v,low)=>{ const b=$(id); b.firstElementChild.style.transform=`scaleX(${Math.max(0,v/100).toFixed(3)})`; b.classList.toggle('low', !!low); };
-  set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25);
+  set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25); set('#waterBar', S.water, S.water<25);
   const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=JUNC.map((j,i)=>`<em style="left:${j/STATION*100}%"></em>`).join('')+`<em style="left:100%;border-radius:3px"></em><b></b>`;
   trip.querySelectorAll('em').forEach((e,i)=>{ if(i<JUNC.length){ e.classList.toggle('ok', S.jres[i]===true); e.classList.toggle('bad', S.jres[i]===false); } });
   trip.querySelector('b').style.left=Math.min(100, S.dist/STATION*100)+'%';
-  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${p.a==='roof'?'ROOF':'INSIDE'}${S.players[ME].carry?' · coal':''}`;
+  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${({roof:'ROOF',cab:'CAB',cargo:'CARGO CAR'})[p.a]}${S.players[ME].carry?' · coal':''}`;
   // my orders (both crews' in the local test), newest first; the word is spoken once when it arrives
-  const mine=S.orders.filter(o=>(MODE==='local' || o.who===ME) && (!o.done || S.t-(o.doneT||S.t)<1.2)).slice(-4).reverse();
+  const mine=S.orders.filter(o=>!o.done || S.t-(o.doneT||S.t)<1.2).slice(-6).reverse(); // shared: both crew see and hear every order
   const box=$('#orders'), key=mine.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
   if(box.dataset.k!==key){ box.dataset.k=key;
-    box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">${MODE==='local'?`<span class="who">${o.who==='h'?'P1':'P2'}</span>`:''}
+    box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">
       <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
       ${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button>`}${o.life&&!o.done?`<span class="t" data-t="${o.id}"></span>`:''}</div>`).join(''); }
   mine.forEach(o=>{ if(!orderSeen[o.id]){ orderSeen[o.id]=1; if(!o.done){ SND.order(); setTimeout(()=>say(o.word), 180); } } });
@@ -324,7 +340,7 @@ const IN={dx:0, dy:0, keys:{}};
   st.addEventListener('pointermove', e=>{ if(e.pointerId===id){ e.preventDefault(); move(e); } });
   const up=e=>{ if(e.pointerId===id){ id=null; IN.dx=IN.dy=0; kn.style.transform=''; } }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up); })();
 let holdT=null;
-const actDown=()=>{ $('#actBtn').classList.add('held'); useNearest(); clearInterval(holdT); holdT=setInterval(()=>{ const n=nearest(); if(n && n.k==='brake') doAct({k:'brake'}); }, 250); };
+const actDown=()=>{ $('#actBtn').classList.add('held'); useNearest(); clearInterval(holdT); holdT=setInterval(()=>{ const n=nearest(); if(n && (n.k==='brake' || n.k==='pump')) doAct({k:n.k}); }, 250); };
 const actUp=()=>{ $('#actBtn').classList.remove('held'); clearInterval(holdT); };
 $('#actBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); actDown(); }); $('#actBtn').addEventListener('pointerup', actUp); $('#actBtn').addEventListener('pointercancel', actUp);
 addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if((e.key===' '||e.key==='e'||e.key==='E') && !e.repeat){ e.preventDefault(); actDown(); } });
@@ -385,6 +401,19 @@ class Train extends Phaser.Scene{
     g.fillStyle(0x4A4A52); g.fillRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22); g.strokeRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22);
     this.lever=this.add.rectangle(SPOT.lever.x, SPOT.lever.y+12, 10, 56, 0xFFB23E).setStrokeStyle(3,0x2A211B).setOrigin(.5,1);
     this.signs=this.add.container(640, ROOFY+60); this.signL=this.sign(-80,'');  this.signR=this.sign(80,''); this.signs.add([this.signL, this.signR]); this.signs.setVisible(false);
+    // ---- cargo car: crates, the water tank (みず) and two lamps (ランプ) ----
+    g.fillStyle(0x2E2A30); g.fillRect(0,CARGOY,960,560); g.fillStyle(0x6E5A48); g.fillRect(50,CARGOY+70,860,440);
+    g.lineStyle(2,0x5E4C3C); for(let y=CARGOY+90;y<CARGOY+510;y+=36) g.lineBetween(50,y,910,y); g.lineStyle(5,0x2A211B); g.strokeRect(50,CARGOY+70,860,440);
+    [[180,CARGOY+400],[250,CARGOY+440],[760,CARGOY+230],[820,CARGOY+170],[440,CARGOY+460]].forEach(([x,y])=>{ g.fillStyle(0xB07A47); g.fillRect(x-30,y-30,60,60); g.lineStyle(4,0x2A211B); g.strokeRect(x-30,y-30,60,60); g.lineBetween(x-30,y-30,x+30,y+30); });
+    g.fillStyle(0x4A5A6A); g.fillRoundedRect(SPOT.pump.x-60,CARGOY+90,90,120,12); g.lineStyle(5,0x2A211B); g.strokeRoundedRect(SPOT.pump.x-60,CARGOY+90,90,120,12);
+    this.tank=this.add.rectangle(SPOT.pump.x-15, CARGOY+205, 70, 100, 0x5BC0FF).setOrigin(.5,1).setAlpha(.9);
+    g.fillStyle(0x8C96A0); g.fillRect(SPOT.pump.x+34,CARGOY+150,30,50); g.strokeRect(SPOT.pump.x+34,CARGOY+150,30,50);
+    this.pumpH=this.add.rectangle(SPOT.pump.x+49, CARGOY+150, 8, 40, 0x2A211B).setOrigin(.5,1);
+    this.lampG={}; ['A','B'].forEach(k=>{ const sp=SPOT['lamp'+k]; g.fillStyle(0x2A211B); g.fillRect(sp.x-4, sp.y-60, 8, 40);
+      this.lampG[k]={ glow:this.add.circle(sp.x, sp.y-10, 46, 0xFFE9A0, .28), bulb:this.add.circle(sp.x, sp.y-10, 18, 0xFFE14D).setStrokeStyle(4,0x2A211B) }; });
+    // doors between the cab and the cargo car
+    g.fillStyle(0x5A3E2E); g.fillRect(52,SPOT.door.y-50,22,100); g.fillRect(886,SPOT.back.y-50,22,100); this.label(105,SPOT.door.y-70,'◀🚪'); this.label(855,SPOT.back.y-70,'🚪▶');
+    this.label(SPOT.pump.x-15, CARGOY+70+0, '💧');
     // ---- crew ----
     this.crew={}; ['h','g'].forEach(w=>{ const s=this.add.image(0,0,'shiba').setDisplaySize(64,79); if(w==='g') s.setTint(0x9DB8FF);
       const tag=this.add.text(0,-56,w==='h'?'P1':'P2',{fontFamily:'Nunito',fontStyle:'900',fontSize:'16px',color:'#2A211B',backgroundColor:w==='h'?'#FFB23E':'#7FD7FF',padding:{x:6,y:2}}).setOrigin(.5);
@@ -413,14 +442,16 @@ class Train extends Phaser.Scene{
       const snap = w===ME || Math.abs(c.drawn.y-ty)>200; c.drawn.x = snap ? target.x : c.drawn.x+(target.x-c.drawn.x)*.25; c.drawn.y = snap ? ty : c.drawn.y+(ty-c.drawn.y)*.25;
       c.c.setPosition(c.drawn.x, c.drawn.y); c.coal.setVisible(!!S.players[w].carry); c.c.setDepth(c.drawn.y); });
     // the camera keeps to the area I'm in
-    const cam=this.cameras.main, a=pos[ME].a, z=Math.max(.55, Math.min(1.5, this.scale.height/470)); if(Math.abs(cam.zoom-z)>.01) cam.setZoom(z); // fit the room's height on any phone
-    if(cam._a!==a){ cam._a=a; cam.setBounds(0, a==='roof'?ROOFY:0, 960, a==='roof'?480:560); }
-    const n=nearest(); this.ring.setVisible(!!n); if(n){ const s = n.k==='valve' ? VALVE[n.c] : SPOT[n.k]; this.ring.setPosition(s.x, s.y); this.ring.setScale(1+.06*Math.sin(time/120)); }
+    const cam=this.cameras.main, a=pos[ME].a, top={cab:0, roof:ROOFY, cargo:CARGOY}[a], z=Math.max(.55, Math.min(1.5, this.scale.height/470)); if(Math.abs(cam.zoom-z)>.01) cam.setZoom(z); // fit the room's height on any phone
+    if(cam._a!==a){ cam._a=a; cam.setBounds(0, top, 960, a==='roof'?480:560); }
+    const n=nearest(); this.ring.setVisible(!!n); if(n){ const s = n.k==='valve' ? VALVE[n.c] : n.k==='lamp' ? SPOT['lamp'+n.id] : SPOT[n.k]; this.ring.setPosition(s.x, s.y); this.ring.setScale(1+.06*Math.sin(time/120)); }
     // the train is moving: ground scrolls past the roof, lights slide past the windows, the fire glows with its power
     const v=(S.speed||0); this.ground.tilePositionX+=v*420*dt; this.ground2.tilePositionX+=v*420*dt;
     this.winLights.forEach(l=>{ l.x-=v*260*dt; if(l.x<150) l.x=900; });
     this.fire.setScale(.6+.5*S.power/100+.05*Math.sin(time/90)); this.fire.setFillStyle(S.power<25?0x8A3A20:0xFF7A2E);
     COLORS.forEach(c=>{ const w=this.valves[c], want=S.valves[c]?Math.PI/4:0; w.rotation+=(want-w.rotation)*.2; });
+    this.tank.setScale(1, Math.max(.02, S.water/100)); this.tank.setFillStyle(S.water<25?0xE04A3C:0x5BC0FF);
+    ['A','B'].forEach(k=>{ const L=this.lampG[k], on=!!S.lamps[k]; L.bulb.setFillStyle(on?0xFFE14D:0x3A3A44); L.glow.setVisible(on); });
     this.brake.rotation+=S.brakeHold*dt*4; this.lever.rotation = S.lever==='L' ? -.6 : S.lever==='R' ? .6 : 0;
     if(S.sign){ this.signs.setVisible(true); this.signL.t.setText(W[S.sign.L].k); this.signR.t.setText(W[S.sign.R].k); this.signL.ar.setText('◀'); this.signR.ar.setText('▶'); } else this.signs.setVisible(false);
     if(v>.2){ this._clk=(this._clk||0)+v*dt; if(this._clk>.45){ this._clk=0; SND.clack(v); } }
