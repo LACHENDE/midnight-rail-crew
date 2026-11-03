@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Midnight Rail Crew</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Zen+Maru+Gothic:wght@700;900&display=swap">
+<style>
+/* Midnight Rail Crew — greybox. One night train, two crew who can go anywhere: the cab (coal, firebox, valves, brake)
+   and the roof (junction signs + lever). Each player privately hears single Japanese words and must act on them. */
+:root{ --ink:#2A211B; --paper:#FFF8EE; --night:#0E1230; --amber:#FFB23E; --red:#E04A3C; --green:#7EE08A; --dim:#A9B3E0; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--night);color:var(--paper);font-family:Nunito,"Zen Maru Gothic",system-ui,sans-serif;overflow:hidden;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+#game{position:fixed;inset:0}
+#game canvas{display:block}
+[hidden]{display:none!important}
+.hud{position:fixed;inset:0;pointer-events:none;z-index:2}
+.top{position:absolute;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
+.meters{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;max-width:330px}
+.meter{display:flex;align-items:center;gap:6px;font:900 11px Nunito,sans-serif;letter-spacing:.06em}
+.meter span{width:44px;flex:none}
+.bar{flex:1;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green);transform-origin:0 50%;transition:transform .2s}
+.bar.fire i{background:var(--amber)}
+.bar.low i{background:var(--red)}
+.trip{position:relative;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink)}
+.trip b{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:4px;background:var(--amber);border:2px solid var(--ink)}
+.trip em{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--ink);border:2px solid var(--dim)}
+.trip em.ok{background:var(--green)}.trip em.bad{background:var(--red)}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto}
+.badge{font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.badge.test{background:#3A1E19;border:2px dashed var(--amber);color:#FFDDB0}
+.orders{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 74px);display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+.ord{display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:4px 6px 4px 4px;box-shadow:0 3px 0 var(--ink);min-width:150px;position:relative;overflow:hidden}
+.ord.new{animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.ord .who{font:900 10px Nunito,sans-serif;background:var(--ink);color:var(--paper);border-radius:6px;padding:2px 4px}
+.ord b{font:900 24px "Zen Maru Gothic",sans-serif;flex:1;white-space:nowrap}
+.ord small{font:800 11px Nunito,sans-serif;color:#8C5E36;display:block;line-height:1}
+.ord button{border:2px solid var(--ink);border-radius:10px;background:#E2E6FA;font:900 13px Nunito,sans-serif;width:30px;height:30px;padding:0;cursor:pointer;color:var(--ink)}
+.ord .t{position:absolute;left:0;bottom:0;height:4px;background:var(--red);transform-origin:0 50%}
+.ord.done{background:#C9F2D1}.ord.fail{background:#FFD3CC}
+.stick{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 18px);width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);pointer-events:auto;touch-action:none}
+.stick i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,248,238,.85);border:3px solid var(--ink)}
+.act{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 18px);width:118px;height:118px;border-radius:50%;background:var(--amber);border:4px solid var(--ink);box-shadow:0 6px 0 var(--ink);font:900 17px Nunito,"Zen Maru Gothic",sans-serif;color:var(--ink);pointer-events:auto;touch-action:none;cursor:pointer;line-height:1.1;padding:6px}
+.act.off{background:#55607A;color:#A9B3E0}
+.act.held{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.switch{pointer-events:auto;font:900 13px Nunito,sans-serif;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:12px;box-shadow:0 3px 0 var(--ink);padding:6px 10px;cursor:pointer}
+.toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
+.toast.ok{background:var(--green)}.toast.bad{background:#FF8A7E}.toast.go{background:var(--amber)}
+.card{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.78)}
+.in{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 var(--ink);padding:16px 18px 14px;width:min(560px,100%);max-height:100%;overflow:auto;text-align:center}
+.in h1{margin:0;font:900 28px/1.1 "Zen Maru Gothic",sans-serif}
+.in h1 small,.in h2 small{display:block;font:900 12px Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6B5E54;margin-top:4px}
+.in h2{margin:0;font:900 24px/1.15 "Zen Maru Gothic",sans-serif}
+.in p{margin:8px 0 0;font:700 14px/1.4 Nunito,sans-serif;color:#4A3F37}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.btn{font:900 17px Nunito,sans-serif;color:var(--ink);background:var(--amber);border:4px solid var(--ink);border-radius:999px;padding:11px 22px;box-shadow:0 5px 0 var(--ink);cursor:pointer}
+.btn.alt{background:var(--paper)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.code{font:900 44px Nunito,sans-serif;letter-spacing:.2em;background:var(--night);color:var(--amber);border:4px solid var(--ink);border-radius:16px;padding:4px 16px;display:inline-block;margin-top:8px}
+input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:uppercase;width:120px;text-align:center;border:3px solid var(--ink);border-radius:12px;padding:8px}
+.words{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
+.word{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--ink);padding:6px 2px 4px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center}
+.word b{font:900 21px "Zen Maru Gothic",sans-serif}.word small{font:800 11px Nunito,sans-serif;color:#6B5E54}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px;margin-right:3px}
+.res{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.res span{background:#F3E9DA;border-radius:12px;padding:7px 2px;font:800 11px Nunito,sans-serif;color:#6B5E54;display:flex;flex-direction:column}
+.res b{font:900 20px Nunito,sans-serif;color:var(--ink)}
+.small{font:800 12px Nunito,sans-serif;color:#6B5E54}
+.rotate{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:var(--night);font:900 20px Nunito,sans-serif;text-align:center;padding:20px}
+@media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud" id="hud" hidden>
+  <div class="top">
+    <div class="meters">
+      <div class="meter"><span>TRAIN</span><div class="bar" id="hpBar"><i></i></div></div>
+      <div class="meter"><span>FIRE</span><div class="bar fire" id="fireBar"><i></i></div></div>
+      <div class="meter"><span>TRIP</span><div class="trip" id="trip"></div></div>
+    </div>
+    <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
+  </div>
+  <div class="orders" id="orders"></div>
+  <div class="stick" id="stick"><i id="knob"></i></div>
+  <button class="act off" id="actBtn">—</button>
+  <div class="toast" id="toast"></div>
+</div>
+<div class="card" id="card"></div>
+<div class="rotate"><div style="font-size:46px">📱↻</div>Turn your phone sideways to play</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- words (single words only for this prototype) ----------
+const W={ aka:{k:'あか',ro:'aka',m:'red'}, ao:{k:'あお',ro:'ao',m:'blue'}, kiiro:{k:'きいろ',ro:'kiiro',m:'yellow'},
+  coal:{k:'せきたん',ro:'sekitan',m:'coal'}, brake:{k:'ブレーキ',ro:'burēki',m:'brake'},
+  asahi:{k:'あさひ',ro:'asahi',m:'station'}, aoba:{k:'あおば',ro:'aoba',m:'station'}, sakura:{k:'さくら',ro:'sakura',m:'station'} };
+const COLORS=['aka','ao','kiiro'], STATIONS=['asahi','aoba','sakura'];
+
+// ---------- world layout ----------
+const ROOFY=760;                              // the roof sits below the cab in world space; the ladder moves you between them
+const AREA={ cab:{x0:70,x1:890,y0:90,y1:490}, roof:{x0:70,x1:890,y0:ROOFY+120,y1:ROOFY+330} };
+const VALVE={ aka:{x:850,y:160,c:0xE04A3C}, ao:{x:850,y:290,c:0x3B6FE0}, kiiro:{x:850,y:420,c:0xF2C230} };
+const SPOT={ bin:{x:150,y:440,a:'cab'}, fire:{x:150,y:180,a:'cab'}, brake:{x:470,y:465,a:'cab'}, ladder:{x:620,y:110,a:'cab'},
+  hatch:{x:300,y:ROOFY+300,a:'roof'}, lever:{x:830,y:ROOFY+170,a:'roof'} };
+const REACH=80;
+// journey (distance units ≈ seconds at full speed): 3 junctions, then the station
+const JUNC=[34,68,102], STATION=128;
+
+// ---------- audio: tiny synth kit + the phone's Japanese voice ----------
+let AC=null, jaVoice=null;
+function audio(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){}
+  try{ if(!audio.warm){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; u.lang='ja-JP'; speechSynthesis.speak(u); audio.warm=1; } }catch(e){} }
+function tone(f,at,d,type,v,f2){ if(!AC) return; const t=AC.currentTime+(at||0), o=AC.createOscillator(), g=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v||.15,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.02); }
+const SND={ ok(){ tone(784,0,.12,'triangle',.2); tone(1175,.08,.18,'triangle',.16); }, bad(){ tone(140,0,.3,'square',.12); tone(95,.05,.3,'sawtooth',.08); },
+  pick(){ tone(300,0,.08,'square',.08); }, fire(){ tone(180,0,.25,'sawtooth',.1,520); }, order(){ tone(988,0,.08,'square',.06); tone(1319,.08,.12,'square',.06); },
+  whistle(){ tone(880,0,.5,'sine',.14); tone(1108,0,.5,'sine',.1); }, clack(v){ tone(90,0,.05,'square',.03*v); } };
+function getVoice(){ if(!jaVoice){ try{ jaVoice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} } return jaVoice; }
+function say(word){ try{ const u=new SpeechSynthesisUtterance(W[word].k); u.lang='ja-JP'; u.rate=.85; const v=getVoice(); if(v) u.voice=v;
+  if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+
+// ---------- state ----------
+// MODE: 'local' (one device, both crew), 'host', 'guest'. The host simulates everything; the guest sends its position + actions.
+let MODE='', ME='h', S=null, NET={kind:'', send:()=>{}, code:''}, guestHere=false;
+const LOCAL={ actN:0, acts:[], seen:{h:0,g:0}, hinted:{}, heard:{}, ready:false };
+const pos={ h:{x:300,y:300,a:'cab'}, g:{x:420,y:330,a:'cab'} };   // where each crew member is drawn
+function freshState(){
+  const signs=JUNC.map(()=>{ const pair=shuffle(STATIONS).slice(0,2); const dest=pair[Math.random()<.5?0:1]; return {L:pair[0], R:pair[1], dest}; });
+  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
+    stopped:false, brakeHold:0, detour:0, jn:0, signs, sign:null, orders:[], oid:0, nextV:6, jres:[], ev:{n:0},
+    stats:{done:0, missed:0, wrong:0, hints:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
+}
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function ev(kind, txt){ S.ev={n:S.ev.n+1, kind, txt}; }
+function addOrder(who, kind, word, life){ S.oid++; S.orders.push({id:S.oid, who, kind, word, until: life ? S.t+life : 1e9, life:life||0, done:0, hint:0}); if(S.orders.length>10) S.orders.splice(0, S.orders.length-10); }
+const active=kind=>S.orders.filter(o=>!o.done && (!kind || o.kind===kind));
+function finish(o, ok){ o.done = ok ? 1 : -1; o.doneT=S.t; if(ok) S.stats.done++; else S.stats.missed++; }
+
+// ---------- host simulation ----------
+function hostTick(dt){
+  if(!S || S.ph!=='run'){ if(S && S.ph==='ready' && S.ready.h && S.ready.g){ S.ph='run'; ev('go','出発! Depart'); } return; }
+  S.t+=dt; S.players.h.x=pos.h.x; S.players.h.y=pos.h.y; S.players.h.a=pos.h.a;
+  if(MODE==='local'){ S.players.g.x=pos.g.x; S.players.g.y=pos.g.y; S.players.g.a=pos.g.a; }
+  if(S.arriveT){ S.speed=Math.max(0,S.speed-dt*.8); if(S.t-S.arriveT>2.2) S.ph='over'; return; }
+  S.power=Math.max(0, S.power-2.1*dt);
+  let sp = S.power>25 ? 1 : .3+.7*S.power/25; if(S.detour>0){ S.detour-=dt; sp*=.3; }
+  S.speed += (sp-S.speed)*Math.min(1,dt*2); S.dist+=S.speed*dt;
+  // orders: coloured valves every ~10 s, coal when the fire runs low, the junction word before each junction, brake before the station
+  if(S.t>=S.nextV && S.dist<STATION-14){ addOrder(pick(['h','g']), 'valve', pick(COLORS), 14); S.nextV=S.t+8+Math.random()*4; }
+  if(S.power<40 && !active('coal').length) addOrder(pick(['h','g']), 'coal', 'coal', 22);
+  if(S.jn<JUNC.length && S.dist>=JUNC[S.jn]-15 && !S.sign){ S.sign={...S.signs[S.jn], jn:S.jn}; addOrder(pick(['h','g']), 'junction', S.sign.dest, 0); }
+  if(S.sign && S.dist>=JUNC[S.sign.jn]){ // judge the junction: the lever picks the side; the sign on that side must be the word
+    const o=active('junction')[0], chosen = S.lever==='L' ? S.sign.L : S.lever==='R' ? S.sign.R : null, ok=chosen===S.sign.dest;
+    if(o) finish(o, ok); S.jres[S.sign.jn]=ok;
+    if(ok) ev('ok','Right line! '+W[S.sign.dest].k); else { S.hp-=20; S.detour=4; S.stats.wrong++; ev('bad', S.lever ? 'Wrong line! Backing up…' : 'Nobody set the lever!'); }
+    S.sign=null; S.lever=null; S.jn++; }
+  if(S.dist>=STATION-14 && !S.orders.some(o=>o.kind==='brake')) addOrder(pick(['h','g']), 'brake', 'brake', 0);
+  S.brakeHold=Math.max(0, S.brakeHold-dt*.5);
+  if(!S.arriveT && S.brakeHold>=1.5 && S.dist>=STATION-14){ const o=active('brake')[0]; if(o) finish(o, true); S.arriveT=S.t; ev('ok','到着! Arrived'); }
+  else if(!S.arriveT && S.dist>=STATION+4){ const o=active('brake')[0]; if(o) finish(o, false); S.hp-=15; S.arriveT=S.t; ev('bad','Overran the station!'); }
+  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; ev('bad','Missed: '+W[o.word].k); }
+  if(S.hp<=0){ S.hp=30; S.detour=3; ev('bad','Breakdown! Patching up…'); }      // recoverable: never a restart
+  S.hp=Math.max(0,Math.min(100,S.hp));
+}
+// an action from a crew member, checked against where they stand
+function hostAct(who, a){
+  if(!S || S.ph!=='run' || S.arriveT) return; const p=S.players[who];
+  if(MODE!=='guest' && (who==='h' || MODE==='local')){ p.x=pos[who].x; p.y=pos[who].y; p.a=pos[who].a; } // this device's crew: use where they are right now
+  const near=s=>s && p.a===s.a && Math.hypot(p.x-s.x, p.y-s.y)<=REACH;
+  if(a.k==='hint'){ const o=S.orders.find(o=>o.id===a.id); if(o && !o.hint){ o.hint=1; S.stats.hints++; } return; }
+  if(a.k==='bin' && near(SPOT.bin) && !p.carry){ p.carry=1; ev('pick',''); return; }
+  if(a.k==='fire' && near(SPOT.fire) && p.carry){ p.carry=0; S.power=Math.min(100, S.power+35); ev('fire',''); active('coal').forEach(o=>finish(o,true)); return; }
+  if(a.k==='brake' && near(SPOT.brake)){ S.brakeHold+=.3; if(S.dist<STATION-14) S.speed*=.97; return; }
+  if(a.k==='lever' && near(SPOT.lever)){ S.lever = S.lever==='L' ? 'R' : 'L'; ev('lever',''); return; }
+  if(a.k==='valve' && VALVE[a.c] && near({...VALVE[a.c], a:'cab'})){
+    S.valves[a.c]^=1; const want=active('valve').filter(o=>o.word===a.c);
+    if(want.length){ want.forEach(o=>finish(o,true)); ev('ok','OK! '+W[a.c].k); }
+    else if(active('valve').length){ S.hp-=12; S.stats.wrong++; ev('bad','Wrong valve! Steam!'); }
+  }
+}
+function hostIn(who, m){ // a guest message: absolute position + recent actions with counters
+  if(!S || !m) return;
+  if(m.ready && S.ph==='ready') S.ready[who]=true;
+  if(typeof m.x==='number'){ const p=S.players[who]; p.x=m.x; p.y=m.y; p.a=m.a==='roof'?'roof':'cab'; pos[who]={x:m.x,y:m.y,a:p.a}; }
+  (m.acts||[]).forEach(a=>{ if(a.n>LOCAL.seen[who]){ LOCAL.seen[who]=a.n; hostAct(who, a); } });
+}
+
+// ---------- my own actions ----------
+function doAct(a){
+  if(MODE==='guest'){ LOCAL.actN++; LOCAL.acts.push({...a, n:LOCAL.actN}); if(LOCAL.acts.length>12) LOCAL.acts.shift(); sendGuest(true); }
+  else hostAct(ME, a);
+}
+function nearest(){ // the closest thing I can use, for the action button
+  const p=pos[ME], list=[];
+  const add=(k,s,label,extra)=>{ if(s.a===p.a){ const d=Math.hypot(p.x-s.x,p.y-s.y); if(d<=REACH) list.push({k,d,label,...extra}); } };
+  const carry=S && S.players[ME].carry;
+  if(!carry) add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
+  COLORS.forEach(c=>add('valve', {...VALVE[c], a:'cab'}, 'TURN', {c}));
+  add('brake', SPOT.brake, 'BRAKE\n(hold)'); add('ladder', SPOT.ladder, 'CLIMB\nUP'); add('hatch', SPOT.hatch, 'CLIMB\nDOWN');
+  add('lever', SPOT.lever, 'LEVER');
+  list.sort((a,b)=>a.d-b.d); return list[0]||null;
+}
+function useNearest(){
+  const n=nearest(); if(!n || !S || S.ph!=='run') return;
+  if(n.k==='ladder'){ pos[ME]={x:SPOT.hatch.x, y:SPOT.hatch.y-50, a:'roof'}; SND.pick(); return; }
+  if(n.k==='hatch'){ pos[ME]={x:SPOT.ladder.x, y:SPOT.ladder.y+60, a:'cab'}; SND.pick(); return; }
+  doAct({k:n.k, c:n.c});
+}
+
+// ---------- networking: claude.ai room (inside claude.ai) or PeerJS (anywhere else) ----------
+async function roomApi(){ try{ return window.claude && claude.use ? await claude.use('room') : null; }catch(e){ return null; } }
+async function netHost(code){
+  const R=await roomApi();
+  if(R){ const room=await R.join('mrc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room};
+    room.presence({role:'host'}); room.onPeers(ch=>{ const gp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='guest'); guestHere=!!gp; if(gp && gp.presence.inp) hostIn('g', gp.presence.inp); });
+    NET.send=st=>room.presence({role:'host', st}).catch(()=>{}); return true; }
+  if(!window.Peer) return 'PeerJS did not load';
+  return new Promise(res=>{ const peer=new Peer('kotoba-mrc-'+code.toLowerCase(), {debug:0}); NET={kind:'online (PeerJS)', code, peer};
+    peer.on('open', ()=>res(true)); peer.on('error', e=>res(e.type==='unavailable-id' ? 'taken' : 'Could not open a room: '+e.type));
+    peer.on('connection', c=>{ NET.conn=c; c.on('open', ()=>{ guestHere=true; }); c.on('data', m=>m && m.inp && hostIn('g', m.inp)); c.on('close', ()=>{ guestHere=false; toast('Your friend left','bad'); }); });
+    NET.send=st=>{ if(NET.conn && NET.conn.open) NET.conn.send({st}); }; });
+}
+async function netJoin(code){
+  const R=await roomApi();
+  if(R){ const room=await R.join('mrc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room}; room.presence({role:'guest', inp:{}});
+    room.onPeers(ch=>{ const hp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='host'); if(hp && hp.presence.st) onHostState(hp.presence.st); });
+    NET.send=inp=>room.presence({role:'guest', inp}).catch(()=>{}); return true; }
+  if(!window.Peer) return 'PeerJS did not load';
+  return new Promise(res=>{ const peer=new Peer({debug:0}); NET={kind:'online (PeerJS)', code, peer}; let done=false;
+    const t=setTimeout(()=>{ if(!done){ done=true; res('No room with that code (or the connection is blocked).'); } }, 12000);
+    peer.on('error', e=>{ if(!done){ done=true; clearTimeout(t); res(e.type==='peer-unavailable' ? 'No room with that code.' : 'Connection problem: '+e.type); } });
+    peer.on('open', ()=>{ const c=peer.connect('kotoba-mrc-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
+      c.on('open', ()=>{ if(!done){ done=true; clearTimeout(t); res(true); } }); c.on('data', m=>m && m.st && onHostState(m.st)); c.on('close', ()=>toast('The host left','bad')); });
+    NET.send=inp=>{ if(NET.conn && NET.conn.open) NET.conn.send({inp}); }; });
+}
+let lastSend=0;
+function sendGuest(now){ const t=performance.now(); if(!now && t-lastSend<(NET.room?160:80)) return; lastSend=t;
+  NET.send({x:Math.round(pos.g.x), y:Math.round(pos.g.y), a:pos.g.a, acts:LOCAL.acts.slice(), ready:LOCAL.ready}); }
+let lastPush=0;
+function pushState(){ const t=performance.now(); if(t-lastPush<(NET.room?160:90)) return; lastPush=t; NET.send(S); }
+function onHostState(st){ const fresh=!S || S.gid!==st.gid; S=st; if(fresh) newRun(); pos.h={x:st.players.h.x, y:st.players.h.y, a:st.players.h.a}; }
+
+// ---------- HUD + cards ----------
+function toast(txt, kind){ const t=$('#toast'); t.textContent=txt; t.className='toast '+(kind||''); try{ t.animate([{opacity:0,transform:'translate(-50%,-30%) scale(.7)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.05)',offset:.15},{opacity:1,transform:'translate(-50%,-50%)',offset:.8},{opacity:0,transform:'translate(-50%,-70%)'}],{duration:1500}); }catch(e){} }
+function card(html){ const c=$('#card'); c.innerHTML=`<div class="in">${html}</div>`; c.hidden=false; }
+function cardHide(){ $('#card').hidden=true; }
+const WORDS_HTML=()=>`<div class="words">${Object.entries(W).map(([k,w])=>`<button class="word" data-hear="${k}"><b>${w.k}</b><small>${COLORS.includes(k)?`<span class="dot" style="background:#${VALVE[k].c.toString(16).padStart(6,'0')}"></span>`:''}${w.ro} · ${w.m}</small></button>`).join('')}</div>`;
+function lobby(msg){
+  MODE=''; S=null; $('#hud').hidden=true;
+  card(`<h1>ミッドナイト・レール<small>Midnight Rail Crew · greybox</small></h1>
+    <p>Two crew, one night train. You can both go anywhere: inside the cab (coal, fire, coloured valves, brake) or up the ladder to the roof (junction signs and lever). Each of you hears your own Japanese orders, so talk to each other.</p>
+    ${msg?`<p style="color:#C9361F;font-weight:900">${esc(msg)}</p>`:''}
+    <div class="row"><button class="btn" data-a="create">Create a room</button></div>
+    <div class="row"><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn alt" data-a="join">Join</button></div>
+    <div class="row"><button class="btn alt" data-a="local">Local test · both crew on this device</button></div>`);
+}
+function practice(){
+  card(`<h2>8 words<small>Tap to hear · your orders use these</small></h2>${WORDS_HTML()}
+    <p>Valve orders are colours. せきたん = carry coal to the fire. Station names = pull the roof lever toward that sign. ブレーキ = hold the brake wheel at the station.</p>
+    <div class="row"><button class="btn" data-a="ready">Ready ▶</button></div>`);
+}
+function results(){
+  const st=S.stats, tot=S.orders.length, t=Math.round(S.t);
+  card(`<h2>${S.hp>60?'到着! Great run':'到着! Arrived'}<small>${st.hints?`with ${st.hints} hint${st.hints>1?'s':''}`:'no hints'}</small></h2>
+    <div class="res"><span><b>${st.done}/${tot}</b>orders</span><span><b>${st.wrong}</b>mistakes</span><span><b>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</b>time</span><span><b>${Math.round(S.hp)}%</b>train</span></div>
+    <p class="small">Junctions: ${S.jres.map((ok,i)=>`J${i+1} ${ok?'✓':'✗'}`).join(' · ')}</p>
+    <div class="row">${MODE!=='guest'?'<button class="btn" data-a="again">Run again ▶</button>':'<p class="small">The host can start the next run.</p>'}<button class="btn alt" data-a="lobby">Lobby</button></div>`);
+}
+let shownPh='', evSeen=0, orderSeen={};
+function newRun(){ evSeen=S.ev.n; orderSeen={}; LOCAL.hinted={}; shownPh=''; LOCAL.ready=false; pos.h={x:300,y:300,a:'cab'}; pos.g={x:420,y:330,a:'cab'}; }
+function hudFrame(){
+  if(!S) return;
+  if(S.ph!==shownPh){ shownPh=S.ph;
+    if(S.ph==='ready'){ if(!LOCAL.ready) practice(); else card(`<h2>Waiting…<small>for your crewmate</small></h2><p>Room <b>${esc(NET.code)}</b> · ${esc(NET.kind)}</p>`); }
+    else if(S.ph==='run'){ cardHide(); $('#hud').hidden=false; }
+    else if(S.ph==='over'){ results(); } }
+  if(S.ph==='ready' && LOCAL.ready && $('#card .words')) card(`<h2>Waiting…<small>for your crewmate</small></h2>`);
+  if(S.ev.n>evSeen){ evSeen=S.ev.n; const e=S.ev;
+    if(e.kind==='ok'){ SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
+    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
+  const set=(id,v,low)=>{ const b=$(id); b.firstElementChild.style.transform=`scaleX(${Math.max(0,v/100).toFixed(3)})`; b.classList.toggle('low', !!low); };
+  set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25);
+  const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=JUNC.map((j,i)=>`<em style="left:${j/STATION*100}%"></em>`).join('')+`<em style="left:100%;border-radius:3px"></em><b></b>`;
+  trip.querySelectorAll('em').forEach((e,i)=>{ if(i<JUNC.length){ e.classList.toggle('ok', S.jres[i]===true); e.classList.toggle('bad', S.jres[i]===false); } });
+  trip.querySelector('b').style.left=Math.min(100, S.dist/STATION*100)+'%';
+  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${p.a==='roof'?'ROOF':'INSIDE'}${S.players[ME].carry?' · coal':''}`;
+  // my orders (both crews' in the local test), newest first; the word is spoken once when it arrives
+  const mine=S.orders.filter(o=>(MODE==='local' || o.who===ME) && (!o.done || S.t-(o.doneT||S.t)<1.2)).slice(-4).reverse();
+  const box=$('#orders'), key=mine.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
+  if(box.dataset.k!==key){ box.dataset.k=key;
+    box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">${MODE==='local'?`<span class="who">${o.who==='h'?'P1':'P2'}</span>`:''}
+      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
+      ${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button>`}${o.life&&!o.done?`<span class="t" data-t="${o.id}"></span>`:''}</div>`).join(''); }
+  mine.forEach(o=>{ if(!orderSeen[o.id]){ orderSeen[o.id]=1; if(!o.done){ SND.order(); setTimeout(()=>say(o.word), 180); } } });
+  box.querySelectorAll('[data-t]').forEach(el=>{ const o=S.orders.find(x=>x.id==el.dataset.t); if(o) el.style.transform=`scaleX(${Math.max(0,(o.until-S.t)/o.life).toFixed(3)})`; });
+  const n=nearest(), btn=$('#actBtn'); const lbl=n ? (n.k==='lever' ? `LEVER\n${S.lever==='L'?'◀':S.lever==='R'?'▶':'·'}` : n.label) : '—';
+  if(btn.dataset.l!==lbl){ btn.dataset.l=lbl; btn.innerHTML=esc(lbl).replace('\n','<br>'); btn.classList.toggle('off', !n); }
+}
+
+// ---------- input: joystick, action button, keys ----------
+const IN={dx:0, dy:0, keys:{}};
+(()=>{ const st=$('#stick'), kn=$('#knob'); let id=null, cx=0, cy=0;
+  const move=e=>{ const R=55; let dx=e.clientX-cx, dy=e.clientY-cy; const d=Math.hypot(dx,dy); if(d>R){ dx*=R/d; dy*=R/d; } IN.dx=dx/R; IN.dy=dy/R; kn.style.transform=`translate(${dx}px,${dy}px)`; };
+  st.addEventListener('pointerdown', e=>{ e.preventDefault(); id=e.pointerId; const r=st.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; st.setPointerCapture(id); move(e); });
+  st.addEventListener('pointermove', e=>{ if(e.pointerId===id){ e.preventDefault(); move(e); } });
+  const up=e=>{ if(e.pointerId===id){ id=null; IN.dx=IN.dy=0; kn.style.transform=''; } }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up); })();
+let holdT=null;
+const actDown=()=>{ $('#actBtn').classList.add('held'); useNearest(); clearInterval(holdT); holdT=setInterval(()=>{ const n=nearest(); if(n && n.k==='brake') doAct({k:'brake'}); }, 250); };
+const actUp=()=>{ $('#actBtn').classList.remove('held'); clearInterval(holdT); };
+$('#actBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); actDown(); }); $('#actBtn').addEventListener('pointerup', actUp); $('#actBtn').addEventListener('pointercancel', actUp);
+addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if((e.key===' '||e.key==='e'||e.key==='E') && !e.repeat){ e.preventDefault(); actDown(); } });
+addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; if(e.key===' '||e.key==='e'||e.key==='E') actUp(); });
+document.addEventListener('click', async e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.hear){ audio(); say(b.dataset.hear); return; }
+  if(b.dataset.say){ const o=S && S.orders.find(o=>o.id==b.dataset.say); if(o) say(o.word); return; }
+  if(b.dataset.hint){ const id=+b.dataset.hint; LOCAL.hinted[id]=1; doAct({k:'hint', id}); $('#orders').dataset.k=''; return; }
+  if(b.id==='switchBtn'){ ME = ME==='h' ? 'g' : 'h'; b.textContent=`Switch to ${ME==='h'?'P2':'P1'}`; SCN && SCN.follow(); return; }
+  const a=b.dataset.a; if(!a) return; audio();
+  if(a==='local'){ MODE='local'; ME='h'; S=freshState(); newRun(); $('#testBadge').hidden=false; $('#switchBtn').hidden=false; NET={kind:'local test', code:'—', send:()=>{}}; return; }
+  if(a==='create'){ card('<h2>Opening a room…</h2>'); let r, code; for(let i=0;i<4;i++){ code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
+    if(r!==true) return lobby(r||'Online play is not available here.');
+    MODE='host'; ME='h'; $('#testBadge').hidden=true; $('#switchBtn').hidden=true;
+    card(`<h2>Room code<small>${esc(NET.kind)}</small></h2><div class="code">${code}</div><p>Your friend opens this same page, types the code and taps Join.</p><p class="small" id="waitG">Waiting for your friend…</p>`);
+    const wait=setInterval(()=>{ if(MODE!=='host'){ clearInterval(wait); return; } if(guestHere){ clearInterval(wait); S=freshState(); newRun(); } }, 300); return; }
+  if(a==='join'){ const code=($('#codeIn').value||'').trim().toUpperCase(); if(!/^[A-Z0-9]{4}$/.test(code)) return lobby('Type the 4-character code.');
+    card('<h2>Joining…</h2>'); const r=await netJoin(code); if(r!==true) return lobby(r);
+    MODE='guest'; ME='g'; $('#testBadge').hidden=true; $('#switchBtn').hidden=true; card('<h2>Joined!<small>waiting for the host</small></h2>');
+    const keep=setInterval(()=>{ if(MODE!=='guest'){ clearInterval(keep); return; } sendGuest(); }, 400); return; }
+  if(a==='ready'){ LOCAL.ready=true; if(MODE==='guest') sendGuest(true); else { S.ready.h=true; if(MODE==='local') S.ready.g=true; } shownPh=''; return; }
+  if(a==='again'){ S=freshState(); newRun(); return; }
+  if(a==='lobby'){ try{ NET.peer && NET.peer.destroy(); NET.room && NET.room.leave(); }catch(x){} location.reload(); }
+});
+
+// ---------- the scene (Phaser): cab + roof, both drawn once; crew sprites move; camera follows you ----------
+let SCN=null;
+class Train extends Phaser.Scene{
+  constructor(){ super('train'); }
+  preload(){ this.load.image('shiba','shiba.webp'); }
+  create(){
+    SCN=this; const g=this.add.graphics();
+    // ---- cab ----
+    g.fillStyle(0x3A2C2A); g.fillRect(0,0,960,560); g.fillStyle(0x8B6B4E); g.fillRect(50,70,860,440);           // walls + floor
+    g.lineStyle(2,0x7A5C42); for(let x=50;x<910;x+=40) g.lineBetween(x,70,x,510); g.lineStyle(5,0x2A211B); g.strokeRect(50,70,860,440);
+    for(let i=0;i<4;i++){ g.fillStyle(0x1A2050); g.fillRect(150+i*190,18,120,40); g.lineStyle(4,0x2A211B); g.strokeRect(150+i*190,18,120,40); } // windows
+    this.winLights=[]; for(let i=0;i<6;i++) this.winLights.push(this.add.rectangle(160+i*130, 38, 10, 6, 0xFFE9A0).setAlpha(.8));
+    // firebox + coal bin
+    g.fillStyle(0x4A4A52); g.fillRoundedRect(95,130,110,100,10); g.lineStyle(5,0x2A211B); g.strokeRoundedRect(95,130,110,100,10);
+    this.fire=this.add.ellipse(150,190,70,40,0xFF7A2E); g.fillStyle(0x5A4636); g.fillRect(95,400,110,80); g.strokeRect(95,400,110,80);
+    for(let i=0;i<9;i++){ g.fillStyle(0x1C1C22); g.fillCircle(110+(i%3)*38+(i>2?8:0), 420+Math.floor(i/3)*18, 12); }
+    this.label(150,120,'🔥'); this.label(150,392,'⛏');
+    // valves (colour only: the order word says which)
+    this.valves={}; COLORS.forEach(c=>{ const v=VALVE[c]; g.fillStyle(0x6B6F78); g.fillRect(v.x-6,v.y-50,12,100); const w=this.add.container(v.x,v.y);
+      const ring=this.add.circle(0,0,30,v.c).setStrokeStyle(5,0x2A211B); const sp=this.add.rectangle(0,0,50,8,0x2A211B), sp2=this.add.rectangle(0,0,8,50,0x2A211B);
+      w.add([ring,sp,sp2]); this.valves[c]=w; });
+    // brake wheel + ladder
+    this.brake=this.add.container(SPOT.brake.x, SPOT.brake.y+5); this.brake.add([this.add.circle(0,0,34,0xC9361F).setStrokeStyle(5,0x2A211B), this.add.rectangle(0,0,60,7,0x2A211B), this.add.rectangle(0,0,7,60,0x2A211B), this.add.circle(0,0,8,0x2A211B)]);
+    g.fillStyle(0xC8A060); g.fillRect(SPOT.ladder.x-26,40,6,100); g.fillRect(SPOT.ladder.x+20,40,6,100); for(let y=50;y<140;y+=16) g.fillRect(SPOT.ladder.x-24,y,46,5);
+    this.label(SPOT.ladder.x,30,'⬆ ROOF');
+    // ---- roof ----
+    this.ground=this.add.tileSprite(480, ROOFY+60, 960, 120, this.groundTex()); this.ground2=this.add.tileSprite(480, ROOFY+400, 960, 140, this.groundTex());
+    g.fillStyle(0x9A2E2A); g.fillRect(40,ROOFY+110,880,240); g.lineStyle(5,0x2A211B); g.strokeRect(40,ROOFY+110,880,240);
+    g.lineStyle(3,0x7A221F); for(let x=80;x<920;x+=60) g.lineBetween(x,ROOFY+112,x,ROOFY+348);
+    g.fillStyle(0x2A211B); g.fillRect(SPOT.hatch.x-34,SPOT.hatch.y-20,68,40); g.fillStyle(0xC8A060); for(let y=SPOT.hatch.y-14;y<SPOT.hatch.y+18;y+=10) g.fillRect(SPOT.hatch.x-28,y,56,4);
+    // junction lever + the sign board ahead (only readable from up here)
+    g.fillStyle(0x4A4A52); g.fillRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22); g.strokeRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22);
+    this.lever=this.add.rectangle(SPOT.lever.x, SPOT.lever.y+12, 10, 56, 0xFFB23E).setStrokeStyle(3,0x2A211B).setOrigin(.5,1);
+    this.signs=this.add.container(640, ROOFY+60); this.signL=this.sign(-80,'');  this.signR=this.sign(80,''); this.signs.add([this.signL, this.signR]); this.signs.setVisible(false);
+    // ---- crew ----
+    this.crew={}; ['h','g'].forEach(w=>{ const s=this.add.image(0,0,'shiba').setDisplaySize(64,79); if(w==='g') s.setTint(0x9DB8FF);
+      const tag=this.add.text(0,-56,w==='h'?'P1':'P2',{fontFamily:'Nunito',fontStyle:'900',fontSize:'16px',color:'#2A211B',backgroundColor:w==='h'?'#FFB23E':'#7FD7FF',padding:{x:6,y:2}}).setOrigin(.5);
+      const coal=this.add.circle(0,-36,11,0x1C1C22).setStrokeStyle(2,0x55555F).setVisible(false); const c=this.add.container(0,0,[s,coal,tag]); this.crew[w]={c,coal,drawn:{x:0,y:0}}; });
+    this.ring=this.add.circle(0,0,REACH*.55,0xFFFFFF,0).setStrokeStyle(4,0xFFE14D,.9);
+    this.follow();
+  }
+  sign(x, txt){ const c=this.add.container(x,0); const b=this.add.rectangle(0,0,140,58,0xFFFFFF).setStrokeStyle(5,0x2A211B); const t=this.add.text(0,-2,txt,{fontFamily:'"Zen Maru Gothic"',fontStyle:'900',fontSize:'32px',color:'#2A211B'}).setOrigin(.5);
+    const ar=this.add.text(0,30,'',{fontFamily:'Nunito',fontStyle:'900',fontSize:'18px',color:'#FFE14D'}).setOrigin(.5); c.add([b,t,ar]); c.t=t; c.ar=ar; return c; }
+  label(x,y,t){ this.add.text(x,y,t,{fontSize:'22px'}).setOrigin(.5); }
+  groundTex(){ if(this.textures.exists('ground')) return 'ground'; const g=this.make.graphics({add:false}); g.fillStyle(0x24324A); g.fillRect(0,0,64,64);
+    g.fillStyle(0x5A4636); g.fillRect(4,10,14,44); g.fillRect(36,10,14,44); g.fillStyle(0xC9CFD8); g.fillRect(0,20,64,4); g.fillRect(0,40,64,4); g.generateTexture('ground',64,64); g.destroy(); return 'ground'; }
+  follow(){ const c=this.crew && this.crew[ME]; if(c) this.cameras.main.startFollow(c.c, true, .15, .15); }
+  shake(){ this.cameras.main.shake(220, .008); }
+  update(time, dtMs){
+    const dt=Math.min(.05, dtMs/1000);
+    // move me (joystick or keys), kept inside the area I'm in
+    const k=IN.keys; let dx=IN.dx+((k.arrowright||k.d)?1:0)-((k.arrowleft||k.a)?1:0), dy=IN.dy+((k.arrowdown||k.s)?1:0)-((k.arrowup||k.w)?1:0);
+    const L=Math.hypot(dx,dy); if(L>1){ dx/=L; dy/=L; }
+    if(S && S.ph==='run'){ const p=pos[ME], A=AREA[p.a]; p.x=Math.max(A.x0,Math.min(A.x1,p.x+dx*240*dt)); p.y=Math.max(A.y0,Math.min(A.y1,p.y+dy*240*dt)); }
+    if(MODE==='host' || MODE==='local'){ hostTick(dt); if(MODE==='host' && S) pushState(); }
+    if(MODE==='guest') sendGuest();
+    if(!S) return;
+    // draw the crew: me where I am, my crewmate smoothed toward their last known place
+    ['h','g'].forEach(w=>{ const c=this.crew[w], target = (w===ME || MODE==='local') ? pos[w] : (MODE==='host' ? pos.g : pos.h), ty=target.a==='roof'?target.y:target.y;
+      const snap = w===ME || Math.abs(c.drawn.y-ty)>200; c.drawn.x = snap ? target.x : c.drawn.x+(target.x-c.drawn.x)*.25; c.drawn.y = snap ? ty : c.drawn.y+(ty-c.drawn.y)*.25;
+      c.c.setPosition(c.drawn.x, c.drawn.y); c.coal.setVisible(!!S.players[w].carry); c.c.setDepth(c.drawn.y); });
+    // the camera keeps to the area I'm in
+    const cam=this.cameras.main, a=pos[ME].a, z=Math.max(.55, Math.min(1.5, this.scale.height/470)); if(Math.abs(cam.zoom-z)>.01) cam.setZoom(z); // fit the room's height on any phone
+    if(cam._a!==a){ cam._a=a; cam.setBounds(0, a==='roof'?ROOFY:0, 960, a==='roof'?480:560); }
+    const n=nearest(); this.ring.setVisible(!!n); if(n){ const s = n.k==='valve' ? VALVE[n.c] : SPOT[n.k]; this.ring.setPosition(s.x, s.y); this.ring.setScale(1+.06*Math.sin(time/120)); }
+    // the train is moving: ground scrolls past the roof, lights slide past the windows, the fire glows with its power
+    const v=(S.speed||0); this.ground.tilePositionX+=v*420*dt; this.ground2.tilePositionX+=v*420*dt;
+    this.winLights.forEach(l=>{ l.x-=v*260*dt; if(l.x<150) l.x=900; });
+    this.fire.setScale(.6+.5*S.power/100+.05*Math.sin(time/90)); this.fire.setFillStyle(S.power<25?0x8A3A20:0xFF7A2E);
+    COLORS.forEach(c=>{ const w=this.valves[c], want=S.valves[c]?Math.PI/4:0; w.rotation+=(want-w.rotation)*.2; });
+    this.brake.rotation+=S.brakeHold*dt*4; this.lever.rotation = S.lever==='L' ? -.6 : S.lever==='R' ? .6 : 0;
+    if(S.sign){ this.signs.setVisible(true); this.signL.t.setText(W[S.sign.L].k); this.signR.t.setText(W[S.sign.R].k); this.signL.ar.setText('◀'); this.signR.ar.setText('▶'); } else this.signs.setVisible(false);
+    if(v>.2){ this._clk=(this._clk||0)+v*dt; if(this._clk>.45){ this._clk=0; SND.clack(v); } }
+    hudFrame();
+  }
+}
+new Phaser.Game({ type:Phaser.AUTO, parent:'game', backgroundColor:'#0E1230', scale:{mode:Phaser.Scale.RESIZE, width:960, height:540}, scene:Train, render:{antialias:true} });
+lobby();
+// test hooks
+window.__mrc={ S:()=>S, mode:()=>MODE, me:()=>ME, pos, net:()=>NET.kind, place:(x,y,a)=>{ pos[ME]={x,y,a}; }, near:()=>nearest(), use:()=>useNearest(), act:a=>doAct(a), W };
+})();
+</script>
+</body>
+</html>
