@@ -1,0 +1,205 @@
+{
+  "generator": "Built-in image_gen",
+  "assets": [
+    {
+      "file": "bg-cab.png",
+      "width": 1536,
+      "height": 896,
+      "transparent": false,
+      "bytes": 1672278,
+      "sha256": "49296011ed403eb159e95690bcd44ca5d8592cdfd8362fc89871cf3c94f3b40c"
+    },
+    {
+      "file": "bg-roof.png",
+      "width": 1536,
+      "height": 896,
+      "transparent": false,
+      "bytes": 2574445,
+      "sha256": "9b6aa996803a4f6c6785549028c48d239f6230507191a4775d6e9d45b182c3ef"
+    },
+    {
+      "file": "bg-cargo.png",
+      "width": 1536,
+      "height": 896,
+      "transparent": false,
+      "bytes": 2594731,
+      "sha256": "80746ed31a58b2fedc2e055d12f7f7b26ed82eb08d13717456e0ba2650e0d070"
+    },
+    {
+      "file": "crew-p2.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 830424,
+      "sha256": "eb65bbd8c67187e61b927977ba6b9178e61725d1125b4f4e483a06cac2a73946"
+    },
+    {
+      "file": "crew-p1-cap.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 810262,
+      "sha256": "4cc6d814160c88f5cf086144b2ad9e940a01cc2317abd214694384f9e29c01ad"
+    },
+    {
+      "file": "yokai-obake.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 773385,
+      "sha256": "55146cf6ec09cff987a48ae586f7d2569700c160b0541ce312546e327c13cb58"
+    },
+    {
+      "file": "yokai-kappa.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 717761,
+      "sha256": "3b0c4f4f8191b5dbfd22cd9f70a7a56bc4027e2c827c66d845531a76d7f9cc81"
+    },
+    {
+      "file": "yokai-tanuki.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 942881,
+      "sha256": "a1319f57959e9d72d248ad35be6f040a6596649baba4821036304d653cd28eb5"
+    },
+    {
+      "file": "obj-furnace.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 1090884,
+      "sha256": "44e58acad4c0f2179c4d48e729b442b99a72492b6402871496778e4cd1ae1c0a"
+    },
+    {
+      "file": "obj-coal.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 904289,
+      "sha256": "50fefcae3bc44bd0b2a664df0560870a29ece6f73760554eb669eb0f0580aae5"
+    },
+    {
+      "file": "obj-valve-red.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 757986,
+      "sha256": "4a4392b6bd7106c5e8918de0191400018dd902b17f0ce800f23fbc3d62dc8cbb"
+    },
+    {
+      "file": "obj-valve-blue.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 767017,
+      "sha256": "f310eabc9c69a0940a6f43916108c4ad844e04cc6488335b803959e385ed21fb"
+    },
+    {
+      "file": "obj-valve-yellow.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 757252,
+      "sha256": "be07dcf78b94f1a24b827107e588ec504389115cc09f63400a663aecc13c1457"
+    },
+    {
+      "file": "obj-seat.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 1432948,
+      "sha256": "ae024c10d4949df7cb950ce37ee6eda4dadf3cc69594466129ca5c5ff90c23db"
+    },
+    {
+      "file": "obj-brake.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 786349,
+      "sha256": "233e28a6e33390d4bd1c6220fac04c6be04da8063bb135f98416106e12d4f481"
+    },
+    {
+      "file": "obj-ofuda-rack.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 1083017,
+      "sha256": "edeaccf16b05e3463c70afe1c46f2310352446052c156b120c710f7131e8aeda"
+    },
+    {
+      "file": "obj-ofuda.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 764147,
+      "sha256": "816355216102280fbff16111bfc0ce48382d53f9ded7c4b95bf9b20cc6dbc77b"
+    },
+    {
+      "file": "obj-tank.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 786636,
+      "sha256": "e0935aaa719584e6dbac05495a84fcf477117a59ab820c14eb8fe4f5fca2f5e1"
+    },
+    {
+      "file": "obj-lamp-on.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 442671,
+      "sha256": "01f3b0adc07a4d09fae5c4998933b40293d0cb7bd70d693b782be9c06bfce943"
+    },
+    {
+      "file": "obj-lamp-off.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 395927,
+      "sha256": "a5c4e0ebc89e14ccd84549b213b05db5e675afdc65a257016eb53d39a5838f17"
+    },
+    {
+      "file": "obj-lever.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 675086,
+      "sha256": "79127ef1f03e9bf1fcab07f572afaddd49ba2a3288f97b475c4674fac76e9476"
+    },
+    {
+      "file": "obj-sign.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 841184,
+      "sha256": "811ea2665b9236ad1fb4bb8aa58106766ae41726be1f45ea18242999a409c2af"
+    },
+    {
+      "file": "fx-meteor.png",
+      "width": 1024,
+      "height": 1024,
+      "transparent": true,
+      "bytes": 683790,
+      "sha256": "9126bdffed054833b79b02eb740790c9c765050f973c5dbc7390a07c0242686b"
+    },
+    {
+      "file": "fx-planets.png",
+      "width": 1536,
+      "height": 512,
+      "transparent": true,
+      "bytes": 520974,
+      "sha256": "131524c25b894994f1ab70169ae73af39aa0b7bb1828a3aaf7eb25ef6d1243ef"
+    },
+    {
+      "file": "key-art.png",
+      "width": 1536,
+      "height": 1024,
+      "transparent": false,
+      "bytes": 2165114,
+      "sha256": "326b5e8bf739ad687b0d1e8a9ddb0e0c8f096ad501d97c032c60f5ffdbc8d14d"
+    }
+  ]
+}
