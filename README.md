@@ -6,7 +6,7 @@ A co-op Japanese-learning game prototype. Two crew run one train flying through 
 - **Roof:** junction signs (あさひ / あおば / さくら) and the lever.
 - **Yokai** (おばけ, かっぱ, たぬき) sneak aboard wearing a colour word (あか / あお / きいろ). Take the お札 charm of that colour and SHOO them.
 
-Both players see and hear every single-word Japanese order. An invisible **Director** (like Left 4 Dead's) paces it in waves: calm → build → peak → breather, holding back when the crew is swamped.
+Both players see and hear every single-word Japanese order. The trip is **6 teaching waves**, made for players who know no Japanese yet. Each wave first teaches its new words with sound and meaning, then you play about 35 seconds, then you get a breather. The waves are 1 valves, 2 fire and water, 3 stations, 4 yokai, 5 lamps and driving, 6 the last stretch and the brake. A hidden Director (like Left 4 Dead's) holds trouble back when the crew is swamped. The first two times a word appears, its meaning shows by itself.
 
 - **Play:** https://lachende.github.io/midnight-rail-crew/ (landscape phone).
 - **Online:** Create a room → share the 4-letter code → Join. PeerJS (free public broker) outside claude.ai; the claude.ai room inside claude.ai.
