@@ -18,7 +18,7 @@ button,input{touch-action:manipulation}
 #game canvas{display:block}
 [hidden]{display:none!important}
 .hud{position:fixed;inset:0;pointer-events:none;z-index:2}
-.top{position:absolute;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
+.top{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
 .meters{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;max-width:min(330px,calc(50vw - 140px))}
 .meter{display:flex;align-items:center;gap:6px;font:900 11px Nunito,sans-serif;letter-spacing:.06em}
 .meter span{width:44px;flex:none}
@@ -58,14 +58,31 @@ button,input{touch-action:manipulation}
 .lanes .ob{position:absolute;transform:translate(-50%,-50%);font-size:24px;line-height:1}
 .thr{font:900 12px Nunito,sans-serif;text-align:center;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:10px;padding:3px 8px;line-height:1.2}
 .thr b{font-size:16px;color:var(--amber)}.thr small{font-size:10px;color:var(--dim)}
-.waveCard{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(500px,60vw);background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:10px 14px 12px;text-align:center;pointer-events:auto;animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
+.waveCard{position:absolute;z-index:4;left:50%;top:46%;transform:translate(-50%,-50%);width:min(500px,60vw);background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:10px 14px 12px;text-align:center;pointer-events:auto;animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
 .waveCard h3{margin:0;font:900 22px "Zen Maru Gothic",Nunito,sans-serif}.waveCard h3 small{font:900 12px Nunito,sans-serif;letter-spacing:.1em;color:#6B5E54;display:block}
 .waveCard .words{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));margin-top:8px}
 .waveCard p{margin:8px 0 0;font:800 13px/1.35 Nunito,sans-serif;color:#4A3F37}
 .waveCard .bar2{height:6px;border-radius:9px;background:#E6DCCB;margin-top:8px;overflow:hidden}.waveCard .bar2 i{display:block;height:100%;background:var(--amber);transform-origin:0 50%}
-.rest{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);font:900 15px Nunito,"Zen Maru Gothic",sans-serif;background:#C9F2D1;color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:5px 14px;box-shadow:0 3px 0 var(--ink);white-space:nowrap}
+.rest{position:absolute;z-index:4;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);font:900 15px Nunito,"Zen Maru Gothic",sans-serif;background:#C9F2D1;color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:5px 14px;box-shadow:0 3px 0 var(--ink);white-space:nowrap}
 .ord small.auto{color:#2E7D4F}
-.toast{position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
+.mapv{position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 50% 30%,#1D2660,#0B0F2C 70%);pointer-events:auto}
+.mapv svg{position:absolute;left:0;top:calc(env(safe-area-inset-top) + 44px);width:100%;height:calc(100% - 100px)}
+.mapv .rail{stroke:#C9CFF0;stroke-width:6;stroke-dasharray:2 12;stroke-linecap:round;opacity:.55}
+.mapv .rail.on{stroke:#FFB23E;opacity:1;stroke-dasharray:none}
+.mapv .node circle{fill:#24306A;stroke:#2A211B;stroke-width:5}
+.mapv .node.seen circle{fill:#FFF8EE}
+.mapv .node.fog circle{fill:#2B3264;stroke-dasharray:6 6}
+.mapv .node.can circle{stroke:#FFB23E;stroke-width:8;animation:glow 1s ease-in-out infinite alternate}
+.mapv .node.next circle{fill:#FFE6B0;stroke:#FFB23E;stroke-width:9}
+.mapv .node text{font-size:40px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.mapv .node.fog text{font:900 30px Nunito,sans-serif;fill:#A9B3E0}
+.mapv .node{cursor:pointer}
+@keyframes glow{to{stroke-width:13}}
+.mapTip{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:2;transform:translateX(-50%);font:900 13px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+.pax{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 8px);transform:translateX(-50%);display:flex;gap:8px;align-items:center;font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:4px 12px}
+.pax span{font-size:24px}
+.hud.driving .orders,.hud.driving .stick,.hud.driving .act{display:none}
+.toast{position:absolute;z-index:5;left:50%;top:62%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
 .toast.ok{background:var(--green)}.toast.bad{background:#FF8A7E}.toast.go{background:var(--amber)}
 .card{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.78)}
 .in{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 var(--ink);padding:16px 18px 14px;width:min(560px,100%);max-height:100%;overflow:auto;text-align:center}
@@ -83,7 +100,7 @@ input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:
 .word{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--ink);padding:6px 2px 4px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center}
 .word b{font:900 21px "Zen Maru Gothic",sans-serif}.word small{font:800 11px Nunito,sans-serif;color:#6B5E54}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px;margin-right:3px}
-.res{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.res{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
 .res span{background:#F3E9DA;border-radius:12px;padding:7px 2px;font:800 11px Nunito,sans-serif;color:#6B5E54;display:flex;flex-direction:column}
 .res b{font:900 20px Nunito,sans-serif;color:var(--ink)}
 .small{font:800 12px Nunito,sans-serif;color:#6B5E54}
@@ -104,6 +121,11 @@ input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:
     <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge" id="driveBadge">🚂 nobody driving</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
   </div>
   <div class="orders" id="orders"></div>
+  <div class="mapv" id="mapv" hidden>
+    <svg id="mapSvg" viewBox="-40 30 1080 560" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="mapTip" id="mapTip">🚂 Tap a glowing place to go</div>
+    <div class="pax" id="paxRow"></div>
+  </div>
   <div class="waveCard" id="waveCard" hidden></div>
   <div class="rest" id="restBanner" hidden></div>
   <div class="wind" id="wind" hidden><div class="lanes" id="lanes"><i></i><i></i><i></i></div><div class="thr"><b id="thrN">×1.0</b><small>▲ faster · ▼ slower<br>◀ ▶ change track</small></div></div>
@@ -126,8 +148,17 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const W={ aka:{k:'あか',ro:'aka',m:'red'}, ao:{k:'あお',ro:'ao',m:'blue'}, kiiro:{k:'きいろ',ro:'kiiro',m:'yellow'},
   coal:{k:'せきたん',ro:'sekitan',m:'coal'}, brake:{k:'ブレーキ',ro:'burēki',m:'brake'},
   mizu:{k:'みず',ro:'mizu',m:'water'}, lamp:{k:'ランプ',ro:'ranpu',m:'lamp'},
-  asahi:{k:'あさひ',ro:'asahi',m:'station'}, aoba:{k:'あおば',ro:'aoba',m:'station'}, sakura:{k:'さくら',ro:'sakura',m:'station'} };
-const COLORS=['aka','ao','kiiro'], STATIONS=['asahi','aoba','sakura'];
+  umi:{k:'うみ',ro:'umi',m:'sea'}, yama:{k:'やま',ro:'yama',m:'mountain'}, tsuki:{k:'つき',ro:'tsuki',m:'moon'}, kitsune:{k:'きつね',ro:'kitsune',m:'fox'},
+  jinja:{k:'じんじゃ',ro:'jinja',m:'shrine'}, sakura:{k:'さくら',ro:'sakura',m:'cherry blossom'}, kumo:{k:'くも',ro:'kumo',m:'cloud'}, dango:{k:'だんご',ro:'dango',m:'dango (sweet)'} };
+// ---------- the galaxy map (the driver's screen): places as pictures only; the crew has the tickets with the Japanese names ----------
+const MAP={ home:{x:500,y:540,ic:'🚉'}, umi:{x:230,y:470,ic:'🌊'}, yama:{x:780,y:470,ic:'🗻'}, tsuki:{x:120,y:250,ic:'🌙'}, kitsune:{x:420,y:330,ic:'🦊'},
+  jinja:{x:640,y:300,ic:'⛩️'}, sakura:{x:880,y:250,ic:'🌸'}, kumo:{x:310,y:90,ic:'☁️'}, dango:{x:710,y:90,ic:'🍡'} };
+const RAILS=[['home','umi'],['home','yama'],['home','kitsune'],['umi','tsuki'],['umi','kitsune'],['kitsune','jinja'],['yama','jinja'],['yama','sakura'],
+  ['tsuki','kumo'],['kitsune','kumo'],['jinja','dango'],['sakura','dango'],['kumo','dango'],['jinja','sakura']];
+const NB={}; RAILS.forEach(([a,b])=>{ (NB[a]=NB[a]||[]).push(b); (NB[b]=NB[b]||[]).push(a); });
+const UNLOCK=[['umi','yama'],['tsuki','kitsune'],['jinja','sakura'],['kumo','dango']];   // destinations open up wave by wave
+const FACES=['🐼','🐸','🐰','🐻','🐱','🐵','🐨','🐯'];
+const COLORS=['aka','ao','kiiro'], STATIONS=['umi','yama','tsuki'];
 
 // ---------- world layout ----------
 const ROOFY=760;                              // the roof sits below the cab in world space; the ladder moves you between them
@@ -143,7 +174,7 @@ const RACK={ cab:{x:340,y:105,a:'cab'}, cargo:{x:450,y:CARGOY+115,a:'cargo'}, ro
 const MOPS=[]; Object.entries(RACK).forEach(([r,s])=>COLORS.forEach((c,i)=>MOPS.push({c, x:s.x+(i-1)*52, y:s.y, a:s.a})));
 // where zombies climb in, and what they go for once inside
 const ZIN={ cab:[[210,100],[480,100],[95,230]], cargo:[[200,CARGOY+100],[700,CARGOY+100],[860,CARGOY+470]], roof:[[100,ROOFY+130],[880,ROOFY+320],[520,ROOFY+125]] };
-const ZGOAL={ cab:['fire','brake','valve'], cargo:['pump','lampA','lampB'], roof:['lever'] };
+const ZGOAL={ cab:['fire','brake','valve'], cargo:['pump','lampA','lampB'], roof:['lever'] }; // (roof yokai are not spawned any more)
 const REACH=80;
 // journey (distance units ≈ seconds at full speed): 3 junctions, then the station
 // the trip is 6 teaching waves (see WAVES); junctions come in waves 3–5, the station at the end of wave 6
@@ -171,9 +202,10 @@ const pos={ h:{x:300,y:300,a:'cab'}, g:{x:420,y:330,a:'cab'} };   // where each 
 function freshState(){
   const signs=[0,1,2].map(()=>{ const pair=shuffle(STATIONS).slice(0,2); const dest=pair[Math.random()<.5?0:1]; return {L:pair[0], R:pair[1], dest}; });
   return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, water:90, lamps:{A:1,B:1}, nextL:30,
-    driver:null, thr:.5, lane:1, obs:[], nextO:22, zs:[], zid:0, nextZ:28, knock:null, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
+    roles:{driver:'h', crew:'g'}, mp:{at:'home', from:null, to:null, p:0, next:null, dwell:0, seen:['home']}, pax:[], pid:0,
+    driver:'h', thr:.5, lane:1, obs:[], nextO:22, zs:[], zid:0, nextZ:28, knock:null, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
     stopped:false, brakeHold:0, detour:0, jn:0, signs, sign:null, orders:[], oid:0, nextV:6, jres:[], ev:{n:0},
-    stats:{done:0, missed:0, wrong:0, hints:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
+    stats:{done:0, missed:0, wrong:0, hints:0, del:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
 }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -187,12 +219,12 @@ function finish(o, ok){ o.done = ok ? 1 : -1; o.doneT=S.t; if(ok) S.stats.done++
 // thing per wave, so someone who knows no Japanese learns each word as it arrives. A hidden stress score (open orders,
 // yokai aboard, low fire/water, recent damage) still holds trouble back when the crew is swamped, and stretches the rest.
 const WAVES=[
-  {name:'Valves', words:['aka','ao','kiiro'], tip:'Turn the valve of that colour. The valves are on the right wall of the cab.'},
-  {name:'Fire & water', words:['coal','mizu'], tip:'せきたん: carry coal from the bin to the fire. みず: pump water in the cargo car (door on the left).'},
-  {name:'Stations', words:['asahi','aoba','sakura'], tip:'A junction is coming! Climb to the roof, read the two signs, pull the lever toward the station you hear.'},
-  {name:'Yokai!', words:['aka','ao','kiiro'], tip:'Yokai sneak aboard wearing a colour word. Take the お札 charm of that colour from a rack and SHOO them.'},
-  {name:'Lamps & driving', words:['lamp'], tip:'ランプ: relight the dark lantern in the cargo car. Sit in the 🚂 seat to steer around meteors and yokai swarms.'},
-  {name:'Last stretch', words:['brake'], tip:'Everything at once! At the end, hold the brake wheel to stop at the station.'}];
+  {name:'First passengers', words:['aka','ao','kiiro','umi','yama'], tip:'Crew: turn the valve of that colour, and read each passenger\'s ticket to the driver. Driver: find that place on your map and go there!'},
+  {name:'Fire & water', words:['coal','mizu','tsuki','kitsune'], tip:'せきたん: carry coal to the fire. みず: pump water in the cargo car (door on the left). Two new places on the map.'},
+  {name:'Explore', words:['jinja','sakura'], tip:'More places hide in the fog. Driver: every stop shows you what\'s next door. Swap jobs after this wave!'},
+  {name:'Yokai!', words:['aka','ao','kiiro','kumo','dango'], tip:'Yokai sneak aboard wearing a colour word. Take the お札 charm of that colour from a rack and SHOO them.'},
+  {name:'Lamps', words:['lamp'], tip:'ランプ: relight the dark lantern in the cargo car.'},
+  {name:'Last stretch', words:[], tip:'Everything at once! Deliver every passenger before the trip ends.'}];
 const T_INTRO=9, T_PLAY=36, T_REST=14;
 function director(dt){
   const R=S.dir||(S.dir={w:0, ph:'intro', t:0, stress:0, hurt:0, hp:S.hp, rate:0, drain:0});
@@ -201,7 +233,9 @@ function director(dt){
   R.t+=dt; const last=R.w===WAVES.length-1;
   if(R.ph==='intro' && R.t>T_INTRO){ R.ph='play'; R.t=0; ev('wave','Wave '+(R.w+1)+' · GO!'); }
   else if(R.ph==='play' && R.t>T_PLAY && !last){ R.ph='rest'; R.t=0; ev('relax','ひと休み · Breather'); }
-  else if(R.ph==='rest' && R.t>T_REST && R.stress<40){ R.w++; R.ph='intro'; R.t=0; ev('intro',''); }
+  else if(R.ph==='rest' && R.t>T_REST && R.stress<40){ R.w++; R.ph='intro'; R.t=0; ev('intro','');
+    if(R.w===3){ const r=S.roles; [r.driver, r.crew]=[r.crew, r.driver]; S.driver=r.driver; ev('swap','役割交代! Swap jobs'); } }
+  else if(R.ph==='play' && R.t>T_PLAY && last && !S.arriveT){ S.arriveT=S.t; ev('ok','到着! End of the line'); }
   const k = R.ph==='play' ? Math.min(1, .3+.1*R.w+.35*R.t/T_PLAY) : 0;
   R.rate = k*(R.stress>70 ? 0 : R.stress>50 ? .5 : 1);
   R.drain = R.w<1 ? 0 : R.ph==='play' ? .5+.5*k : .25;           // wave 1 teaches valves only: no fire or water to worry about yet
@@ -224,24 +258,35 @@ function hostTick(dt){
   if(w>=1 && S.power<40 && !active('coal').length) addOrder('all', 'coal', 'coal', 26-6*f);
   if(w>=1 && S.water<40 && !active('water').length) addOrder('all', 'water', 'mizu', 26-6*f);
   if(w>=4 && play && f>0 && S.t>=S.nextL){ const dark=['A','B'].filter(k=>S.lamps[k]); if(dark.length){ const k=pick(dark); S.lamps[k]=0; addOrder('all', 'lamp', 'lamp', 18-6*f, k); } S.nextL=S.t+10+16*(1-f)+Math.random()*4; }
-  // junctions: one in each of waves 3–5; the signs come into view 10 s into the wave and the points arrive 16 s later
-  if(play && w>=2 && w<=4 && S.jn===w-2 && !S.sign && R.t>10){ S.sign={...S.signs[S.jn], jn:S.jn, at:S.t+16}; addOrder('all', 'junction', S.sign.dest, 0); }
-  if(S.sign && S.t>=S.sign.at){ // judge the junction: the lever picks the side; the sign on that side must be the word
-    const o=active('junction')[0], chosen = S.lever==='L' ? S.sign.L : S.lever==='R' ? S.sign.R : null, ok=chosen===S.sign.dest;
-    if(o) finish(o, ok); S.jres[S.sign.jn]=ok;
-    if(ok) ev('ok','Right line! '+W[S.sign.dest].k); else { S.hp-=20; S.detour=4; S.stats.wrong++; ev('bad', S.lever ? 'Wrong line! Backing up…' : 'Nobody set the lever!'); }
-    S.sign=null; S.lever=null; S.jn++; }
-  // the station: in the last wave the brake order comes 26 s in; nobody stopping by 46 s means an overrun
-  if(last && play && R.t>26 && !S.orders.some(o=>o.kind==='brake')) addOrder('all', 'brake', 'brake', 0);
-  S.brakeHold=Math.max(0, S.brakeHold-dt*.5);
-  if(!S.arriveT && S.brakeHold>=1.5 && S.orders.some(o=>o.kind==='brake')){ const o=active('brake')[0]; if(o) finish(o, true); S.arriveT=S.t; ev('ok','到着! Arrived'); }
-  else if(!S.arriveT && last && play && R.t>46){ const o=active('brake')[0]; if(o) finish(o, false); S.hp-=15; S.arriveT=S.t; ev('bad','Overran the station!'); }
-  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; if(o.kind==='lamp') S.lamps[o.target]=1; ev('bad','Missed: '+W[o.word].k); }
+  mapTick(dt, f, R);
+  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; if(o.kind==='lamp') S.lamps[o.target]=1; if(o.kind==='ride') S.pax=S.pax.filter(p=>p.id!==o.target); ev('bad', o.kind==='ride' ? 'A passenger gave up: '+W[o.word].k : 'Missed: '+W[o.word].k); }
   zombiesTick(dt, f);
   if(S.hp<=0){ S.hp=30; S.detour=3; ev('bad','Breakdown! Patching up…'); }      // recoverable: never a restart
   S.hp=Math.max(0,Math.min(100,S.hp));
 }
-// ---------- hazards on the track (only the driver sees them) + zombies on board ----------
+// ---------- the train on the map, and its passengers ----------
+function unlocked(){ const w=S.dir?S.dir.w:0; return UNLOCK.slice(0, Math.min(UNLOCK.length, w+1)).flat(); }
+function board(at, f){ // a passenger gets on with a ticket to somewhere else (only the crew can read the ticket)
+  const cap=Math.min(4, 2+Math.floor((S.dir?S.dir.w:0)/2)); if(S.pax.length>=cap) return;
+  const dests=unlocked().filter(d=>d!==at && !S.pax.some(p=>p.dest===d)); if(!dests.length) return;
+  const dest=pick(dests); S.pid++; S.pax.push({id:S.pid, dest, face:pick(FACES)}); addOrder('all', 'ride', dest, 85-25*f, S.pid); ev('board','');
+}
+function mapTick(dt, f, R){
+  const M=S.mp, play=R.ph==='play';
+  if(M.to){ M.p+=dt/5.5*(S.power>25?1:.55)*(S.detour>0?.4:1); if(M.p>=1){ M.at=M.to; M.from=M.to=null; M.p=0; M.dwell=1.6; arriveAt(M.at, f, play); } }
+  else if(M.dwell>0) M.dwell-=dt;
+  else if(M.next && NB[M.at].includes(M.next)){ M.from=M.at; M.to=M.next; M.next=null; M.p=0; }
+  if(play && f>0 && !S.pax.length && !M.to) board(M.at, f);       // never leave the driver with nothing to do
+}
+function arriveAt(id, f, play){
+  const M=S.mp; if(!M.seen.includes(id)) M.seen.push(id);
+  const off=S.pax.filter(p=>p.dest===id);
+  if(off.length){ S.pax=S.pax.filter(p=>p.dest!==id); off.forEach(p=>{ const o=S.orders.find(o=>o.kind==='ride' && o.target===p.id && !o.done); if(o) finish(o,true); S.stats.del++; }); ev('ok','ありがとう! '+MAP[id].ic+' '+W[id].k); }
+  if(play && f>0 && Math.random()<.75) board(id, f);
+  if(play && f>.6 && Math.random()<.35) board(id, f);
+}
+
+// ---------- zombies (yokai) on board ----------
 function spawnZombie(area, force){
   if(S.zs.length>=7) return; if(!force && S.speed>1.3 && Math.random()<.6){ ev('dodge','Too fast! A yokai blew away'); return; }
   const [x,y]=pick(ZIN[area]), c=pick(COLORS), goal=pick(ZGOAL[area]); S.zid++;
@@ -252,16 +297,16 @@ function zombiesTick(dt, f){
   // hazards: a horde or a wreck in one of 3 tracks, coming closer; the train must be on another track when it arrives
   const w=S.dir.w, play=S.dir.ph==='play';
   if(S.t>=S.nextO && (w<4 || !play || f<=0)) S.nextO=S.t+1;
-  else if(S.t>=S.nextO){ S.obs.push({id:S.t, lane:Math.floor(Math.random()*3), z:1, kind:pick(['horde','wreck'])}); S.nextO=S.t+7+12*(1-f)+Math.random()*3; }
+  else if(false && S.t>=S.nextO){ S.obs.push({id:S.t, lane:Math.floor(Math.random()*3), z:1, kind:pick(['horde','wreck'])}); S.nextO=S.t+7+12*(1-f)+Math.random()*3; }
   S.obs.forEach(o=>o.z-=dt*S.speed/4.5);
   S.obs=S.obs.filter(o=>{ if(o.z>0) return true;
     if(o.lane!==S.lane) ev('dodge','Dodged!');
     else if(o.kind==='wreck'){ S.hp-=18; S.detour=1.5; ev('bad','Meteor hit! ☄'); }
-    else { S.hp-=6; ev('bad','Yokai swarm! They\'re climbing on!'); spawnZombie(pick(['cab','cargo','roof']), true); spawnZombie(pick(['cab','cargo','roof']), true); }
+    else { S.hp-=6; ev('bad','Yokai swarm! They\'re climbing on!'); spawnZombie(pick(['cab','cargo']), true); spawnZombie(pick(['cab','cargo']), true); }
     return false; });
   // boarding: calm at first, then often; going fast shakes some off
   if(S.t>=S.nextZ && (w<3 || !play || f<=0)) S.nextZ=S.t+1;
-  else if(S.t>=S.nextZ){ spawnZombie(pick(['cab','cab','cargo','roof'])); S.nextZ=S.t+7+12*(1-f)+Math.random()*4; }
+  else if(S.t>=S.nextZ){ spawnZombie(pick(['cab','cab','cargo'])); S.nextZ=S.t+7+12*(1-f)+Math.random()*4; }
   // zombies wobble to their goal and wreck it every 3 s; each one aboard also wears the train down a little
   const spd=40+20*f;
   for(const z of S.zs){
@@ -282,6 +327,7 @@ function hostAct(who, a){
   if(MODE!=='guest' && (who==='h' || MODE==='local')){ p.x=pos[who].x; p.y=pos[who].y; p.a=pos[who].a; } // this device's crew: use where they are right now
   const near=s=>s && p.a===s.a && Math.hypot(p.x-s.x, p.y-s.y)<=REACH;
   if(a.k==='hint'){ const o=S.orders.find(o=>o.id===a.id); if(o && !o.hint){ o.hint=1; S.stats.hints++; } return; }
+  if(a.k==='go' && (S.roles.driver===who || MODE==='local')){ const M=S.mp, from=M.to||M.at; if(NB[from].includes(a.id)){ M.next=a.id; ev('lane',''); } return; }
   if(a.k==='seat' && near(SPOT.seat) && !S.driver){ S.driver=who; ev('seat',''); return; }
   if(a.k==='leave' && S.driver===who){ S.driver=null; return; }
   if(a.k==='thr' && S.driver===who && typeof a.v==='number'){ S.thr=Math.max(0,Math.min(1,a.v)); return; }
@@ -319,14 +365,13 @@ function nearest(){ // the closest thing I can use, for the action button
   const p=pos[ME], list=[];
   const add=(k,s,label,extra)=>{ if(s.a===p.a){ const d=Math.hypot(p.x-s.x,p.y-s.y); if(d<=REACH) list.push({k,d,label,sx:s.x,sy:s.y,...extra}); } };
   const carry=S && S.players[ME].carry;
-  if(S && S.driver===ME) return {k:'leave', d:0, label:'LEAVE\nSEAT', sx:SPOT.seat.x, sy:SPOT.seat.y};
+  if(S && S.roles && S.roles.driver===ME) return null;            // the driver works the map, not the train
   if(S && COLORS.includes(carry)){ let best=null; S.zs.forEach(z=>{ if(z.a===p.a){ const d=Math.hypot(p.x-z.x,p.y-z.y); if(d<=REACH+10 && (!best||d<best.d)) best={k:'bonk', d, id:z.id, label:'SHOO!', sx:z.x, sy:z.y}; } }); if(best){ best.d-=15; list.push(best); } } // SHOO wins ties, but a charm you're standing at still wins
   if(carry!=='coal') add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
   MOPS.forEach(m=>{ if(carry!==m.c) add('mop', m, 'TAKE\nお札', {c:m.c}); });
-  if(S && !S.driver) add('seat', SPOT.seat, 'DRIVE');
   COLORS.forEach(c=>add('valve', {...VALVE[c], a:'cab'}, 'TURN', {c}));
   add('brake', SPOT.brake, 'BRAKE\n(hold)'); add('ladder', SPOT.ladder, 'CLIMB\nUP'); add('hatch', SPOT.hatch, 'CLIMB\nDOWN');
-  add('lever', SPOT.lever, 'LEVER'); add('door', SPOT.door, 'CARGO\nCAR ◀'); add('back', SPOT.back, 'CAB ▶'); add('pump', SPOT.pump, 'PUMP\n(hold)');
+  add('door', SPOT.door, 'CARGO\nCAR ◀'); add('back', SPOT.back, 'CAB ▶'); add('pump', SPOT.pump, 'PUMP\n(hold)');
   if(S){ ['A','B'].forEach(k=>{ if(!S.lamps[k]) add('lamp', SPOT['lamp'+k], 'LIGHT', {id:k}); }); }
   list.sort((a,b)=>a.d-b.d); return list[0]||null;
 }
@@ -388,21 +433,39 @@ function lobby(msg){
 }
 function practice(){
   card(`<h2>How to play<small>no Japanese needed to start</small></h2>
-    <p>🕹 Joystick: walk anywhere (or drive, in the 🚂 seat). Big button: use what's next to you.</p>
-    <p>Orders are single Japanese words. Each wave teaches its new words first, with sound and meaning, then you play, then you get a breather. Tap 🔊 to hear an order again, ? for its meaning. Talk to each other!</p>
+    <p><b>🚂 Driver</b> (${MODE==='guest'?'your friend':'P1'} first): your screen is a map of places as pictures, mostly hidden in fog. Tap a glowing place to go there.</p>
+    <p><b>🧰 Crew</b>: run around the train keeping it alive, and read each passenger's 🎫 ticket to the driver. Only you can read the tickets, only the driver sees the map. Talk! You swap jobs after wave 3.</p>
+    <p>Each wave teaches its new words first, with sound and meaning, then you play, then a breather.</p>
     <div class="row"><button class="btn" data-a="ready">Ready ▶</button></div>`);
 }
 function results(){
   const st=S.stats, tot=S.orders.length, t=Math.round(S.t);
   card(`<h2>${S.hp>60?'到着! Great run':'到着! Arrived'}<small>${st.hints?`with ${st.hints} hint${st.hints>1?'s':''}`:'no hints'}</small></h2>
-    <div class="res"><span><b>${Math.min(WAVES.length,(S.dir?S.dir.w:0)+1)}/${WAVES.length}</b>waves</span><span><b>${st.done}/${tot}</b>orders</span><span><b>${st.wrong}</b>mistakes</span><span><b>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</b>time</span><span><b>${Math.round(S.hp)}%</b>train</span></div>
-    <p class="small">Junctions: ${S.jres.map((ok,i)=>`J${i+1} ${ok?'✓':'✗'}`).join(' · ')}</p>
+    <div class="res"><span><b>${st.del}</b>passengers</span><span><b>${Math.min(WAVES.length,(S.dir?S.dir.w:0)+1)}/${WAVES.length}</b>waves</span><span><b>${st.done}/${tot}</b>orders</span><span><b>${st.wrong}</b>mistakes</span><span><b>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</b>time</span><span><b>${Math.round(S.hp)}%</b>train</span></div>
+    
     <div class="row">${MODE!=='guest'?'<button class="btn" data-a="again">Run again ▶</button>':'<p class="small">The host can start the next run.</p>'}<button class="btn alt" data-a="lobby">Lobby</button></div>`);
 }
 let shownPh='', evSeen=0, orderSeen={};
 function newRun(){ evSeen=S.ev.n; orderSeen={}; LOCAL.hinted={}; LOCAL.auto={}; LOCAL.wc={}; shownPh=''; LOCAL.ready=false; pos.h={x:300,y:300,a:'cab'}; pos.g={x:420,y:330,a:'cab'}; }
+function mapFrame(){
+  const M=S.mp, svg=$('#mapSvg'), from=M.to||M.at, can=M.to||M.dwell>0||true ? NB[from] : [], seen=new Set(M.seen), near=new Set(M.seen.flatMap(n=>NB[n]));
+  const key=M.seen.join(',')+'|'+from+'|'+M.next+'|'+M.at+'|'+M.to;
+  if(svg.dataset.k!==key){ svg.dataset.k=key;
+    const rails=RAILS.filter(([a,b])=>(seen.has(a)||seen.has(b))).map(([a,b])=>`<line class="rail ${(M.at===a&&M.to===b)||(M.at===b&&M.to===a)||(from===a&&M.next===b)||(from===b&&M.next===a)?'on':''}" x1="${MAP[a].x}" y1="${MAP[a].y}" x2="${MAP[b].x}" y2="${MAP[b].y}"/>`).join('');
+    const nodes=Object.entries(MAP).filter(([id])=>seen.has(id)||near.has(id)).map(([id,n])=>{ const isSeen=seen.has(id), cls=['node', isSeen?'seen':'fog', can.includes(id)?'can':'', M.next===id?'next':''].join(' ');
+      return `<g class="${cls}" data-go="${id}"><circle cx="${n.x}" cy="${n.y}" r="44"/><text x="${n.x}" y="${n.y+2}">${isSeen?n.ic:'?'}</text></g>`; }).join('');
+    // the map zooms to what you've discovered: big and close at the start, wider as you explore
+    const vis=Object.entries(MAP).filter(([id])=>seen.has(id)||near.has(id)).map(([,n])=>n), xs=vis.map(n=>n.x), ys=vis.map(n=>n.y);
+    let x0=Math.min(...xs)-80, x1=Math.max(...xs)+80, y0=Math.min(...ys)-110, y1=Math.max(...ys)+70; const asp=svg.clientWidth/Math.max(1,svg.clientHeight)||2;
+    let w=Math.max(420,x1-x0), h=Math.max(260,y1-y0); if(w/h<asp) w=h*asp; else h=w/asp; const cx=(x0+x1)/2, cy=(y0+y1)/2;
+    svg.setAttribute('viewBox', `${(cx-w/2).toFixed(0)} ${(cy-h/2).toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}`);
+    svg.innerHTML=rails+nodes+`<g id="trainMk"><circle r="20" fill="#FFB23E" stroke="#2A211B" stroke-width="5"/><text y="2" style="font-size:22px;text-anchor:middle;dominant-baseline:central">🚂</text></g>`; }
+  const a=MAP[M.at], b=M.to?MAP[M.to]:a, t=M.to?M.p:0, x=a.x+(b.x-a.x)*t, y=a.y+(b.y-a.y)*t-52;
+  const mk=$('#trainMk'); if(mk) mk.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+  const row=$('#paxRow'), pk=S.pax.map(p=>p.id).join(','); if(row.dataset.k!==pk){ row.dataset.k=pk; row.innerHTML = S.pax.length ? `ABOARD ${S.pax.map(p=>`<span>${p.face}</span>`).join('')} · ask your crew where to!` : 'No passengers right now'; }
+}
 function hudFrame(){
-  if(!S) return;
+  if(!S) return; const iDrive = !!(S.roles && S.roles.driver===ME && S.ph!=='ready');
   if(S.ph!==shownPh){ shownPh=S.ph;
     if(S.ph==='ready'){ if(!LOCAL.ready) practice(); else card(`<h2>Waiting…<small>for your crewmate</small></h2><p>Room <b>${esc(NET.code)}</b> · ${esc(NET.kind)}</p>`); }
     else if(S.ph==='run'){ cardHide(); $('#hud').hidden=false; }
@@ -410,36 +473,38 @@ function hudFrame(){
   if(S.ph==='ready' && LOCAL.ready && $('#card .words')) card(`<h2>Waiting…<small>for your crewmate</small></h2>`);
   if(S.ev.n>evSeen){ evSeen=S.ev.n; const e=S.ev;
     if(e.kind==='ok'){ if(/ばいばい/.test(e.txt)) SND.bonk(); SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
-    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='zombie') SND.groan(); else if(e.kind==='relax'){ SND.relax(); toast(e.txt,'ok'); } else if(e.kind==='wave'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='chomp') SND.chomp(); else if(e.kind==='lane'||e.kind==='seat') SND.lane(); else if(e.kind==='dodge'){ SND.dodge(); if(e.txt) toast(e.txt,'ok'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
+    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='zombie') SND.groan(); else if(e.kind==='board') SND.order(); else if(e.kind==='swap'){ SND.relax(); toast(e.txt,'go'); } else if(e.kind==='relax'){ SND.relax(); toast(e.txt,'ok'); } else if(e.kind==='wave'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='chomp') SND.chomp(); else if(e.kind==='lane'||e.kind==='seat') SND.lane(); else if(e.kind==='dodge'){ SND.dodge(); if(e.txt) toast(e.txt,'ok'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
   const set=(id,v,low)=>{ const b=$(id); b.firstElementChild.style.transform=`scaleX(${Math.max(0,v/100).toFixed(3)})`; b.classList.toggle('low', !!low); };
   set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25); set('#waterBar', S.water, S.water<25);
   const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=WAVES.slice(0,-1).map((x,i)=>`<em style="left:${(i+1)/WAVES.length*100}%"></em>`).join('')+`<em style="left:100%;border-radius:3px"></em><b></b>`;
   trip.querySelectorAll('em').forEach((e,i)=>e.classList.toggle('ok', !!S.dir && i<S.dir.w));
   const D=S.dir||{w:0,ph:'intro',t:0}, frac = D.ph==='intro' ? 0 : D.ph==='play' ? .1+.7*Math.min(1,D.t/T_PLAY) : .85; trip.querySelector('b').style.left=Math.min(100,(D.w+frac)/WAVES.length*100)+'%';
-  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${({roof:'ROOF',cab:'CAB',cargo:'CARGO CAR'})[p.a]}${S.players[ME].carry?' · coal':''}`;
+  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${iDrive?'DRIVER':({roof:'ROOF',cab:'CAB',cargo:'CARGO CAR'})[p.a]}${S.players[ME].carry?' · coal':''}`;
   // my orders (both crews' in the local test), newest first; the word is spoken once when it arrives
-  const mine=S.orders.filter(o=>!o.done || S.t-(o.doneT||S.t)<1.2).slice(-6).reverse(); // shared: both crew see and hear every order
+  const mine = iDrive ? [] : S.orders.filter(o=>!o.done || S.t-(o.doneT||S.t)<1.2).slice(-6).reverse(); // the crew sees and hears every order; the driver only the map
   const box=$('#orders'), key=mine.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
   if(box.dataset.k!==key){ box.dataset.k=key;
     mine.forEach(o=>{ if(LOCAL.auto[o.id]==null){ const c=LOCAL.wc[o.word]||0; LOCAL.auto[o.id]= c<2; LOCAL.wc[o.word]=c+1; } }); // the first two times a word shows up, its meaning shows by itself
     box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">
-      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${o.kind==='zombie'?'👻':''}${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:LOCAL.auto[o.id]?`<small class="auto">${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
+      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${o.kind==='zombie'?'👻':o.kind==='ride'?'🎫':''}${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:LOCAL.auto[o.id]?`<small class="auto">${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
       ${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button>`}${o.life&&!o.done?`<span class="t" data-t="${o.id}"></span>`:''}</div>`).join(''); }
   mine.forEach(o=>{ if(!orderSeen[o.id]){ orderSeen[o.id]=1; if(!o.done){ SND.order(); setTimeout(()=>say(o.word), 180); } } });
   box.querySelectorAll('[data-t]').forEach(el=>{ const o=S.orders.find(x=>x.id==el.dataset.t); if(o) el.style.transform=`scaleX(${Math.max(0,(o.until-S.t)/o.life).toFixed(3)})`; });
   // the wave intro card (its new words, spoken one after another) and the breather banner
-  const D2=S.dir, wc=$('#waveCard'), rb=$('#restBanner');
+  const D2=S.dir, wc=$('#waveCard'), rb=$('#restBanner'); const dIcon=k=>MAP[k]?MAP[k].ic+' ':'';
   if(D2 && D2.ph==='intro'){ const Wv=WAVES[D2.w], key='w'+D2.w+':'+S.gid;
     if(wc.dataset.k!==key){ wc.dataset.k=key; wc.innerHTML=`<h3><small>WAVE ${D2.w+1} OF ${WAVES.length}</small>${esc(Wv.name)}</h3>
-      <div class="words">${Wv.words.map(k=>`<button class="word" data-hear="${k}"><b>${W[k].k}</b><small>${COLORS.includes(k)?`<span class="dot" style="background:#${VALVE[k].c.toString(16).padStart(6,'0')}"></span>`:''}${W[k].ro} · ${W[k].m}</small></button>`).join('')}</div>
+      <div class="words">${Wv.words.map(k=>`<button class="word" data-hear="${k}"><b>${dIcon(k)}${W[k].k}</b><small>${COLORS.includes(k)?`<span class="dot" style="background:#${VALVE[k].c.toString(16).padStart(6,'0')}"></span>`:''}${W[k].ro} · ${W[k].m}</small></button>`).join('')}</div>
       <p>${esc(Wv.tip)}</p><div class="bar2"><i></i></div>`;
       Wv.words.forEach((k,i)=>setTimeout(()=>say(k), 500+i*1200)); }
     wc.hidden=false; const bi=wc.querySelector('.bar2 i'); if(bi) bi.style.transform=`scaleX(${Math.max(0,1-D2.t/T_INTRO).toFixed(3)})`;
   } else wc.hidden=true;
   rb.hidden=!(D2 && D2.ph==='rest'); if(D2 && D2.ph==='rest'){ const nx=WAVES[D2.w+1]; const t=`ひと休み · Breather${nx?' · next: '+nx.name:''}`; if(rb.textContent!==t) rb.textContent=t; }
-  const drv=S.driver; $('#driveBadge').textContent = drv ? `🚂 ${drv==='h'?'P1':'P2'} driving` : (S.obs.length ? '⚠ nobody driving!' : '🚂 nobody driving');
-  const wind=$('#wind'), iDrive = drv===ME; wind.hidden=!iDrive;
-  if(iDrive){ document.querySelectorAll('#lanes i').forEach((e,i)=>e.classList.toggle('me', i===S.lane)); $('#thrN').textContent='×'+(.5+S.thr).toFixed(1);
+  // the driver's full-screen map (pictures only: the crew has the names)
+  $('#hud').classList.toggle('driving', iDrive); $('#mapv').hidden=!iDrive; if(iDrive) mapFrame();
+  const drv=S.roles?S.roles.driver:S.driver; $('#driveBadge').textContent = `🚂 ${drv==='h'?'P1':'P2'} driving`;
+  const wind=$('#wind'); wind.hidden=true;
+  if(false){ document.querySelectorAll('#lanes i').forEach((e,i)=>e.classList.toggle('me', i===S.lane)); $('#thrN').textContent='×'+(.5+S.thr).toFixed(1);
     const L=$('#lanes'), want=S.obs.map(o=>o.id+'').join(','); if(L.dataset.k!==want){ L.dataset.k=want; L.querySelectorAll('.ob').forEach(e=>e.remove()); S.obs.forEach(o=>L.insertAdjacentHTML('beforeend', `<span class="ob" data-o="${o.id}">${o.kind==='wreck'?'☄️':'👻👻'}</span>`)); }
     S.obs.forEach(o=>{ const e=L.querySelector(`[data-o="${o.id}"]`); if(e){ e.style.left=((o.lane+.5)/3*100)+'%'; e.style.top=((1-o.z)*85+5)+'%'; e.style.fontSize=(14+16*(1-o.z))+'px'; } }); }
   const n=nearest(), btn=$('#actBtn'); const lbl=n ? (n.k==='lever' ? `LEVER\n${S.lever==='L'?'◀':S.lever==='R'?'▶':'·'}` : n.label) : '—';
@@ -465,11 +530,13 @@ const actUp=()=>{ $('#actBtn').classList.remove('held'); clearInterval(holdT); }
 $('#actBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); actDown(); }); $('#actBtn').addEventListener('pointerup', actUp); $('#actBtn').addEventListener('pointercancel', actUp);
 addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if((e.key===' '||e.key==='e'||e.key==='E') && !e.repeat){ e.preventDefault(); actDown(); } });
 addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; if(e.key===' '||e.key==='e'||e.key==='E') actUp(); });
+document.addEventListener('pointerdown', e=>{ const g=e.target.closest && e.target.closest('[data-go]'); if(g && S && S.ph==='run'){ e.preventDefault(); doAct({k:'go', id:g.dataset.go}); $('#mapSvg').dataset.k=''; } }, {passive:false});
 document.addEventListener('click', async e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.hear){ audio(); say(b.dataset.hear); return; }
   if(b.dataset.say){ const o=S && S.orders.find(o=>o.id==b.dataset.say); if(o) say(o.word); return; }
   if(b.dataset.hint){ const id=+b.dataset.hint; LOCAL.hinted[id]=1; doAct({k:'hint', id}); $('#orders').dataset.k=''; return; }
+  if(b.dataset.go) return;
   if(b.id==='switchBtn'){ ME = ME==='h' ? 'g' : 'h'; b.textContent=`Switch to ${ME==='h'?'P2':'P1'}`; SCN && SCN.follow(); return; }
   const a=b.dataset.a; if(!a) return; audio();
   if(a==='local'){ MODE='local'; ME='h'; S=freshState(); newRun(); $('#testBadge').hidden=false; $('#switchBtn').hidden=false; NET={kind:'local test', code:'—', send:()=>{}}; return; }
@@ -572,10 +639,10 @@ class Train extends Phaser.Scene{
     // move me (joystick or keys), kept inside the area I'm in
     const k=IN.keys; let dx=IN.dx+((k.arrowright||k.d)?1:0)-((k.arrowleft||k.a)?1:0), dy=IN.dy+((k.arrowdown||k.s)?1:0)-((k.arrowup||k.w)?1:0);
     const L=Math.hypot(dx,dy); if(L>1){ dx/=L; dy/=L; }
-    const driving = S && S.ph==='run' && S.driver===ME;
+    const driving = S && S.ph==='run' && S.roles && S.roles.driver===ME;
     if(driving){ pos[ME]={x:SPOT.seat.x, y:SPOT.seat.y+8, a:'cab'};          // seated: the joystick drives instead of walking
-      if(Math.abs(dy)>.35){ this.thrL=Math.max(0,Math.min(1,(this.thrL??S.thr)-dy*.7*dt)); if(time-(this._thrT||0)>160){ this._thrT=time; doAct({k:'thr', v:+this.thrL.toFixed(2)}); } } else this.thrL=S.thr;
-      const fl = Math.abs(dx)>.6 ? Math.sign(dx) : 0; if(fl && fl!==this._flick) doAct({k:'lane', d:fl}); this._flick=fl; }
+      if(false && Math.abs(dy)>.35){ this.thrL=Math.max(0,Math.min(1,(this.thrL??S.thr)-dy*.7*dt)); if(time-(this._thrT||0)>160){ this._thrT=time; doAct({k:'thr', v:+this.thrL.toFixed(2)}); } } else this.thrL=S.thr;
+    }
     else if(S && S.ph==='run'){ const p=pos[ME], A=AREA[p.a]; p.x=Math.max(A.x0,Math.min(A.x1,p.x+dx*240*dt)); p.y=Math.max(A.y0,Math.min(A.y1,p.y+dy*240*dt)); }
     if(MODE==='host' || MODE==='local'){ hostTick(dt); if(MODE==='host' && S) pushState(); }
     if(MODE==='guest') sendGuest();
@@ -611,7 +678,7 @@ class Train extends Phaser.Scene{
 new Phaser.Game({ type:Phaser.AUTO, parent:'game', backgroundColor:'#0E1230', scale:{mode:Phaser.Scale.RESIZE, width:960, height:540}, scene:Train, render:{antialias:true} });
 lobby();
 // test hooks
-window.__mrc={ dir:()=>S&&S.dir, S:()=>S, mode:()=>MODE, me:()=>ME, pos, net:()=>NET.kind, place:(x,y,a)=>{ pos[ME]={x,y,a}; }, near:()=>nearest(), use:()=>useNearest(), act:a=>doAct(a), W };
+window.__mrc={ go:id=>doAct({k:'go', id}), MAP, NB, dir:()=>S&&S.dir, S:()=>S, mode:()=>MODE, me:()=>ME, pos, net:()=>NET.kind, place:(x,y,a)=>{ pos[ME]={x,y,a}; }, near:()=>nearest(), use:()=>useNearest(), act:a=>doAct(a), W };
 })();
 </script>
 </body>
