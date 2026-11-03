@@ -7,678 +7,492 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Zen+Maru+Gothic:wght@700;900&display=swap">
 <style>
-/* Midnight Rail Crew — greybox. One night train, two crew who can go anywhere: the cab (coal, firebox, valves, brake)
-   and the roof (junction signs + lever). Each player privately hears single Japanese words and must act on them. */
-:root{ --ink:#2A211B; --paper:#FFF8EE; --night:#0E1230; --amber:#FFB23E; --red:#E04A3C; --green:#7EE08A; --dim:#A9B3E0; }
+/* 銀河鉄道 Galaxy Rail Crew v2 — the Driver flies the train through space in 3D (gate signs in kana only);
+   the Navigator has the map (pictures only) and the passengers' tickets (kana). Talk to each other. */
+:root{ --ink:#2A211B; --paper:#FFF8EE; --night:#0B0F2C; --amber:#FFB23E; --red:#E04A3C; --green:#7EE08A; --dim:#A9B3E0; }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--night);color:var(--paper);font-family:Nunito,"Zen Maru Gothic",system-ui,sans-serif;overflow:hidden;
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 button,input{touch-action:manipulation}
-#game{position:fixed;inset:0}
-#game canvas{display:block}
 [hidden]{display:none!important}
+#three{position:fixed;inset:0}
+#three canvas{display:block;width:100%;height:100%}
 .hud{position:fixed;inset:0;pointer-events:none;z-index:2}
-.top{position:absolute;z-index:3;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
-.meters{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;max-width:min(330px,calc(50vw - 140px))}
+.top{position:absolute;z-index:6;left:0;right:0;top:0;display:flex;gap:8px;align-items:flex-start;padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) 0 max(10px,env(safe-area-inset-left))}
+.meters{display:flex;flex-direction:column;gap:5px;flex:1;max-width:min(300px,calc(50vw - 150px))}
 .meter{display:flex;align-items:center;gap:6px;font:900 11px Nunito,sans-serif;letter-spacing:.06em}
 .meter span{width:44px;flex:none}
 .bar{flex:1;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--green);transform-origin:0 50%;transition:transform .2s}
-.bar.fire i{background:var(--amber)}.bar.water i{background:#5BC0FF}
 .bar.low i{background:var(--red)}
-.trip{position:relative;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink)}
+.trip{position:relative;flex:1;height:12px;border-radius:999px;background:rgba(0,0,0,.45);border:2px solid var(--ink)}
 .trip b{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:4px;background:var(--amber);border:2px solid var(--ink)}
 .trip em{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--ink);border:2px solid var(--dim)}
-.trip em.ok{background:var(--green)}.trip em.bad{background:var(--red)}
-.side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto}
-.badge{font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.trip em.ok{background:var(--green)}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto;pointer-events:auto}
+.badge{font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:4px 10px;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.badge img{width:26px;height:26px;object-fit:contain;margin:-4px 0}
 .badge.test{background:#3A1E19;border:2px dashed var(--amber);color:#FFDDB0}
-.orders{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 100px);display:flex;flex-direction:column;gap:5px;pointer-events:auto}
-.orders{max-height:calc(100% - 250px);flex-wrap:wrap;align-content:flex-start;max-width:52vw}
-.ord{display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:16px;padding:4px 6px 4px 4px;box-shadow:0 3px 0 var(--ink);min-width:128px;position:relative;overflow:hidden}
-.ord.new{animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
-@keyframes pop{from{transform:scale(.6);opacity:0}}
-.ord .who{font:900 10px Nunito,sans-serif;background:var(--ink);color:var(--paper);border-radius:6px;padding:2px 4px}
-.ord b{font:900 20px "Zen Maru Gothic",sans-serif;flex:1;white-space:nowrap}
-.ord small{font:800 11px Nunito,sans-serif;color:#8C5E36;display:block;line-height:1}
-.ord button{border:2px solid var(--ink);border-radius:9px;background:#E2E6FA;font:900 12px Nunito,sans-serif;width:28px;height:28px;padding:0;cursor:pointer;color:var(--ink)}
-.ord .t{position:absolute;left:0;bottom:0;height:4px;background:var(--red);transform-origin:0 50%}
-.ord.done{background:#C9F2D1}.ord.fail{background:#FFD3CC}
+.switch{font:900 13px Nunito,sans-serif;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:12px;box-shadow:0 3px 0 var(--ink);padding:6px 10px;cursor:pointer}
+/* driver cockpit */
+.cockpit{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 62% at 50% 46%,rgba(0,0,0,0) 62%,rgba(20,8,6,.55) 82%,rgba(20,8,6,.92));}
+.cockpit .strut{position:absolute;bottom:0;width:22%;height:16%;background:linear-gradient(#5A1E1A,#2A0F0D);border-top:4px solid #C9A14A}
+.cockpit .strut.l{left:0;border-top-right-radius:40px}.cockpit .strut.r{right:0;border-top-left-radius:40px}
+.cross{position:absolute;left:50%;top:46%;width:34px;height:34px;margin:-17px 0 0 -17px;border:3px solid rgba(255,248,238,.7);border-radius:50%}
+.cross::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--amber)}
+.dash{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 8px);transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(14,18,48,.85);border:3px solid var(--ink);border-radius:16px;padding:5px 12px;font:900 12px Nunito,sans-serif;white-space:nowrap}
+.dash b{font-size:22px;color:var(--amber);font-variant-numeric:tabular-nums;min-width:30px;text-align:right}
+.dash span.f{font-size:22px}
 .stick{position:absolute;left:max(18px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 18px);width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);pointer-events:auto;touch-action:none}
 .stick i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,248,238,.85);border:3px solid var(--ink)}
-.act{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 18px);width:118px;height:118px;border-radius:50%;background:var(--amber);border:4px solid var(--ink);box-shadow:0 6px 0 var(--ink);font:900 17px Nunito,"Zen Maru Gothic",sans-serif;color:var(--ink);pointer-events:auto;touch-action:none;cursor:pointer;line-height:1.1;padding:6px}
-.act.off{background:#55607A;color:#A9B3E0}
-.act.held{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
-.switch{pointer-events:auto;font:900 13px Nunito,sans-serif;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:12px;box-shadow:0 3px 0 var(--ink);padding:6px 10px;cursor:pointer}
-.wind{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);width:min(250px,28vw);display:flex;flex-direction:column;gap:4px;align-items:center}
-.lanes{position:relative;width:100%;height:110px;border:3px solid var(--ink);border-radius:12px;background:linear-gradient(#141A44,#24324A);display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}
-.lanes i{border-right:2px dashed rgba(201,207,240,.35);position:relative}.lanes i:last-child{border-right:0}
-.lanes i.me{background:rgba(255,178,62,.22)}
-.lanes i.me::after{content:"🚂";position:absolute;left:50%;bottom:2px;transform:translateX(-50%);font-size:22px}
-.lanes .ob{position:absolute;transform:translate(-50%,-50%);font-size:24px;line-height:1}
-.thr{font:900 12px Nunito,sans-serif;text-align:center;background:rgba(14,18,48,.8);border:2px solid var(--ink);border-radius:10px;padding:3px 8px;line-height:1.2}
-.thr b{font-size:16px;color:var(--amber)}.thr small{font-size:10px;color:var(--dim)}
-.waveCard{position:absolute;z-index:4;left:50%;top:46%;transform:translate(-50%,-50%);width:min(500px,60vw);background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:10px 14px 12px;text-align:center;pointer-events:auto;animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
+.boost{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 18px);width:112px;height:112px;border-radius:50%;background:var(--amber);border:4px solid var(--ink);box-shadow:0 6px 0 var(--ink);font:900 17px Nunito,sans-serif;color:var(--ink);pointer-events:auto;touch-action:none;cursor:pointer}
+.boost.held{transform:translateY(4px);box-shadow:0 2px 0 var(--ink);background:#FFD27A}
+/* navigator */
+.nav{position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 50% 40%,#1D2660,#0B0F2C 70%);pointer-events:auto}
+.nav svg{position:absolute;left:34%;top:calc(env(safe-area-inset-top) + 40px);width:66%;height:calc(100% - 80px)}
+.nav .node circle{fill:#FFF8EE;stroke:#2A211B;stroke-width:5}
+.nav .node.fog circle{fill:#2B3264;stroke-dasharray:6 6;stroke:#A9B3E0}
+.nav .node text{font-size:92px;text-anchor:middle;dominant-baseline:central}
+.nav .node.fog text{font:900 64px Nunito,sans-serif;fill:#A9B3E0}
+.tickets{position:absolute;left:max(10px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 76px);width:32%;display:flex;flex-direction:column;gap:6px}
+.tickets h4{margin:0;font:900 12px Nunito,sans-serif;letter-spacing:.12em;color:var(--dim)}
+.tk{display:flex;align-items:center;gap:6px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:14px;padding:4px 6px;box-shadow:0 3px 0 var(--ink);position:relative;overflow:hidden}
+.tk .fc{font-size:22px}
+.tk b{font:900 22px "Zen Maru Gothic",sans-serif;flex:1;line-height:1.05}
+.tk small{display:block;font:800 11px Nunito,sans-serif;color:#2E7D4F}
+.tk button{border:2px solid var(--ink);border-radius:9px;background:#E2E6FA;font:900 12px Nunito,sans-serif;width:28px;height:28px;padding:0;cursor:pointer;color:var(--ink)}
+.tk .t{position:absolute;left:0;bottom:0;width:100%;height:4px;background:var(--red);transform-origin:0 50%}
+.tk.new{animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
+.navTip{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 8px);transform:translateX(-50%);font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+/* shared */
+.waveCard{position:absolute;z-index:7;left:50%;top:44%;transform:translate(-50%,-50%);width:min(520px,64vw);background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:10px 14px 12px;text-align:center;pointer-events:auto;animation:pop .35s cubic-bezier(.2,1.5,.4,1)}
 .waveCard h3{margin:0;font:900 22px "Zen Maru Gothic",Nunito,sans-serif}.waveCard h3 small{font:900 12px Nunito,sans-serif;letter-spacing:.1em;color:#6B5E54;display:block}
-.waveCard .words{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));margin-top:8px}
 .waveCard p{margin:8px 0 0;font:800 13px/1.35 Nunito,sans-serif;color:#4A3F37}
 .waveCard .bar2{height:6px;border-radius:9px;background:#E6DCCB;margin-top:8px;overflow:hidden}.waveCard .bar2 i{display:block;height:100%;background:var(--amber);transform-origin:0 50%}
-.rest{position:absolute;z-index:4;left:50%;top:calc(env(safe-area-inset-top) + 8px);transform:translateX(-50%);font:900 15px Nunito,"Zen Maru Gothic",sans-serif;background:#C9F2D1;color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:5px 14px;box-shadow:0 3px 0 var(--ink);white-space:nowrap}
-.ord small.auto{color:#2E7D4F}
-.mapv{position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 50% 30%,#1D2660,#0B0F2C 70%);pointer-events:auto}
-.mapv svg{position:absolute;left:0;top:calc(env(safe-area-inset-top) + 44px);width:100%;height:calc(100% - 100px)}
-.mapv .rail{stroke:#C9CFF0;stroke-width:6;stroke-dasharray:2 12;stroke-linecap:round;opacity:.55}
-.mapv .rail.on{stroke:#FFB23E;opacity:1;stroke-dasharray:none}
-.mapv .node circle{fill:#24306A;stroke:#2A211B;stroke-width:5}
-.mapv .node.seen circle{fill:#FFF8EE}
-.mapv .node.fog circle{fill:#2B3264;stroke-dasharray:6 6}
-.mapv .node.can circle{stroke:#FFB23E;stroke-width:8;animation:glow 1s ease-in-out infinite alternate}
-.mapv .node.next circle{fill:#FFE6B0;stroke:#FFB23E;stroke-width:9}
-.mapv .node text{font-size:40px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
-.mapv .node.fog text{font:900 30px Nunito,sans-serif;fill:#A9B3E0}
-.mapv .node{cursor:pointer}
-@keyframes glow{to{stroke-width:13}}
-.mapTip{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:2;transform:translateX(-50%);font:900 13px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:5px 12px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
-.pax{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 8px);transform:translateX(-50%);display:flex;gap:8px;align-items:center;font:900 12px Nunito,sans-serif;background:rgba(14,18,48,.85);border:2px solid var(--ink);border-radius:999px;padding:4px 12px}
-.pax span{font-size:24px}
-.hud.driving .orders,.hud.driving .stick,.hud.driving .act{display:none}
-.toast{position:absolute;z-index:5;left:50%;top:62%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
+.words{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px;margin-top:8px}
+.word{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--ink);padding:6px 2px 4px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center}
+.word b{font:900 22px "Zen Maru Gothic",sans-serif}.word small{font:800 11px Nunito,sans-serif;color:#6B5E54}
+.rest{position:absolute;z-index:7;left:50%;top:calc(env(safe-area-inset-top) + 50px);transform:translateX(-50%);font:900 15px Nunito,"Zen Maru Gothic",sans-serif;background:#C9F2D1;color:var(--ink);border:3px solid var(--ink);border-radius:999px;padding:5px 14px;box-shadow:0 3px 0 var(--ink);white-space:nowrap}
+.toast{position:absolute;z-index:8;left:50%;top:30%;transform:translate(-50%,-50%);font:900 22px Nunito,"Zen Maru Gothic",sans-serif;padding:6px 14px;border-radius:14px;border:3px solid var(--ink);background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);opacity:0;white-space:nowrap}
 .toast.ok{background:var(--green)}.toast.bad{background:#FF8A7E}.toast.go{background:var(--amber)}
-.card{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.78)}
-.in{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 var(--ink);padding:16px 18px 14px;width:min(560px,100%);max-height:100%;overflow:auto;text-align:center}
-.in h1{margin:0;font:900 28px/1.1 "Zen Maru Gothic",sans-serif}
+.card{position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;padding:14px;background:rgba(8,10,30,.8)}
+.in{background:var(--paper);color:var(--ink);border:4px solid var(--ink);border-radius:24px;box-shadow:0 8px 0 var(--ink);padding:14px 18px;width:min(620px,100%);max-height:100%;overflow:auto;text-align:center}
+.in .key{width:100%;max-height:34vh;object-fit:cover;border-radius:14px;border:3px solid var(--ink)}
+.in h1{margin:6px 0 0;font:900 28px/1.1 "Zen Maru Gothic",sans-serif}
 .in h1 small,.in h2 small{display:block;font:900 12px Nunito,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6B5E54;margin-top:4px}
 .in h2{margin:0;font:900 24px/1.15 "Zen Maru Gothic",sans-serif}
 .in p{margin:8px 0 0;font:700 14px/1.4 Nunito,sans-serif;color:#4A3F37}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;text-align:left}
+.roles div{display:flex;gap:8px;align-items:center;background:#F3E9DA;border-radius:14px;padding:6px 8px;font:800 13px/1.3 Nunito,sans-serif}
+.roles img{width:64px;height:64px;object-fit:contain;flex:none}
 .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .btn{font:900 17px Nunito,sans-serif;color:var(--ink);background:var(--amber);border:4px solid var(--ink);border-radius:999px;padding:11px 22px;box-shadow:0 5px 0 var(--ink);cursor:pointer}
 .btn.alt{background:var(--paper)}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
 .code{font:900 44px Nunito,sans-serif;letter-spacing:.2em;background:var(--night);color:var(--amber);border:4px solid var(--ink);border-radius:16px;padding:4px 16px;display:inline-block;margin-top:8px}
 input.codein{font:900 22px Nunito,sans-serif;letter-spacing:.2em;text-transform:uppercase;width:120px;text-align:center;border:3px solid var(--ink);border-radius:12px;padding:8px}
-.words{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:10px}
-.word{border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:0 3px 0 var(--ink);padding:6px 2px 4px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;align-items:center}
-.word b{font:900 21px "Zen Maru Gothic",sans-serif}.word small{font:800 11px Nunito,sans-serif;color:#6B5E54}
-.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);vertical-align:-1px;margin-right:3px}
-.res{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+.res{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
 .res span{background:#F3E9DA;border-radius:12px;padding:7px 2px;font:800 11px Nunito,sans-serif;color:#6B5E54;display:flex;flex-direction:column}
 .res b{font:900 20px Nunito,sans-serif;color:var(--ink)}
 .small{font:800 12px Nunito,sans-serif;color:#6B5E54}
-.rotate{position:fixed;inset:0;z-index:9;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:var(--night);font:900 20px Nunito,sans-serif;text-align:center;padding:20px}
+.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:var(--night);font:900 20px Nunito,sans-serif;text-align:center;padding:20px}
 @media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
 </style>
 </head>
 <body>
-<div id="game"></div>
+<div id="three"></div>
 <div class="hud" id="hud" hidden>
   <div class="top">
     <div class="meters">
       <div class="meter"><span>TRAIN</span><div class="bar" id="hpBar"><i></i></div></div>
-      <div class="meter"><span>FIRE</span><div class="bar fire" id="fireBar"><i></i></div></div>
-      <div class="meter"><span>WATER</span><div class="bar water" id="waterBar"><i></i></div></div>
       <div class="meter"><span>WAVE</span><div class="trip" id="trip"></div></div>
     </div>
-    <div class="side"><span class="badge" id="where">P1 · INSIDE</span><span class="badge" id="driveBadge">🚂 nobody driving</span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch to P2</button></div>
+    <div class="side"><span class="badge" id="role"></span><span class="badge test" id="testBadge" hidden>LOCAL TEST · not online</span><button class="switch" id="switchBtn" hidden>Switch view</button></div>
   </div>
-  <div class="orders" id="orders"></div>
-  <div class="mapv" id="mapv" hidden>
-    <svg id="mapSvg" viewBox="-40 30 1080 560" preserveAspectRatio="xMidYMid meet"></svg>
-    <div class="mapTip" id="mapTip">🚂 Tap a glowing place to go</div>
-    <div class="pax" id="paxRow"></div>
+  <div id="driverUI" hidden>
+    <div class="cockpit"><div class="strut l"></div><div class="strut r"></div><div class="cross"></div></div>
+    <div class="dash" id="dash"></div>
+    <div class="stick" id="stick"><i id="knob"></i></div>
+    <button class="boost" id="boostBtn">BOOST</button>
+  </div>
+  <div class="nav" id="navUI" hidden>
+    <svg id="mapSvg" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="tickets" id="tickets"></div>
+    <div class="navTip">Read the ticket · find the place · tell your driver: left, right, up, down!</div>
   </div>
   <div class="waveCard" id="waveCard" hidden></div>
   <div class="rest" id="restBanner" hidden></div>
-  <div class="wind" id="wind" hidden><div class="lanes" id="lanes"><i></i><i></i><i></i></div><div class="thr"><b id="thrN">×1.0</b><small>▲ faster · ▼ slower<br>◀ ▶ change track</small></div></div>
-  <div class="stick" id="stick"><i id="knob"></i></div>
-  <button class="act off" id="actBtn">—</button>
   <div class="toast" id="toast"></div>
 </div>
 <div class="card" id="card"></div>
 <div class="rotate"><div style="font-size:46px">📱↻</div>Turn your phone sideways to play</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.80.1/phaser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const ART='art/web/';
 
-// ---------- words (single words only for this prototype) ----------
-const W={ aka:{k:'あか',ro:'aka',m:'red'}, ao:{k:'あお',ro:'ao',m:'blue'}, kiiro:{k:'きいろ',ro:'kiiro',m:'yellow'},
-  coal:{k:'せきたん',ro:'sekitan',m:'coal'}, brake:{k:'ブレーキ',ro:'burēki',m:'brake'},
-  mizu:{k:'みず',ro:'mizu',m:'water'}, lamp:{k:'ランプ',ro:'ranpu',m:'lamp'},
-  umi:{k:'うみ',ro:'umi',m:'sea'}, yama:{k:'やま',ro:'yama',m:'mountain'}, tsuki:{k:'つき',ro:'tsuki',m:'moon'}, kitsune:{k:'きつね',ro:'kitsune',m:'fox'},
-  jinja:{k:'じんじゃ',ro:'jinja',m:'shrine'}, sakura:{k:'さくら',ro:'sakura',m:'cherry blossom'}, kumo:{k:'くも',ro:'kumo',m:'cloud'}, dango:{k:'だんご',ro:'dango',m:'dango (sweet)'} };
-// ---------- the galaxy map (the driver's screen): places as pictures only; the crew has the tickets with the Japanese names ----------
-const MAP={ home:{x:500,y:540,ic:'🚉'}, umi:{x:230,y:470,ic:'🌊'}, yama:{x:780,y:470,ic:'🗻'}, tsuki:{x:120,y:250,ic:'🌙'}, kitsune:{x:420,y:330,ic:'🦊'},
-  jinja:{x:640,y:300,ic:'⛩️'}, sakura:{x:880,y:250,ic:'🌸'}, kumo:{x:310,y:90,ic:'☁️'}, dango:{x:710,y:90,ic:'🍡'} };
-const RAILS=[['home','umi'],['home','yama'],['home','kitsune'],['umi','tsuki'],['umi','kitsune'],['kitsune','jinja'],['yama','jinja'],['yama','sakura'],
-  ['tsuki','kumo'],['kitsune','kumo'],['jinja','dango'],['sakura','dango'],['kumo','dango'],['jinja','sakura']];
-const NB={}; RAILS.forEach(([a,b])=>{ (NB[a]=NB[a]||[]).push(b); (NB[b]=NB[b]||[]).push(a); });
-const UNLOCK=[['umi','yama'],['tsuki','kitsune'],['jinja','sakura'],['kumo','dango']];   // destinations open up wave by wave
+// ---------- places: the driver sees only the kana sign, the navigator only the picture ----------
+const W={ umi:{k:'うみ',ro:'umi',m:'sea'}, yama:{k:'やま',ro:'yama',m:'mountain'}, tsuki:{k:'つき',ro:'tsuki',m:'moon'}, kitsune:{k:'きつね',ro:'kitsune',m:'fox'},
+  jinja:{k:'じんじゃ',ro:'jinja',m:'shrine'}, sakura:{k:'さくら',ro:'sakura',m:'cherry blossom'}, kumo:{k:'くも',ro:'kumo',m:'cloud'}, dango:{k:'だんご',ro:'dango',m:'dango (sweet)'},
+  home:{k:'えき',ro:'eki',m:'station'} };
+// x/z = the navigator's map (top-down), y = height in space
+const P={ home:{x:0,y:0,z:380,ic:'🚉'}, umi:{x:-480,y:40,z:250,ic:'🌊'}, yama:{x:500,y:-30,z:250,ic:'🗻'}, tsuki:{x:-680,y:90,z:-140,ic:'🌙'}, kitsune:{x:-150,y:-40,z:0,ic:'🦊'},
+  jinja:{x:250,y:30,z:-50,ic:'⛩️'}, sakura:{x:690,y:70,z:-150,ic:'🌸'}, kumo:{x:-340,y:110,z:-430,ic:'☁️'}, dango:{x:380,y:-60,z:-430,ic:'🍡'} };
+const PLACES=Object.keys(P).filter(k=>k!=='home');
 const FACES=['🐼','🐸','🐰','🐻','🐱','🐵','🐨','🐯'];
-const COLORS=['aka','ao','kiiro'], STATIONS=['umi','yama','tsuki'];
+const WAVES=[
+  {name:'First stops', words:['umi','yama'], tip:'Navigator: read the ticket, find the place on your map, guide the driver. Driver: fly through the gate whose sign says it.'},
+  {name:'Moon & fox', words:['tsuki','kitsune'], tip:'Two new places. "?" marks on the map turn into pictures when the driver flies near them.'},
+  {name:'Explore', words:['jinja','sakura'], tip:'More places out in the stars. You swap jobs after this wave!'},
+  {name:'Clouds & sweets', words:['kumo','dango'], tip:'Now you know all 8 places. Passengers get less patient…'},
+  {name:'Meteors!', words:[], tip:'Meteors and yokai drift through space. Driver: don\'t bump into them! Navigator: keep the tickets coming.'},
+  {name:'Last stretch', words:[], tip:'Everything at once. Deliver everyone before the trip ends!'}];
+const T_INTRO=9, T_PLAY=45, T_REST=12;
+const GATE_R=26, SEE_R=300;
 
-// ---------- world layout ----------
-const ROOFY=760;                              // the roof sits below the cab in world space; the ladder moves you between them
-const CARGOY=1500;                            // the cargo car (water tank + lamps), through the cab's left door
-const AREA={ cab:{x0:70,x1:890,y0:90,y1:490}, roof:{x0:70,x1:890,y0:ROOFY+120,y1:ROOFY+330}, cargo:{x0:70,x1:890,y0:CARGOY+90,y1:CARGOY+490} };
-const VALVE={ aka:{x:850,y:160,c:0xE04A3C}, ao:{x:850,y:290,c:0x3B6FE0}, kiiro:{x:850,y:420,c:0xF2C230} };
-const SPOT={ bin:{x:150,y:440,a:'cab'}, fire:{x:150,y:180,a:'cab'}, brake:{x:470,y:465,a:'cab'}, ladder:{x:620,y:110,a:'cab'},
-  hatch:{x:300,y:ROOFY+300,a:'roof'}, lever:{x:830,y:ROOFY+170,a:'roof'},
-  door:{x:85,y:310,a:'cab'}, back:{x:875,y:CARGOY+310,a:'cargo'}, pump:{x:300,y:CARGOY+180,a:'cargo'},
-  lampA:{x:620,y:CARGOY+130,a:'cargo'}, lampB:{x:620,y:CARGOY+450,a:'cargo'}, seat:{x:760,y:115,a:'cab'} };
-// mop racks: one per room, a red, blue and yellow mop each (colour only, no words: the zombie's tag says which)
-const RACK={ cab:{x:340,y:105,a:'cab'}, cargo:{x:450,y:CARGOY+115,a:'cargo'}, roof:{x:170,y:ROOFY+140,a:'roof'} };
-const MOPS=[]; Object.entries(RACK).forEach(([r,s])=>COLORS.forEach((c,i)=>MOPS.push({c, x:s.x+(i-1)*52, y:s.y, a:s.a})));
-// where zombies climb in, and what they go for once inside
-const ZIN={ cab:[[210,100],[480,100],[95,230]], cargo:[[200,CARGOY+100],[700,CARGOY+100],[860,CARGOY+470]], roof:[[100,ROOFY+130],[880,ROOFY+320],[520,ROOFY+125]] };
-const ZGOAL={ cab:['fire','brake','valve'], cargo:['pump','lampA','lampB'], roof:['lever'] }; // (roof yokai are not spawned any more)
-const REACH=80;
-// journey (distance units ≈ seconds at full speed): 3 junctions, then the station
-// the trip is 6 teaching waves (see WAVES); junctions come in waves 3–5, the station at the end of wave 6
-
-// ---------- audio: tiny synth kit + the phone's Japanese voice ----------
-let AC=null, jaVoice=null;
+// ---------- audio ----------
+let AC=null, jaVoice=null, hum=null;
 function audio(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended') AC.resume(); }catch(e){}
   try{ if(!audio.warm){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; u.lang='ja-JP'; speechSynthesis.speak(u); audio.warm=1; } }catch(e){} }
 function tone(f,at,d,type,v,f2){ if(!AC) return; const t=AC.currentTime+(at||0), o=AC.createOscillator(), g=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+d);
   g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(v||.15,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.02); }
 const SND={ ok(){ tone(784,0,.12,'triangle',.2); tone(1175,.08,.18,'triangle',.16); }, bad(){ tone(140,0,.3,'square',.12); tone(95,.05,.3,'sawtooth',.08); },
-  pick(){ tone(300,0,.08,'square',.08); }, fire(){ tone(180,0,.25,'sawtooth',.1,520); }, order(){ tone(988,0,.08,'square',.06); tone(1319,.08,.12,'square',.06); },
-  whistle(){ tone(880,0,.5,'sine',.14); tone(1108,0,.5,'sine',.1); },
-  groan(){ tone(900,0,.7,'sine',.07,300); tone(1200,.1,.6,'triangle',.04,500); }, relax(){ tone(523,0,.6,'sine',.08); tone(659,.15,.7,'sine',.07); tone(784,.3,.9,'sine',.06); }, chomp(){ tone(220,0,.08,'square',.06); tone(180,.1,.08,'square',.06); },
-  bonk(){ tone(520,0,.06,'square',.12); tone(260,.03,.25,'triangle',.18,90); }, lane(){ tone(660,0,.06,'triangle',.08); }, dodge(){ tone(880,0,.08,'triangle',.08); tone(1175,.06,.1,'triangle',.07); }, clack(v){ tone(90,0,.05,'square',.03*v); } };
+  gate(){ tone(988,0,.1,'sine',.12); tone(1319,.07,.2,'sine',.1); }, fanfare(){ [523,659,784,1047].forEach((f,k)=>tone(f,k*.08,.4,'triangle',.16)); },
+  board(){ tone(988,0,.08,'square',.06); tone(1319,.08,.12,'square',.06); }, whistle(){ tone(880,0,.5,'sine',.14); tone(1108,0,.5,'sine',.1); },
+  relax(){ tone(523,0,.6,'sine',.08); tone(659,.15,.7,'sine',.07); tone(784,.3,.9,'sine',.06); }, swap(){ tone(660,0,.2,'triangle',.12); tone(880,.2,.3,'triangle',.12); } };
+let humOn=null;
+function engine(on, boost){ try{ if(!AC) return; const k=on?(boost?2:1):0; if(k===humOn) return; humOn=k;
+  if(on && !hum){ const o=AC.createOscillator(), f=AC.createBiquadFilter(), g=AC.createGain(); o.type='sawtooth'; o.frequency.value=70; f.type='lowpass'; f.frequency.value=260; g.gain.value=.0001; o.connect(f); f.connect(g); g.connect(AC.destination); o.start(); hum={o,f,g}; }
+  if(hum){ const t=AC.currentTime; hum.g.gain.setTargetAtTime(on ? .045 : .0001, t, .2); hum.o.frequency.setTargetAtTime(boost?120:70, t, .3); hum.f.frequency.setTargetAtTime(boost?600:260, t, .3); } }catch(e){} }
 function getVoice(){ if(!jaVoice){ try{ jaVoice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; }catch(e){} } return jaVoice; }
 function say(word){ try{ const u=new SpeechSynthesisUtterance(W[word].k); u.lang='ja-JP'; u.rate=.85; const v=getVoice(); if(v) u.voice=v;
-  if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+  if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); window.__spoken&&window.__spoken.push(W[word].k); }catch(e){} }
 
 // ---------- state ----------
-// MODE: 'local' (one device, both crew), 'host', 'guest'. The host simulates everything; the guest sends its position + actions.
+// MODE 'local' | 'host' | 'guest'. The host runs waves, passengers and hazards; the driving phone flies the ship and sends it.
 let MODE='', ME='h', S=null, NET={kind:'', send:()=>{}, code:''}, guestHere=false;
-const LOCAL={ actN:0, acts:[], seen:{h:0,g:0}, hinted:{}, heard:{}, ready:false, auto:{}, wc:{} };
-const pos={ h:{x:300,y:300,a:'cab'}, g:{x:420,y:330,a:'cab'} };   // where each crew member is drawn
+const LOCAL={ actN:0, acts:[], seen:{h:0,g:0}, hinted:{}, auto:{}, wc:{}, seenTk:{}, ready:false, view:'' };
+const SHIP={x:0,y:0,z:460,yaw:0,pitch:0,roll:0,spd:0,boost:false,stamp:''};
 function freshState(){
-  const signs=[0,1,2].map(()=>{ const pair=shuffle(STATIONS).slice(0,2); const dest=pair[Math.random()<.5?0:1]; return {L:pair[0], R:pair[1], dest}; });
-  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, power:80, water:90, lamps:{A:1,B:1}, nextL:30,
-    roles:{driver:'h', crew:'g'}, mp:{at:'home', from:null, to:null, p:0, next:null, dwell:0, seen:['home']}, pax:[], pid:0,
-    driver:'h', thr:.5, lane:1, obs:[], nextO:22, zs:[], zid:0, nextZ:28, knock:null, hp:100, dist:0, speed:0, lever:null, valves:{aka:0,ao:0,kiiro:0},
-    stopped:false, brakeHold:0, detour:0, jn:0, signs, sign:null, orders:[], oid:0, nextV:6, jres:[], ev:{n:0},
-    stats:{done:0, missed:0, wrong:0, hints:0, del:0}, players:{h:{x:300,y:300,a:'cab',carry:0}, g:{x:420,y:330,a:'cab',carry:0}}, arriveT:0, gid:Date.now()%1e9 };
+  return { ph:'ready', ready:{h:false, g:MODE==='local'}, t:0, gid:Date.now()%1e9, hp:100, roles:{driver:'h', nav:'g'},
+    ship:{x:0,y:0,z:460,yaw:0,pitch:0}, seen:['home'], pax:[], pid:0, orders:[], oid:0, nextB:0, hz:[], hid:0, nextH:0,
+    ev:{n:0}, stats:{del:0, missed:0, hits:0, hints:0}, arriveT:0, dir:null };
 }
-function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-function ev(kind, txt){ S.ev={n:S.ev.n+1, kind, txt}; }
-function addOrder(who, kind, word, life, target){ S.oid++; S.orders.push({id:S.oid, who, kind, word, target, until: life ? S.t+life : 1e9, life:life||0, done:0, hint:0}); if(S.orders.length>10) S.orders.splice(0, S.orders.length-10); }
+const ev=(kind,txt)=>{ S.ev={n:S.ev.n+1, kind, txt}; };
 const active=kind=>S.orders.filter(o=>!o.done && (!kind || o.kind===kind));
-function finish(o, ok){ o.done = ok ? 1 : -1; o.doneT=S.t; if(ok) S.stats.done++; else S.stats.missed++; }
+function finish(o, ok){ o.done=ok?1:-1; o.doneT=S.t; }
+const dist3=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z);
+const unlocked=()=>WAVES.slice(0, Math.min(4,(S.dir?S.dir.w:0)+1)).flatMap(w=>w.words);
 
-// ---------- the Director: teaching waves ----------
-// Each wave: intro (its new words on screen, nothing happens) → play (~36 s, ramping gently) → rest (a breather). One new
-// thing per wave, so someone who knows no Japanese learns each word as it arrives. A hidden stress score (open orders,
-// yokai aboard, low fire/water, recent damage) still holds trouble back when the crew is swamped, and stretches the rest.
-const WAVES=[
-  {name:'First passengers', words:['aka','ao','kiiro','umi','yama'], tip:'Crew: turn the valve of that colour, and read each passenger\'s ticket to the driver. Driver: find that place on your map and go there!'},
-  {name:'Fire & water', words:['coal','mizu','tsuki','kitsune'], tip:'せきたん: carry coal to the fire. みず: pump water in the cargo car (door on the left). Two new places on the map.'},
-  {name:'Explore', words:['jinja','sakura'], tip:'More places hide in the fog. Driver: every stop shows you what\'s next door. Swap jobs after this wave!'},
-  {name:'Yokai!', words:['aka','ao','kiiro','kumo','dango'], tip:'Yokai sneak aboard wearing a colour word. Take the お札 charm of that colour from a rack and SHOO them.'},
-  {name:'Lamps', words:['lamp'], tip:'ランプ: relight the dark lantern in the cargo car.'},
-  {name:'Last stretch', words:[], tip:'Everything at once! Deliver every passenger before the trip ends.'}];
-const T_INTRO=9, T_PLAY=36, T_REST=14;
+// ---------- the Director: teaching waves with breathers ----------
 function director(dt){
-  const R=S.dir||(S.dir={w:0, ph:'intro', t:0, stress:0, hurt:0, hp:S.hp, rate:0, drain:0});
-  if(S.hp<R.hp) R.hurt+=R.hp-S.hp; R.hp=S.hp; R.hurt=Math.max(0, R.hurt-3*dt);
-  R.stress=Math.min(100, active().length*12 + S.zs.length*14 + (S.power<30?12:0) + (S.water<30?12:0) + R.hurt*1.5 + (S.hp<40?15:0));
+  const R=S.dir||(S.dir={w:0, ph:'intro', t:0, rate:0});
   R.t+=dt; const last=R.w===WAVES.length-1;
   if(R.ph==='intro' && R.t>T_INTRO){ R.ph='play'; R.t=0; ev('wave','Wave '+(R.w+1)+' · GO!'); }
-  else if(R.ph==='play' && R.t>T_PLAY && !last){ R.ph='rest'; R.t=0; ev('relax','ひと休み · Breather'); }
-  else if(R.ph==='rest' && R.t>T_REST && R.stress<40){ R.w++; R.ph='intro'; R.t=0; ev('intro','');
-    if(R.w===3){ const r=S.roles; [r.driver, r.crew]=[r.crew, r.driver]; S.driver=r.driver; ev('swap','役割交代! Swap jobs'); } }
-  else if(R.ph==='play' && R.t>T_PLAY && last && !S.arriveT){ S.arriveT=S.t; ev('ok','到着! End of the line'); }
-  const k = R.ph==='play' ? Math.min(1, .3+.1*R.w+.35*R.t/T_PLAY) : 0;
-  R.rate = k*(R.stress>70 ? 0 : R.stress>50 ? .5 : 1);
-  R.drain = R.w<1 ? 0 : R.ph==='play' ? .5+.5*k : .25;           // wave 1 teaches valves only: no fire or water to worry about yet
+  else if(R.ph==='play' && R.t>T_PLAY){ if(last){ if(!S.arriveT){ S.arriveT=S.t; ev('ok','到着! End of the line'); } } else { R.ph='rest'; R.t=0; ev('relax','ひと休み · Breather'); } }
+  else if(R.ph==='rest' && R.t>T_REST){ R.w++; R.ph='intro'; R.t=0;
+    if(R.w===3){ const r=S.roles; [r.driver, r.nav]=[r.nav, r.driver]; ev('swap','役割交代! Swap jobs'); } }
+  const busy=active('ride').length/3; R.rate = R.ph==='play' ? Math.max(0, Math.min(1, .35+.1*R.w+.35*R.t/T_PLAY) - .3*busy) : 0;
   return R;
 }
 
 // ---------- host simulation ----------
+function board(f){
+  const cap=Math.min(3, 1+Math.floor(((S.dir?S.dir.w:0)+1)/2)); if(S.pax.length>=cap) return;
+  const dests=unlocked().filter(d=>!S.pax.some(p=>p.dest===d)); if(!dests.length) return;
+  const dest=pick(dests); S.pid++; S.pax.push({id:S.pid, dest, face:pick(FACES)});
+  S.oid++; S.orders.push({id:S.oid, kind:'ride', word:dest, target:S.pid, life:95-30*f, until:S.t+95-30*f, done:0, hint:0}); ev('board','');
+}
 function hostTick(dt){
-  if(!S || S.ph!=='run'){ if(S && S.ph==='ready' && S.ready.h && S.ready.g){ S.ph='run'; ev('go','出発! Depart'); } return; }
-  S.t+=dt; S.players.h.x=pos.h.x; S.players.h.y=pos.h.y; S.players.h.a=pos.h.a;
-  if(MODE==='local'){ S.players.g.x=pos.g.x; S.players.g.y=pos.g.y; S.players.g.a=pos.g.a; }
-  if(S.arriveT){ S.speed=Math.max(0,S.speed-dt*.8); if(S.t-S.arriveT>2.2) S.ph='over'; return; }
-  const R=director(dt), f=R.rate, w=R.w, play=R.ph==='play', last=w===WAVES.length-1; // f: how much trouble is allowed right now (0..1)
-  S.power=Math.max(0, S.power-1.6*R.drain*dt); S.water=Math.max(0, S.water-1.0*R.drain*dt);
-  if(S.water<=0) S.hp-=4*dt;                                                    // dry boiler: the train takes damage until someone pumps
-  let sp = (S.power>25 ? 1 : .3+.7*S.power/25)*(.5+S.thr); if(S.detour>0){ S.detour-=dt; sp*=.3; } // throttle .5 = normal, 1 = 1.5×
-  S.speed += (sp-S.speed)*Math.min(1,dt*2); S.dist+=S.speed*dt;
-  // orders: coloured valves every ~10 s, coal when the fire runs low, the junction word before each junction, brake before the station
-  if(play && S.t>=S.nextV){ if(f>0){ addOrder('all', 'valve', pick(COLORS), 22-6*f); S.nextV=S.t+5+9*(1-f)+Math.random()*2; } else S.nextV=S.t+1; }
-  if(w>=1 && S.power<40 && !active('coal').length) addOrder('all', 'coal', 'coal', 26-6*f);
-  if(w>=1 && S.water<40 && !active('water').length) addOrder('all', 'water', 'mizu', 26-6*f);
-  if(w>=4 && play && f>0 && S.t>=S.nextL){ const dark=['A','B'].filter(k=>S.lamps[k]); if(dark.length){ const k=pick(dark); S.lamps[k]=0; addOrder('all', 'lamp', 'lamp', 18-6*f, k); } S.nextL=S.t+10+16*(1-f)+Math.random()*4; }
-  mapTick(dt, f, R);
-  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o, false); S.hp-=10; if(o.kind==='lamp') S.lamps[o.target]=1; if(o.kind==='ride') S.pax=S.pax.filter(p=>p.id!==o.target); ev('bad', o.kind==='ride' ? 'A passenger gave up: '+W[o.word].k : 'Missed: '+W[o.word].k); }
-  zombiesTick(dt, f);
-  if(S.hp<=0){ S.hp=30; S.detour=3; ev('bad','Breakdown! Patching up…'); }      // recoverable: never a restart
+  if(!S) return;
+  if(S.ph==='ready'){ if(S.ready.h && S.ready.g){ S.ph='run'; ev('go','出発! Depart'); } return; }
+  if(S.ph!=='run') return;
+  S.t+=dt;
+  if(S.arriveT){ if(S.t-S.arriveT>2.2) S.ph='over'; return; }
+  const R=director(dt), f=R.rate, play=R.ph==='play';
+  if(MODE==='local' || S.roles.driver==='h') S.ship={x:SHIP.x,y:SHIP.y,z:SHIP.z,yaw:SHIP.yaw,pitch:SHIP.pitch};
+  // the navigator's map fills in as the ship flies near places
+  for(const k of PLACES) if(!S.seen.includes(k) && dist3(S.ship,P[k])<SEE_R){ S.seen.push(k); ev('seen',''); }
+  // passengers: never none while playing, more as the waves go on
+  if(play && f>0 && !S.pax.length) board(f);
+  if(play && f>0 && S.t>=S.nextB){ board(f); S.nextB=S.t+22-10*f; }
+  for(const o of S.orders) if(!o.done && o.life && S.t>o.until){ finish(o,false); S.stats.missed++; S.hp-=12; S.pax=S.pax.filter(p=>p.id!==o.target); ev('bad','A passenger gave up: '+W[o.word].k); }
+  // hazards (waves 5–6): meteors and yokai drifting in front of the ship
+  if(R.w>=4 && play && f>0 && S.t>=S.nextH && S.hz.length<9){
+    const s=S.ship, fx=-Math.sin(s.yaw)*Math.cos(s.pitch), fy=Math.sin(s.pitch), fz=-Math.cos(s.yaw)*Math.cos(s.pitch), d=200+Math.random()*120, side=(Math.random()-.5)*140, up=(Math.random()-.5)*70;
+    S.hid++; S.hz.push({id:S.hid, type:Math.random()<.6?'meteor':pick(['obake','kappa','tanuki']), x:s.x+fx*d+Math.cos(s.yaw)*side, y:s.y+fy*d+up, z:s.z+fz*d-Math.sin(s.yaw)*side,
+      vx:(Math.random()-.5)*14, vy:(Math.random()-.5)*6, vz:(Math.random()-.5)*14, t:0});
+    S.nextH=S.t+2.5+4*(1-f); }
+  S.hz.forEach(h=>{ h.x+=h.vx*dt; h.y+=h.vy*dt; h.z+=h.vz*dt; h.t+=dt; }); S.hz=S.hz.filter(h=>h.t<30);
+  if(S.hp<=0){ S.hp=40; ev('bad','Breakdown! Patching up…'); }
   S.hp=Math.max(0,Math.min(100,S.hp));
 }
-// ---------- the train on the map, and its passengers ----------
-function unlocked(){ const w=S.dir?S.dir.w:0; return UNLOCK.slice(0, Math.min(UNLOCK.length, w+1)).flat(); }
-function board(at, f){ // a passenger gets on with a ticket to somewhere else (only the crew can read the ticket)
-  const cap=Math.min(4, 2+Math.floor((S.dir?S.dir.w:0)/2)); if(S.pax.length>=cap) return;
-  const dests=unlocked().filter(d=>d!==at && !S.pax.some(p=>p.dest===d)); if(!dests.length) return;
-  const dest=pick(dests); S.pid++; S.pax.push({id:S.pid, dest, face:pick(FACES)}); addOrder('all', 'ride', dest, 85-25*f, S.pid); ev('board','');
-}
-function mapTick(dt, f, R){
-  const M=S.mp, play=R.ph==='play';
-  if(M.to){ M.p+=dt/5.5*(S.power>25?1:.55)*(S.detour>0?.4:1); if(M.p>=1){ M.at=M.to; M.from=M.to=null; M.p=0; M.dwell=1.6; arriveAt(M.at, f, play); } }
-  else if(M.dwell>0) M.dwell-=dt;
-  else if(M.next && NB[M.at].includes(M.next)){ M.from=M.at; M.to=M.next; M.next=null; M.p=0; }
-  if(play && f>0 && !S.pax.length && !M.to) board(M.at, f);       // never leave the driver with nothing to do
-}
-function arriveAt(id, f, play){
-  const M=S.mp; if(!M.seen.includes(id)) M.seen.push(id);
-  const off=S.pax.filter(p=>p.dest===id);
-  if(off.length){ S.pax=S.pax.filter(p=>p.dest!==id); off.forEach(p=>{ const o=S.orders.find(o=>o.kind==='ride' && o.target===p.id && !o.done); if(o) finish(o,true); S.stats.del++; }); ev('ok','ありがとう! '+MAP[id].ic+' '+W[id].k); }
-  if(play && f>0 && Math.random()<.75) board(id, f);
-  if(play && f>.6 && Math.random()<.35) board(id, f);
-}
-
-// ---------- zombies (yokai) on board ----------
-function spawnZombie(area, force){
-  if(S.zs.length>=7) return; if(!force && S.speed>1.3 && Math.random()<.6){ ev('dodge','Too fast! A yokai blew away'); return; }
-  const [x,y]=pick(ZIN[area]), c=pick(COLORS), goal=pick(ZGOAL[area]); S.zid++;
-  S.zs.push({id:S.zid, type:pick(['obake','kappa','tanuki']), x, y, a:area, c, goal, vc: goal==='valve' ? pick(COLORS) : null, wt:0});
-  addOrder('all', 'zombie', c, 0, S.zid); ev('zombie','');
-}
-function zombiesTick(dt, f){
-  // hazards: a horde or a wreck in one of 3 tracks, coming closer; the train must be on another track when it arrives
-  const w=S.dir.w, play=S.dir.ph==='play';
-  if(S.t>=S.nextO && (w<4 || !play || f<=0)) S.nextO=S.t+1;
-  else if(false && S.t>=S.nextO){ S.obs.push({id:S.t, lane:Math.floor(Math.random()*3), z:1, kind:pick(['horde','wreck'])}); S.nextO=S.t+7+12*(1-f)+Math.random()*3; }
-  S.obs.forEach(o=>o.z-=dt*S.speed/4.5);
-  S.obs=S.obs.filter(o=>{ if(o.z>0) return true;
-    if(o.lane!==S.lane) ev('dodge','Dodged!');
-    else if(o.kind==='wreck'){ S.hp-=18; S.detour=1.5; ev('bad','Meteor hit! ☄'); }
-    else { S.hp-=6; ev('bad','Yokai swarm! They\'re climbing on!'); spawnZombie(pick(['cab','cargo']), true); spawnZombie(pick(['cab','cargo']), true); }
-    return false; });
-  // boarding: calm at first, then often; going fast shakes some off
-  if(S.t>=S.nextZ && (w<3 || !play || f<=0)) S.nextZ=S.t+1;
-  else if(S.t>=S.nextZ){ spawnZombie(pick(['cab','cab','cargo'])); S.nextZ=S.t+7+12*(1-f)+Math.random()*4; }
-  // zombies wobble to their goal and wreck it every 3 s; each one aboard also wears the train down a little
-  const spd=40+20*f;
-  for(const z of S.zs){
-    const g = z.goal==='valve' ? {...VALVE[z.vc], a:'cab'} : SPOT[z.goal], dx=g.x-z.x, dy=g.y-z.y, d=Math.hypot(dx,dy);
-    if(d>38){ z.x+=dx/d*spd*dt; z.y+=dy/d*spd*dt; }
-    else if((z.wt+=dt)>=3){ z.wt=0;
-      if(z.goal==='fire') S.power=Math.max(0,S.power-15); else if(z.goal==='pump') S.water=Math.max(0,S.water-15);
-      else if(z.goal==='lampA'||z.goal==='lampB'){ const k=z.goal.slice(-1); if(S.lamps[k]){ S.lamps[k]=0; addOrder('all','lamp','lamp',18-6*f,k); } }
-      else if(z.goal==='lever') S.lever = S.lever==='L' ? 'R' : 'L';
-      else if(z.goal==='valve') S.valves[z.vc]^=1;
-      S.hp-=5; ev('chomp',''); }
-    S.hp-=.5*dt;
-  }
-}
-// an action from a crew member, checked against where they stand
 function hostAct(who, a){
-  if(!S || S.ph!=='run' || S.arriveT) return; const p=S.players[who];
-  if(MODE!=='guest' && (who==='h' || MODE==='local')){ p.x=pos[who].x; p.y=pos[who].y; p.a=pos[who].a; } // this device's crew: use where they are right now
-  const near=s=>s && p.a===s.a && Math.hypot(p.x-s.x, p.y-s.y)<=REACH;
+  if(!S || S.ph!=='run' || S.arriveT) return;
+  const driver = MODE==='local' || S.roles.driver===who;
   if(a.k==='hint'){ const o=S.orders.find(o=>o.id===a.id); if(o && !o.hint){ o.hint=1; S.stats.hints++; } return; }
-  if(a.k==='go' && (S.roles.driver===who || MODE==='local')){ const M=S.mp, from=M.to||M.at; if(NB[from].includes(a.id)){ M.next=a.id; ev('lane',''); } return; }
-  if(a.k==='seat' && near(SPOT.seat) && !S.driver){ S.driver=who; ev('seat',''); return; }
-  if(a.k==='leave' && S.driver===who){ S.driver=null; return; }
-  if(a.k==='thr' && S.driver===who && typeof a.v==='number'){ S.thr=Math.max(0,Math.min(1,a.v)); return; }
-  if(a.k==='lane' && S.driver===who){ S.lane=Math.max(0,Math.min(2,S.lane+(a.d>0?1:-1))); ev('lane',''); return; }
-  if(a.k==='mop'){ const m=MOPS.find(m=>m.c===a.c && m.a===p.a && Math.hypot(p.x-m.x,p.y-m.y)<=REACH); if(m){ p.carry=a.c; ev('pick',''); } return; }
-  if(a.k==='bonk' && COLORS.includes(p.carry)){ const z=S.zs.find(z=>z.id===a.id && z.a===p.a && Math.hypot(p.x-z.x,p.y-z.y)<=REACH+10); if(!z) return;
-    if(z.c===p.carry){ S.zs=S.zs.filter(x=>x!==z); S.knock={n:(S.knock?S.knock.n:0)+1, x:z.x, y:z.y, c:z.c}; const o=S.orders.find(o=>o.kind==='zombie' && o.target===z.id && !o.done); if(o) finish(o,true); ev('ok','ばいばい! 👻'); }
-    else { S.stats.wrong++; ev('bad','Wrong お札! It needs '+W[z.c].k); }
-    return; }
-  if(a.k==='bin' && near(SPOT.bin) && p.carry!=='coal'){ p.carry='coal'; ev('pick',''); return; }
-  if(a.k==='fire' && near(SPOT.fire) && p.carry==='coal'){ p.carry=0; S.power=Math.min(100, S.power+35); ev('fire',''); active('coal').forEach(o=>finish(o,true)); return; }
-  if(a.k==='brake' && near(SPOT.brake)){ S.brakeHold+=.3; if(!S.orders.some(o=>o.kind==='brake')) S.speed*=.97; return; }
-  if(a.k==='pump' && near(SPOT.pump)){ S.water=Math.min(100, S.water+8); if(S.water>=85 && active('water').length){ active('water').forEach(o=>finish(o,true)); ev('ok','OK! '+W.mizu.k); } return; }
-  if(a.k==='lamp' && (a.id==='A'||a.id==='B') && near(SPOT['lamp'+a.id]) && !S.lamps[a.id]){ S.lamps[a.id]=1; const o=S.orders.find(o=>!o.done && o.kind==='lamp' && o.target===a.id); if(o) finish(o,true); ev('ok','OK! '+W.lamp.k); return; }
-  if(a.k==='lever' && near(SPOT.lever)){ S.lever = S.lever==='L' ? 'R' : 'L'; ev('lever',''); return; }
-  if(a.k==='valve' && VALVE[a.c] && near({...VALVE[a.c], a:'cab'})){
-    S.valves[a.c]^=1; const want=active('valve').filter(o=>o.word===a.c);
-    if(want.length){ want.forEach(o=>finish(o,true)); ev('ok','OK! '+W[a.c].k); }
-    else if(active('valve').length){ S.hp-=12; S.stats.wrong++; ev('bad','Wrong valve! Steam!'); }
-  }
+  if(a.k==='gate' && driver && P[a.id] && dist3(S.ship,P[a.id])<GATE_R*3){
+    const off=S.pax.filter(p=>p.dest===a.id);
+    if(off.length){ S.pax=S.pax.filter(p=>p.dest!==a.id); off.forEach(p=>{ const o=S.orders.find(o=>o.kind==='ride' && o.target===p.id && !o.done); if(o) finish(o,true); S.stats.del++; }); ev('del','ありがとう! '+W[a.id].k); }
+    else ev('gate',''); return; }
+  if(a.k==='hit' && driver){ const h=S.hz.find(h=>h.id===a.id); if(h){ S.hz=S.hz.filter(x=>x!==h); S.hp-=h.type==='meteor'?10:6; S.stats.hits++; ev('bad', h.type==='meteor'?'Meteor hit! ☄':'Bumped a yokai! 👻'); } }
 }
-function hostIn(who, m){ // a guest message: absolute position + recent actions with counters
+function hostIn(who, m){
   if(!S || !m) return;
   if(m.ready && S.ph==='ready') S.ready[who]=true;
-  if(typeof m.x==='number'){ const p=S.players[who]; p.x=m.x; p.y=m.y; p.a=AREA[m.a]?m.a:'cab'; pos[who]={x:m.x,y:m.y,a:p.a}; }
+  if(m.ship && S.roles.driver===who) S.ship=m.ship;
   (m.acts||[]).forEach(a=>{ if(a.n>LOCAL.seen[who]){ LOCAL.seen[who]=a.n; hostAct(who, a); } });
 }
+function doAct(a){ if(MODE==='guest'){ LOCAL.actN++; LOCAL.acts.push({...a, n:LOCAL.actN}); if(LOCAL.acts.length>12) LOCAL.acts.shift(); sendGuest(true); } else hostAct(ME, a); }
+const iDrive=()=>!!S && (MODE==='local' ? LOCAL.view==='driver' : S.roles.driver===ME);
 
-// ---------- my own actions ----------
-function doAct(a){
-  if(MODE==='guest'){ LOCAL.actN++; LOCAL.acts.push({...a, n:LOCAL.actN}); if(LOCAL.acts.length>12) LOCAL.acts.shift(); sendGuest(true); }
-  else hostAct(ME, a);
-}
-function nearest(){ // the closest thing I can use, for the action button
-  const p=pos[ME], list=[];
-  const add=(k,s,label,extra)=>{ if(s.a===p.a){ const d=Math.hypot(p.x-s.x,p.y-s.y); if(d<=REACH) list.push({k,d,label,sx:s.x,sy:s.y,...extra}); } };
-  const carry=S && S.players[ME].carry;
-  if(S && S.roles && S.roles.driver===ME) return null;            // the driver works the map, not the train
-  if(S && COLORS.includes(carry)){ let best=null; S.zs.forEach(z=>{ if(z.a===p.a){ const d=Math.hypot(p.x-z.x,p.y-z.y); if(d<=REACH+10 && (!best||d<best.d)) best={k:'bonk', d, id:z.id, label:'SHOO!', sx:z.x, sy:z.y}; } }); if(best){ best.d-=15; list.push(best); } } // SHOO wins ties, but a charm you're standing at still wins
-  if(carry!=='coal') add('bin', SPOT.bin, 'LOAD'); else add('fire', SPOT.fire, 'FIRE');
-  MOPS.forEach(m=>{ if(carry!==m.c) add('mop', m, 'TAKE\nお札', {c:m.c}); });
-  COLORS.forEach(c=>add('valve', {...VALVE[c], a:'cab'}, 'TURN', {c}));
-  add('brake', SPOT.brake, 'BRAKE\n(hold)'); add('ladder', SPOT.ladder, 'CLIMB\nUP'); add('hatch', SPOT.hatch, 'CLIMB\nDOWN');
-  add('door', SPOT.door, 'CARGO\nCAR ◀'); add('back', SPOT.back, 'CAB ▶'); add('pump', SPOT.pump, 'PUMP\n(hold)');
-  if(S){ ['A','B'].forEach(k=>{ if(!S.lamps[k]) add('lamp', SPOT['lamp'+k], 'LIGHT', {id:k}); }); }
-  list.sort((a,b)=>a.d-b.d); return list[0]||null;
-}
-function useNearest(){
-  const n=nearest(); if(!n || !S || S.ph!=='run') return;
-  if(n.k==='ladder'){ pos[ME]={x:SPOT.hatch.x, y:SPOT.hatch.y-50, a:'roof'}; SND.pick(); return; }
-  if(n.k==='hatch'){ pos[ME]={x:SPOT.ladder.x, y:SPOT.ladder.y+60, a:'cab'}; SND.pick(); return; }
-  if(n.k==='door'){ pos[ME]={x:SPOT.back.x-70, y:SPOT.back.y, a:'cargo'}; SND.pick(); return; }
-  if(n.k==='back'){ pos[ME]={x:SPOT.door.x+70, y:SPOT.door.y, a:'cab'}; SND.pick(); return; }
-  doAct({k:n.k, c:n.c, id:n.id});
-}
-
-// ---------- networking: claude.ai room (inside claude.ai) or PeerJS (anywhere else) ----------
+// ---------- networking: claude.ai room inside claude.ai, PeerJS anywhere else ----------
 async function roomApi(){ try{ return window.claude && claude.use ? await claude.use('room') : null; }catch(e){ return null; } }
 async function netHost(code){
   const R=await roomApi();
-  if(R){ const room=await R.join('mrc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room};
+  if(R){ const room=await R.join('grc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room};
     room.presence({role:'host'}); room.onPeers(ch=>{ const gp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='guest'); guestHere=!!gp; if(gp && gp.presence.inp) hostIn('g', gp.presence.inp); });
     NET.send=st=>room.presence({role:'host', st}).catch(()=>{}); return true; }
   if(!window.Peer) return 'PeerJS did not load';
-  return new Promise(res=>{ const peer=new Peer('kotoba-mrc-'+code.toLowerCase(), {debug:0}); NET={kind:'online (PeerJS)', code, peer};
+  return new Promise(res=>{ const peer=new Peer('kotoba-grc-'+code.toLowerCase(), {debug:0}); NET={kind:'online (PeerJS)', code, peer};
     peer.on('open', ()=>res(true)); peer.on('error', e=>res(e.type==='unavailable-id' ? 'taken' : 'Could not open a room: '+e.type));
     peer.on('connection', c=>{ NET.conn=c; c.on('open', ()=>{ guestHere=true; }); c.on('data', m=>m && m.inp && hostIn('g', m.inp)); c.on('close', ()=>{ guestHere=false; toast('Your friend left','bad'); }); });
     NET.send=st=>{ if(NET.conn && NET.conn.open) NET.conn.send({st}); }; });
 }
 async function netJoin(code){
   const R=await roomApi();
-  if(R){ const room=await R.join('mrc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room}; room.presence({role:'guest', inp:{}});
+  if(R){ const room=await R.join('grc-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room}; room.presence({role:'guest', inp:{}});
     room.onPeers(ch=>{ const hp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='host'); if(hp && hp.presence.st) onHostState(hp.presence.st); });
     NET.send=inp=>room.presence({role:'guest', inp}).catch(()=>{}); return true; }
   if(!window.Peer) return 'PeerJS did not load';
   return new Promise(res=>{ const peer=new Peer({debug:0}); NET={kind:'online (PeerJS)', code, peer}; let done=false;
     const t=setTimeout(()=>{ if(!done){ done=true; res('No room with that code (or the connection is blocked).'); } }, 12000);
     peer.on('error', e=>{ if(!done){ done=true; clearTimeout(t); res(e.type==='peer-unavailable' ? 'No room with that code.' : 'Connection problem: '+e.type); } });
-    peer.on('open', ()=>{ const c=peer.connect('kotoba-mrc-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
+    peer.on('open', ()=>{ const c=peer.connect('kotoba-grc-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
       c.on('open', ()=>{ if(!done){ done=true; clearTimeout(t); res(true); } }); c.on('data', m=>m && m.st && onHostState(m.st)); c.on('close', ()=>toast('The host left','bad')); });
     NET.send=inp=>{ if(NET.conn && NET.conn.open) NET.conn.send({inp}); }; });
 }
-let lastSend=0;
-function sendGuest(now){ const t=performance.now(); if(!now && t-lastSend<(NET.room?160:80)) return; lastSend=t;
-  NET.send({x:Math.round(pos.g.x), y:Math.round(pos.g.y), a:pos.g.a, acts:LOCAL.acts.slice(), ready:LOCAL.ready}); }
-let lastPush=0;
-function pushState(){ const t=performance.now(); if(t-lastPush<(NET.room?160:90)) return; lastPush=t; NET.send(S); }
-function onHostState(st){ const fresh=!S || S.gid!==st.gid; S=st; if(fresh) newRun(); pos.h={x:st.players.h.x, y:st.players.h.y, a:st.players.h.a}; }
+let lastSend=0, lastPush=0;
+function sendGuest(now){ const t=performance.now(); if(!now && t-lastSend<(NET.room?160:70)) return; lastSend=t;
+  NET.send({acts:LOCAL.acts.slice(), ready:LOCAL.ready, ship: S && S.roles.driver==='g' ? {x:+SHIP.x.toFixed(1),y:+SHIP.y.toFixed(1),z:+SHIP.z.toFixed(1),yaw:+SHIP.yaw.toFixed(3),pitch:+SHIP.pitch.toFixed(3)} : null}); }
+function pushState(){ const t=performance.now(); if(t-lastPush<(NET.room?160:80)) return; lastPush=t; NET.send(S); }
+function onHostState(st){ const fresh=!S || S.gid!==st.gid; S=st; if(fresh) newRun(); }
 
-// ---------- HUD + cards ----------
+// ---------- the driver's ship (simulated on the driving phone, so steering never waits for the network) ----------
+const IN={dx:0, dy:0, boost:false, keys:{}};
+let gateCool={}, hitSent={};
+function flyShip(dt){
+  // take over from the shared state when I start driving (start of a run, or after the swap)
+  const stamp=S.gid+':'+(MODE==='local'?'L':S.roles.driver); if(SHIP.stamp!==stamp){ Object.assign(SHIP, S.ship, {roll:0, spd:30, stamp}); }
+  const k=IN.keys; let dx=IN.dx+((k.arrowright||k.d)?1:0)-((k.arrowleft||k.a)?1:0), dy=IN.dy+((k.arrowdown||k.s)?1:0)-((k.arrowup||k.w)?1:0);
+  dx=Math.max(-1,Math.min(1,dx)); dy=Math.max(-1,Math.min(1,dy));
+  const boost = !!(IN.boost || k.shift || k[' ']);
+  SHIP.yaw -= dx*1.25*dt; SHIP.pitch = Math.max(-.7, Math.min(.7, SHIP.pitch - dy*.85*dt)); SHIP.roll += (-dx*.45-SHIP.roll)*Math.min(1,dt*5);
+  const want = S.arriveT ? 0 : boost ? 85 : 42; SHIP.spd += (want-SHIP.spd)*Math.min(1, dt*1.6); SHIP.boost=boost;
+  const fx=-Math.sin(SHIP.yaw)*Math.cos(SHIP.pitch), fy=Math.sin(SHIP.pitch), fz=-Math.cos(SHIP.yaw)*Math.cos(SHIP.pitch);
+  SHIP.x+=fx*SHIP.spd*dt; SHIP.y+=fy*SHIP.spd*dt; SHIP.z+=fz*SHIP.spd*dt;
+  // the edge of the galaxy turns you back gently
+  if(Math.hypot(SHIP.x,SHIP.z)>1050){ const back=Math.atan2(SHIP.x, SHIP.z); let d=back-SHIP.yaw; d=Math.atan2(Math.sin(d),Math.cos(d)); SHIP.yaw+=d*Math.min(1,dt*.8); }
+  SHIP.y=Math.max(-260, Math.min(260, SHIP.y));
+  if(MODE!=='guest') S.ship={x:SHIP.x,y:SHIP.y,z:SHIP.z,yaw:SHIP.yaw,pitch:SHIP.pitch};
+  // gates and hazards are checked here, on the driving phone, then confirmed by the host
+  const now=performance.now();
+  for(const id in P){ if(dist3(SHIP,P[id])<GATE_R && !(gateCool[id]>now)){ gateCool[id]=now+3000; SND.gate(); FX.flash=.35; doAct({k:'gate', id}); } }
+  for(const h of S.hz||[]){ if(!hitSent[h.id] && dist3(SHIP,h)<15){ hitSent[h.id]=1; FX.shake=.5; doAct({k:'hit', id:h.id}); } }
+}
+
+// ---------- 3D: stars, planets, gates with kana signs, hazards ----------
+const FX={shake:0, flash:0};
+let R3=null;
+function initThree(){
+  if(R3 || !window.THREE) return; const T=THREE;
+  const renderer=new T.WebGLRenderer({antialias:false, powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(1.5, devicePixelRatio||1)); $('#three').appendChild(renderer.domElement);
+  const scene=new T.Scene(); scene.background=new T.Color(0x0B0F2C); scene.fog=new T.Fog(0x0B0F2C, 400, 1600);
+  const cam=new T.PerspectiveCamera(72, 2, 1, 4000); cam.rotation.order='YXZ';
+  // stars on a big sphere, plus a soft milky way band
+  const n=2600, pos=new Float32Array(n*3); for(let i=0;i<n;i++){ const u=Math.random()*2-1, th=Math.random()*6.283, r=1500+Math.random()*900, s=Math.sqrt(1-u*u); pos[i*3]=r*s*Math.cos(th); pos[i*3+1]=r*u; pos[i*3+2]=r*s*Math.sin(th); }
+  const sg=new T.BufferGeometry(); sg.setAttribute('position', new T.BufferAttribute(pos,3));
+  scene.add(new T.Points(sg, new T.PointsMaterial({color:0xFFF8EE, size:2.2, sizeAttenuation:false, fog:false})));
+  const mw=new Float32Array(1500*3); for(let i=0;i<1500;i++){ const a=Math.random()*6.283, r=1700+Math.random()*300; mw[i*3]=r*Math.cos(a); mw[i*3+1]=(Math.random()-.5)*160+Math.sin(a*2)*120; mw[i*3+2]=r*Math.sin(a); }
+  const mg=new T.BufferGeometry(); mg.setAttribute('position', new T.BufferAttribute(mw,3)); scene.add(new T.Points(mg, new T.PointsMaterial({color:0xC9A7FF, size:1.6, sizeAttenuation:false, fog:false, transparent:true, opacity:.6})));
+  // close dust that streaks past, so speed is felt
+  const dn=500, dpos=new Float32Array(dn*3); for(let i=0;i<dn*3;i++) dpos[i]=(Math.random()-.5)*400;
+  const dg=new T.BufferGeometry(); dg.setAttribute('position', new T.BufferAttribute(dpos,3)); const dust=new T.Points(dg, new T.PointsMaterial({color:0xBFD2FF, size:1.4, sizeAttenuation:true, transparent:true, opacity:.8})); scene.add(dust);
+  const loader=new T.TextureLoader(), sprite=(file, sc)=>{ const s=new T.Sprite(new T.SpriteMaterial({map:loader.load(ART+file), fog:false, transparent:true})); s.scale.set(sc,sc,1); return s; };
+  // planets far away (art)
+  [[0,-1300,180,-900,320],[1,1200,-120,-700,240],[2,-900,-200,1100,200],[3,1000,260,900,280]].forEach(([i,x,y,z,sc])=>{ const s=sprite('planet'+i+'.webp', sc); s.position.set(x,y,z); scene.add(s); });
+  // gates: a golden ring, a light beam and a kana sign (the art's blank board; the game writes the kana)
+  const signImg=new Image(); signImg.src=ART+'sign.webp';
+  const gates={};
+  for(const id in P){ const p=P[id], g=new T.Group(); g.position.set(p.x,p.y,p.z);
+    const ring=new T.Mesh(new T.TorusGeometry(GATE_R-3, 2.6, 10, 44), new T.MeshBasicMaterial({color:0xFFB23E})); g.add(ring);
+    const glow=new T.Mesh(new T.TorusGeometry(GATE_R-7, .9, 6, 40), new T.MeshBasicMaterial({color:0xFFF3C4, transparent:true, opacity:.7})); g.add(glow);
+    const beam=new T.Mesh(new T.CylinderGeometry(.8,.8,600,6,1,true), new T.MeshBasicMaterial({color:0xFFE6B0, transparent:true, opacity:.12, fog:false})); beam.position.y=300+GATE_R+60; g.add(beam);
+    const cv=document.createElement('canvas'); cv.width=384; cv.height=192; const tex=new T.CanvasTexture(cv);
+    const sign=new T.Sprite(new T.SpriteMaterial({map:tex, transparent:true})); sign.scale.set(96,48,1); sign.position.y=GATE_R+34; g.add(sign);
+    const draw=()=>{ const c=cv.getContext('2d'); c.clearRect(0,0,384,192); if(signImg.complete && signImg.naturalWidth) c.drawImage(signImg, 0, 0, 384, 192); else { c.fillStyle='#fff'; c.fillRect(20,30,344,120); }
+      c.fillStyle='#2A211B'; c.font='900 64px "Zen Maru Gothic", sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(W[id].k, 192, 88); tex.needsUpdate=true; };
+    draw(); signImg.addEventListener('load', draw); if(document.fonts) document.fonts.load('900 64px "Zen Maru Gothic"', W[id].k).then(draw).catch(()=>{});
+    g.lookAt(0, p.y, 0); scene.add(g); gates[id]={g, ring}; }
+  const hzTex={}; ['meteor','obake','kappa','tanuki'].forEach(t=>hzTex[t]=loader.load(ART+(t==='meteor'?'fx-meteor.webp':'yokai-'+t+'.webp')));
+  R3={renderer, scene, cam, gates, hzTex, hz:{}, dust};
+  const size=()=>{ const w=innerWidth, h=innerHeight; renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; size(); addEventListener('resize', size);
+}
+function draw3(dt, time){
+  if(!R3) return; const {renderer, scene, cam, gates, hzTex, dust}=R3;
+  let sx=0, sy=0; if(FX.shake>0){ FX.shake-=dt; sx=(Math.random()-.5)*FX.shake*6; sy=(Math.random()-.5)*FX.shake*6; }
+  cam.position.set(SHIP.x+sx, SHIP.y+6+sy, SHIP.z); cam.rotation.set(SHIP.pitch, SHIP.yaw, SHIP.roll);
+  const fov = SHIP.boost ? 86 : 72; if(Math.abs(cam.fov-fov)>.2){ cam.fov+=(fov-cam.fov)*Math.min(1,dt*4); cam.updateProjectionMatrix(); }
+  // the dust box follows the ship in 400-unit cells, so it always surrounds you
+  dust.position.set(Math.round(SHIP.x/400)*400, Math.round(SHIP.y/400)*400, Math.round(SHIP.z/400)*400);
+  for(const id in gates){ gates[id].ring.rotation.z = time/900; }
+  // hazards: one sprite each, following the host's positions
+  const live={}; (S.hz||[]).forEach(h=>{ live[h.id]=1; let s=R3.hz[h.id]; if(!s){ s=R3.hz[h.id]=new THREE.Sprite(new THREE.SpriteMaterial({map:hzTex[h.type], transparent:true})); s.scale.set(26,26,1); scene.add(s); } s.position.set(h.x,h.y,h.z); });
+  Object.keys(R3.hz).forEach(id=>{ if(!live[id]){ scene.remove(R3.hz[id]); R3.hz[id].material.dispose(); delete R3.hz[id]; } });
+  if(FX.flash>0){ FX.flash-=dt; scene.background.setRGB(.04+FX.flash*.8, .06+FX.flash*.6, .17+FX.flash*.3); } else scene.background.setHex(0x0B0F2C);
+  renderer.render(scene, cam);
+}
+
+// ---------- the navigator's map ----------
+function mapFrame(){
+  const svg=$('#mapSvg'), seen=new Set(S.seen), key=S.seen.join(',');
+  if(svg.dataset.k!==key){ svg.dataset.k=key;
+    svg.setAttribute('viewBox','-820 -560 1640 1080');
+    // places the ship has flown near show their picture; the rest are "?" marks (something is there, but what?)
+    svg.innerHTML=`<circle cx="0" cy="0" r="1050" fill="none" stroke="#3D4A92" stroke-width="4" stroke-dasharray="10 14"/>`+
+      Object.entries(P).map(([id,p])=>{ const s=seen.has(id); return `<g class="node ${s?'':'fog'}" data-place="${id}"><circle cx="${p.x}" cy="${p.z}" r="78"/><text x="${p.x}" y="${p.z+6}">${s?p.ic:'?'}</text></g>`; }).join('')+
+      `<g id="shipMk"><path d="M0 -52 L34 34 L0 16 L-34 34 Z" fill="#FFB23E" stroke="#2A211B" stroke-width="5" stroke-linejoin="round"/></g>`; }
+  const s=S.ship||{x:0,z:0,yaw:0}, mk=$('#shipMk'); if(mk) mk.setAttribute('transform',`translate(${s.x.toFixed(0)},${s.z.toFixed(0)}) rotate(${(-s.yaw*180/Math.PI).toFixed(1)})`);
+  // the tickets (only the navigator sees these); the first two times a word appears its meaning shows by itself
+  const box=$('#tickets'), list=S.orders.filter(o=>o.kind==='ride' && (!o.done || S.t-(o.doneT||S.t)<1.2));
+  list.forEach(o=>{ if(LOCAL.auto[o.id]==null){ const c=LOCAL.wc[o.word]||0; LOCAL.auto[o.id]=c<2; LOCAL.wc[o.word]=c+1; } });
+  const tk=list.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
+  if(box.dataset.k!==tk){ box.dataset.k=tk;
+    box.innerHTML=`<h4>🎫 TICKETS</h4>`+(list.length ? list.map(o=>{ const p=S.pax.find(p=>p.id===o.target)||{face:'🙂'}, show=LOCAL.hinted[o.id]||LOCAL.auto[o.id];
+      return `<div class="tk ${LOCAL.seenTk[o.id]?'':'new'}" data-tk="${o.word}"><span class="fc">${o.done>0?'✅':o.done<0?'💢':p.face}</span><button data-say="${o.word}" aria-label="Hear it">🔊</button>
+        <b>${W[o.word].k}${show?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button><span class="t" data-t="${o.id}"></span>`}</div>`; }).join('') : '<p class="small" style="color:#A9B3E0">No passengers right now</p>');
+    list.forEach(o=>{ if(!LOCAL.seenTk[o.id]){ LOCAL.seenTk[o.id]=1; if(!o.done){ SND.board(); setTimeout(()=>say(o.word), 200); } } }); }
+  box.querySelectorAll('[data-t]').forEach(el=>{ const o=S.orders.find(x=>x.id==el.dataset.t); if(o) el.style.transform=`scaleX(${Math.max(0,(o.until-S.t)/o.life).toFixed(3)})`; });
+}
+
+// ---------- HUD, cards ----------
 function toast(txt, kind){ const t=$('#toast'); t.textContent=txt; t.className='toast '+(kind||''); try{ t.animate([{opacity:0,transform:'translate(-50%,-30%) scale(.7)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.05)',offset:.15},{opacity:1,transform:'translate(-50%,-50%)',offset:.8},{opacity:0,transform:'translate(-50%,-70%)'}],{duration:1500}); }catch(e){} }
 function card(html){ const c=$('#card'); c.innerHTML=`<div class="in">${html}</div>`; c.hidden=false; }
-function cardHide(){ $('#card').hidden=true; }
-const WORDS_HTML=()=>`<div class="words">${Object.entries(W).map(([k,w])=>`<button class="word" data-hear="${k}"><b>${w.k}</b><small>${COLORS.includes(k)?`<span class="dot" style="background:#${VALVE[k].c.toString(16).padStart(6,'0')}"></span>`:''}${w.ro} · ${w.m}</small></button>`).join('')}</div>`;
 function lobby(msg){
   MODE=''; S=null; $('#hud').hidden=true;
-  card(`<h1>銀河鉄道<small>Galaxy Rail Crew · greybox</small></h1>
-    <p>Two crew, one train flying through the stars. Go anywhere: the cab (coal, fire, coloured valves, brake, the 🚂 driver's seat), the cargo car (water, lamps) or up the ladder to the roof (junction signs and lever). Yokai sneak aboard. Listen to the Japanese orders and talk to each other.</p>
+  card(`<img class="key" src="${ART}key-art.webp" alt="The galaxy train with the shiba crew and yokai"><h1>銀河鉄道<small>Galaxy Rail Crew</small></h1>
+    <p>One of you <b>flies</b> the train through space. The other has the <b>map</b> and the passengers' tickets. Find the places, deliver everyone, talk to each other!</p>
     ${msg?`<p style="color:#C9361F;font-weight:900">${esc(msg)}</p>`:''}
-    <div class="row"><button class="btn" data-a="create">Create a room</button></div>
-    <div class="row"><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn alt" data-a="join">Join</button></div>
-    <div class="row"><button class="btn alt" data-a="local">Local test · both crew on this device</button></div>`);
+    <div class="row"><button class="btn" data-a="create">Create a room</button><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn alt" data-a="join">Join</button></div>
+    <div class="row"><button class="btn alt" data-a="local">Local test · both on this device</button></div>`);
 }
-function practice(){
+function howTo(){
+  const me=MODE==='guest'?'g':'h';
   card(`<h2>How to play<small>no Japanese needed to start</small></h2>
-    <p><b>🚂 Driver</b> (${MODE==='guest'?'your friend':'P1'} first): your screen is a map of places as pictures, mostly hidden in fog. Tap a glowing place to go there.</p>
-    <p><b>🧰 Crew</b>: run around the train keeping it alive, and read each passenger's 🎫 ticket to the driver. Only you can read the tickets, only the driver sees the map. Talk! You swap jobs after wave 3.</p>
-    <p>Each wave teaches its new words first, with sound and meaning, then you play, then a breather.</p>
+    <div class="roles"><div><img src="${ART}crew-p1-cap.webp" alt=""><span><b>🚀 Driver</b> (${me==='h'?'you':'your friend'} first): steer with the joystick, hold BOOST. Fly through the ring whose sign matches. Signs are in kana only!</span></div>
+    <div><img src="${ART}crew-p2.webp" alt=""><span><b>🗺 Navigator</b> (${me==='g'?'you':'your friend'} first): you have the map (pictures only) and the passengers' 🎫 tickets in kana. Find the place, guide the driver!</span></div></div>
+    <p>Each wave teaches its new words first, then you play, then a breather. You swap jobs after wave 3.</p>
     <div class="row"><button class="btn" data-a="ready">Ready ▶</button></div>`);
 }
 function results(){
-  const st=S.stats, tot=S.orders.length, t=Math.round(S.t);
-  card(`<h2>${S.hp>60?'到着! Great run':'到着! Arrived'}<small>${st.hints?`with ${st.hints} hint${st.hints>1?'s':''}`:'no hints'}</small></h2>
-    <div class="res"><span><b>${st.del}</b>passengers</span><span><b>${Math.min(WAVES.length,(S.dir?S.dir.w:0)+1)}/${WAVES.length}</b>waves</span><span><b>${st.done}/${tot}</b>orders</span><span><b>${st.wrong}</b>mistakes</span><span><b>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</b>time</span><span><b>${Math.round(S.hp)}%</b>train</span></div>
-    
-    <div class="row">${MODE!=='guest'?'<button class="btn" data-a="again">Run again ▶</button>':'<p class="small">The host can start the next run.</p>'}<button class="btn alt" data-a="lobby">Lobby</button></div>`);
+  const st=S.stats, t=Math.round(S.t);
+  card(`<img class="key" src="${ART}key-art.webp" alt="" style="max-height:24vh"><h2>${st.del>=8?'到着! Amazing crew':'到着! Arrived'}<small>${st.hints?`with ${st.hints} hint${st.hints>1?'s':''}`:'no hints'}</small></h2>
+    <div class="res"><span><b>${st.del}</b>delivered</span><span><b>${st.missed}</b>gave up</span><span><b>${st.hits}</b>bumps</span><span><b>${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}</b>time</span><span><b>${Math.round(S.hp)}%</b>train</span></div>
+    <div class="row">${MODE!=='guest'?'<button class="btn" data-a="again">Fly again ▶</button>':'<p class="small">The host can start the next run.</p>'}<button class="btn alt" data-a="lobby">Lobby</button></div>`);
 }
-let shownPh='', evSeen=0, orderSeen={};
-function newRun(){ evSeen=S.ev.n; orderSeen={}; LOCAL.hinted={}; LOCAL.auto={}; LOCAL.wc={}; shownPh=''; LOCAL.ready=false; pos.h={x:300,y:300,a:'cab'}; pos.g={x:420,y:330,a:'cab'}; }
-function mapFrame(){
-  const M=S.mp, svg=$('#mapSvg'), from=M.to||M.at, can=M.to||M.dwell>0||true ? NB[from] : [], seen=new Set(M.seen), near=new Set(M.seen.flatMap(n=>NB[n]));
-  const key=M.seen.join(',')+'|'+from+'|'+M.next+'|'+M.at+'|'+M.to;
-  if(svg.dataset.k!==key){ svg.dataset.k=key;
-    const rails=RAILS.filter(([a,b])=>(seen.has(a)||seen.has(b))).map(([a,b])=>`<line class="rail ${(M.at===a&&M.to===b)||(M.at===b&&M.to===a)||(from===a&&M.next===b)||(from===b&&M.next===a)?'on':''}" x1="${MAP[a].x}" y1="${MAP[a].y}" x2="${MAP[b].x}" y2="${MAP[b].y}"/>`).join('');
-    const nodes=Object.entries(MAP).filter(([id])=>seen.has(id)||near.has(id)).map(([id,n])=>{ const isSeen=seen.has(id), cls=['node', isSeen?'seen':'fog', can.includes(id)?'can':'', M.next===id?'next':''].join(' ');
-      return `<g class="${cls}" data-go="${id}"><circle cx="${n.x}" cy="${n.y}" r="44"/><text x="${n.x}" y="${n.y+2}">${isSeen?n.ic:'?'}</text></g>`; }).join('');
-    // the map zooms to what you've discovered: big and close at the start, wider as you explore
-    const vis=Object.entries(MAP).filter(([id])=>seen.has(id)||near.has(id)).map(([,n])=>n), xs=vis.map(n=>n.x), ys=vis.map(n=>n.y);
-    let x0=Math.min(...xs)-80, x1=Math.max(...xs)+80, y0=Math.min(...ys)-110, y1=Math.max(...ys)+70; const asp=svg.clientWidth/Math.max(1,svg.clientHeight)||2;
-    let w=Math.max(420,x1-x0), h=Math.max(260,y1-y0); if(w/h<asp) w=h*asp; else h=w/asp; const cx=(x0+x1)/2, cy=(y0+y1)/2;
-    svg.setAttribute('viewBox', `${(cx-w/2).toFixed(0)} ${(cy-h/2).toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}`);
-    svg.innerHTML=rails+nodes+`<g id="trainMk"><circle r="20" fill="#FFB23E" stroke="#2A211B" stroke-width="5"/><text y="2" style="font-size:22px;text-anchor:middle;dominant-baseline:central">🚂</text></g>`; }
-  const a=MAP[M.at], b=M.to?MAP[M.to]:a, t=M.to?M.p:0, x=a.x+(b.x-a.x)*t, y=a.y+(b.y-a.y)*t-52;
-  const mk=$('#trainMk'); if(mk) mk.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
-  const row=$('#paxRow'), pk=S.pax.map(p=>p.id).join(','); if(row.dataset.k!==pk){ row.dataset.k=pk; row.innerHTML = S.pax.length ? `ABOARD ${S.pax.map(p=>`<span>${p.face}</span>`).join('')} · ask your crew where to!` : 'No passengers right now'; }
-}
+let shownPh='', evSeen=0;
+function newRun(){ evSeen=S.ev.n; shownPh=''; LOCAL.ready=false; LOCAL.hinted={}; LOCAL.auto={}; LOCAL.wc={}; LOCAL.seenTk={}; LOCAL.view=MODE==='local'?'driver':''; gateCool={}; hitSent={};
+  $('#tickets').dataset.k='-'; $('#mapSvg').dataset.k='-'; $('#waveCard').dataset.k=''; }
 function hudFrame(){
-  if(!S) return; const iDrive = !!(S.roles && S.roles.driver===ME && S.ph!=='ready');
+  if(!S) return;
   if(S.ph!==shownPh){ shownPh=S.ph;
-    if(S.ph==='ready'){ if(!LOCAL.ready) practice(); else card(`<h2>Waiting…<small>for your crewmate</small></h2><p>Room <b>${esc(NET.code)}</b> · ${esc(NET.kind)}</p>`); }
-    else if(S.ph==='run'){ cardHide(); $('#hud').hidden=false; }
+    if(S.ph==='ready'){ if(!LOCAL.ready) howTo(); else card(`<h2>Waiting…<small>for your crewmate</small></h2><p>Room <b>${esc(NET.code)}</b> · ${esc(NET.kind)}</p>`); }
+    else if(S.ph==='run'){ $('#card').hidden=true; $('#hud').hidden=false; }
     else if(S.ph==='over'){ results(); } }
-  if(S.ph==='ready' && LOCAL.ready && $('#card .words')) card(`<h2>Waiting…<small>for your crewmate</small></h2>`);
+  const drive=iDrive(); $('#driverUI').hidden=!drive; $('#navUI').hidden=drive; $('#three').style.visibility=drive?'visible':'hidden';
+  const roleTxt=`${ME}|${drive}|${MODE}`; const rl=$('#role'); if(rl.dataset.k!==roleTxt){ rl.dataset.k=roleTxt;
+    rl.innerHTML=`<img src="${ART}${ME==='h'?'crew-p1-cap':'crew-p2'}.webp" alt="">${MODE==='local'?(drive?'DRIVER view':'NAVIGATOR view'):(ME==='h'?'P1':'P2')+' · '+(drive?'DRIVER':'NAVIGATOR')}`; }
   if(S.ev.n>evSeen){ evSeen=S.ev.n; const e=S.ev;
-    if(e.kind==='ok'){ if(/ばいばい/.test(e.txt)) SND.bonk(); SND.ok(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); SCN && SCN.shake(); }
-    else if(e.kind==='go'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='zombie') SND.groan(); else if(e.kind==='board') SND.order(); else if(e.kind==='swap'){ SND.relax(); toast(e.txt,'go'); } else if(e.kind==='relax'){ SND.relax(); toast(e.txt,'ok'); } else if(e.kind==='wave'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='chomp') SND.chomp(); else if(e.kind==='lane'||e.kind==='seat') SND.lane(); else if(e.kind==='dodge'){ SND.dodge(); if(e.txt) toast(e.txt,'ok'); } else if(e.kind==='pick') SND.pick(); else if(e.kind==='fire') SND.fire(); else if(e.kind==='lever') SND.pick(); }
+    if(e.kind==='ok'||e.kind==='del'){ SND.fanfare(); toast(e.txt,'ok'); } else if(e.kind==='bad'){ SND.bad(); toast(e.txt,'bad'); FX.shake=Math.max(FX.shake,.4); }
+    else if(e.kind==='go'||e.kind==='wave'){ SND.whistle(); toast(e.txt,'go'); } else if(e.kind==='relax'){ SND.relax(); toast(e.txt,'ok'); }
+    else if(e.kind==='swap'){ SND.swap(); toast(e.txt,'go'); } else if(e.kind==='seen' && !drive) SND.gate(); }
   const set=(id,v,low)=>{ const b=$(id); b.firstElementChild.style.transform=`scaleX(${Math.max(0,v/100).toFixed(3)})`; b.classList.toggle('low', !!low); };
-  set('#hpBar', S.hp, S.hp<35); set('#fireBar', S.power, S.power<25); set('#waterBar', S.water, S.water<25);
-  const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=WAVES.slice(0,-1).map((x,i)=>`<em style="left:${(i+1)/WAVES.length*100}%"></em>`).join('')+`<em style="left:100%;border-radius:3px"></em><b></b>`;
-  trip.querySelectorAll('em').forEach((e,i)=>e.classList.toggle('ok', !!S.dir && i<S.dir.w));
-  const D=S.dir||{w:0,ph:'intro',t:0}, frac = D.ph==='intro' ? 0 : D.ph==='play' ? .1+.7*Math.min(1,D.t/T_PLAY) : .85; trip.querySelector('b').style.left=Math.min(100,(D.w+frac)/WAVES.length*100)+'%';
-  const p=pos[ME]; $('#where').textContent=`${ME==='h'?'P1':'P2'} · ${iDrive?'DRIVER':({roof:'ROOF',cab:'CAB',cargo:'CARGO CAR'})[p.a]}${S.players[ME].carry?' · coal':''}`;
-  // my orders (both crews' in the local test), newest first; the word is spoken once when it arrives
-  const mine = iDrive ? [] : S.orders.filter(o=>!o.done || S.t-(o.doneT||S.t)<1.2).slice(-6).reverse(); // the crew sees and hears every order; the driver only the map
-  const box=$('#orders'), key=mine.map(o=>o.id+':'+o.done+':'+(LOCAL.hinted[o.id]?1:0)).join('|');
-  if(box.dataset.k!==key){ box.dataset.k=key;
-    mine.forEach(o=>{ if(LOCAL.auto[o.id]==null){ const c=LOCAL.wc[o.word]||0; LOCAL.auto[o.id]= c<2; LOCAL.wc[o.word]=c+1; } }); // the first two times a word shows up, its meaning shows by itself
-    box.innerHTML=mine.map(o=>`<div class="ord ${orderSeen[o.id]?'':'new'} ${o.done>0?'done':o.done<0?'fail':''}" data-id="${o.id}">
-      <button data-say="${o.id}" aria-label="Hear it again">🔊</button><b>${o.kind==='zombie'?'👻':o.kind==='ride'?'🎫':''}${W[o.word].k}${LOCAL.hinted[o.id]?`<small>${W[o.word].ro} · ${W[o.word].m}</small>`:LOCAL.auto[o.id]?`<small class="auto">${W[o.word].ro} · ${W[o.word].m}</small>`:''}</b>
-      ${o.done?'':`<button data-hint="${o.id}" aria-label="Hint">?</button>`}${o.life&&!o.done?`<span class="t" data-t="${o.id}"></span>`:''}</div>`).join(''); }
-  mine.forEach(o=>{ if(!orderSeen[o.id]){ orderSeen[o.id]=1; if(!o.done){ SND.order(); setTimeout(()=>say(o.word), 180); } } });
-  box.querySelectorAll('[data-t]').forEach(el=>{ const o=S.orders.find(x=>x.id==el.dataset.t); if(o) el.style.transform=`scaleX(${Math.max(0,(o.until-S.t)/o.life).toFixed(3)})`; });
-  // the wave intro card (its new words, spoken one after another) and the breather banner
-  const D2=S.dir, wc=$('#waveCard'), rb=$('#restBanner'); const dIcon=k=>MAP[k]?MAP[k].ic+' ':'';
-  if(D2 && D2.ph==='intro'){ const Wv=WAVES[D2.w], key='w'+D2.w+':'+S.gid;
-    if(wc.dataset.k!==key){ wc.dataset.k=key; wc.innerHTML=`<h3><small>WAVE ${D2.w+1} OF ${WAVES.length}</small>${esc(Wv.name)}</h3>
-      <div class="words">${Wv.words.map(k=>`<button class="word" data-hear="${k}"><b>${dIcon(k)}${W[k].k}</b><small>${COLORS.includes(k)?`<span class="dot" style="background:#${VALVE[k].c.toString(16).padStart(6,'0')}"></span>`:''}${W[k].ro} · ${W[k].m}</small></button>`).join('')}</div>
-      <p>${esc(Wv.tip)}</p><div class="bar2"><i></i></div>`;
-      Wv.words.forEach((k,i)=>setTimeout(()=>say(k), 500+i*1200)); }
-    wc.hidden=false; const bi=wc.querySelector('.bar2 i'); if(bi) bi.style.transform=`scaleX(${Math.max(0,1-D2.t/T_INTRO).toFixed(3)})`;
+  set('#hpBar', S.hp, S.hp<35);
+  const trip=$('#trip'); if(!trip.childElementCount) trip.innerHTML=WAVES.slice(0,-1).map((x,i)=>`<em style="left:${(i+1)/WAVES.length*100}%"></em>`).join('')+'<b></b>';
+  const D=S.dir||{w:0,ph:'intro',t:0}; trip.querySelectorAll('em').forEach((e,i)=>e.classList.toggle('ok', i<D.w));
+  trip.querySelector('b').style.left=Math.min(100,(D.w+(D.ph==='intro'?0:D.ph==='play'?.1+.7*Math.min(1,D.t/T_PLAY):.85))/WAVES.length*100)+'%';
+  // wave intro card (words + pictures, spoken) and the breather banner
+  const wc=$('#waveCard'), rb=$('#restBanner');
+  if(S.ph==='run' && D.ph==='intro'){ const Wv=WAVES[D.w], key='w'+D.w+':'+S.gid;
+    if(wc.dataset.k!==key){ wc.dataset.k=key; wc.innerHTML=`<h3><small>WAVE ${D.w+1} OF ${WAVES.length}</small>${esc(Wv.name)}</h3>
+      ${Wv.words.length?`<div class="words">${Wv.words.map(k=>`<button class="word" data-hear="${k}"><b>${P[k].ic} ${W[k].k}</b><small>${W[k].ro} · ${W[k].m}</small></button>`).join('')}</div>`:''}
+      <p>${esc(Wv.tip)}</p><div class="bar2"><i></i></div>`; Wv.words.forEach((k,i)=>setTimeout(()=>say(k), 500+i*1300)); }
+    wc.hidden=false; const bi=wc.querySelector('.bar2 i'); if(bi) bi.style.transform=`scaleX(${Math.max(0,1-D.t/T_INTRO).toFixed(3)})`;
   } else wc.hidden=true;
-  rb.hidden=!(D2 && D2.ph==='rest'); if(D2 && D2.ph==='rest'){ const nx=WAVES[D2.w+1]; const t=`ひと休み · Breather${nx?' · next: '+nx.name:''}`; if(rb.textContent!==t) rb.textContent=t; }
-  // the driver's full-screen map (pictures only: the crew has the names)
-  $('#hud').classList.toggle('driving', iDrive); $('#mapv').hidden=!iDrive; if(iDrive) mapFrame();
-  const drv=S.roles?S.roles.driver:S.driver; $('#driveBadge').textContent = `🚂 ${drv==='h'?'P1':'P2'} driving`;
-  const wind=$('#wind'); wind.hidden=true;
-  if(false){ document.querySelectorAll('#lanes i').forEach((e,i)=>e.classList.toggle('me', i===S.lane)); $('#thrN').textContent='×'+(.5+S.thr).toFixed(1);
-    const L=$('#lanes'), want=S.obs.map(o=>o.id+'').join(','); if(L.dataset.k!==want){ L.dataset.k=want; L.querySelectorAll('.ob').forEach(e=>e.remove()); S.obs.forEach(o=>L.insertAdjacentHTML('beforeend', `<span class="ob" data-o="${o.id}">${o.kind==='wreck'?'☄️':'👻👻'}</span>`)); }
-    S.obs.forEach(o=>{ const e=L.querySelector(`[data-o="${o.id}"]`); if(e){ e.style.left=((o.lane+.5)/3*100)+'%'; e.style.top=((1-o.z)*85+5)+'%'; e.style.fontSize=(14+16*(1-o.z))+'px'; } }); }
-  const n=nearest(), btn=$('#actBtn'); const lbl=n ? (n.k==='lever' ? `LEVER\n${S.lever==='L'?'◀':S.lever==='R'?'▶':'·'}` : n.label) : '—';
-  if(btn.dataset.l!==lbl){ btn.dataset.l=lbl; btn.innerHTML=esc(lbl).replace('\n','<br>'); btn.classList.toggle('off', !n); }
+  rb.hidden=!(S.ph==='run' && D.ph==='rest'); if(D.ph==='rest'){ const nx=WAVES[D.w+1]; const t=`ひと休み · Breather${nx?' · next: '+nx.name:''}`; if(rb.textContent!==t) rb.textContent=t; }
+  if(drive){ const d=$('#dash'), k=Math.round(SHIP.spd/2)+'|'+S.pax.map(p=>p.face).join(''); if(d.dataset.k!==k){ d.dataset.k=k;
+    d.innerHTML=`<span>SPEED</span><b>${Math.round(SHIP.spd/2)*2}</b><span>· ABOARD</span>${S.pax.length?S.pax.map(p=>`<span class="f">${p.face}</span>`).join(''):'<span>nobody</span>'}<span>· ask your navigator!</span>`; } }
+  else mapFrame();
 }
 
-// ---------- input: joystick, action button, keys ----------
-// iPhone Safari ignores user-scalable=no: block double-tap zoom and pinch zoom ourselves
+// ---------- input ----------
 let lastTouchEnd=0;
 document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-lastTouchEnd<350) e.preventDefault(); lastTouchEnd=now; }, {passive:false});
 document.addEventListener('dblclick', e=>e.preventDefault(), {passive:false});
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
-document.addEventListener('touchmove', e=>{ if(e.touches.length>1) e.preventDefault(); }, {passive:false});
-const IN={dx:0, dy:0, keys:{}};
 (()=>{ const st=$('#stick'), kn=$('#knob'); let id=null, cx=0, cy=0;
   const move=e=>{ const R=55; let dx=e.clientX-cx, dy=e.clientY-cy; const d=Math.hypot(dx,dy); if(d>R){ dx*=R/d; dy*=R/d; } IN.dx=dx/R; IN.dy=dy/R; kn.style.transform=`translate(${dx}px,${dy}px)`; };
-  st.addEventListener('pointerdown', e=>{ e.preventDefault(); id=e.pointerId; const r=st.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; st.setPointerCapture(id); move(e); });
+  st.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); id=e.pointerId; const r=st.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; try{ st.setPointerCapture(id); }catch(x){} move(e); });
   st.addEventListener('pointermove', e=>{ if(e.pointerId===id){ e.preventDefault(); move(e); } });
   const up=e=>{ if(e.pointerId===id){ id=null; IN.dx=IN.dy=0; kn.style.transform=''; } }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up); })();
-let holdT=null;
-const actDown=()=>{ $('#actBtn').classList.add('held'); useNearest(); clearInterval(holdT); holdT=setInterval(()=>{ const n=nearest(); if(n && (n.k==='brake' || n.k==='pump')) doAct({k:n.k}); }, 250); };
-const actUp=()=>{ $('#actBtn').classList.remove('held'); clearInterval(holdT); };
-$('#actBtn').addEventListener('pointerdown', e=>{ e.preventDefault(); actDown(); }); $('#actBtn').addEventListener('pointerup', actUp); $('#actBtn').addEventListener('pointercancel', actUp);
-addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if((e.key===' '||e.key==='e'||e.key==='E') && !e.repeat){ e.preventDefault(); actDown(); } });
-addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; if(e.key===' '||e.key==='e'||e.key==='E') actUp(); });
-document.addEventListener('pointerdown', e=>{ const g=e.target.closest && e.target.closest('[data-go]'); if(g && S && S.ph==='run'){ e.preventDefault(); doAct({k:'go', id:g.dataset.go}); $('#mapSvg').dataset.k=''; } }, {passive:false});
+const bb=$('#boostBtn'); bb.addEventListener('pointerdown', e=>{ e.preventDefault(); IN.boost=true; bb.classList.add('held'); }); const bu=()=>{ IN.boost=false; bb.classList.remove('held'); }; bb.addEventListener('pointerup', bu); bb.addEventListener('pointercancel', bu); bb.addEventListener('pointerleave', bu);
+addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if(e.key===' ') e.preventDefault(); });
+addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; });
 document.addEventListener('click', async e=>{
   const b=e.target.closest('button'); if(!b) return;
   if(b.dataset.hear){ audio(); say(b.dataset.hear); return; }
-  if(b.dataset.say){ const o=S && S.orders.find(o=>o.id==b.dataset.say); if(o) say(o.word); return; }
-  if(b.dataset.hint){ const id=+b.dataset.hint; LOCAL.hinted[id]=1; doAct({k:'hint', id}); $('#orders').dataset.k=''; return; }
-  if(b.dataset.go) return;
-  if(b.id==='switchBtn'){ ME = ME==='h' ? 'g' : 'h'; b.textContent=`Switch to ${ME==='h'?'P2':'P1'}`; SCN && SCN.follow(); return; }
+  if(b.dataset.say){ say(b.dataset.say); return; }
+  if(b.dataset.hint){ const id=+b.dataset.hint; LOCAL.hinted[id]=1; doAct({k:'hint', id}); return; }
+  if(b.id==='switchBtn'){ LOCAL.view = LOCAL.view==='driver' ? 'nav' : 'driver'; return; }
   const a=b.dataset.a; if(!a) return; audio();
-  if(a==='local'){ MODE='local'; ME='h'; S=freshState(); newRun(); $('#testBadge').hidden=false; $('#switchBtn').hidden=false; NET={kind:'local test', code:'—', send:()=>{}}; return; }
-  if(a==='create'){ card('<h2>Opening a room…</h2>'); let r, code; for(let i=0;i<4;i++){ code=Array.from({length:4},()=> 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
+  if(a==='local'){ MODE='local'; ME='h'; NET={kind:'local test', code:'—', send:()=>{}}; S=freshState(); newRun(); $('#testBadge').hidden=false; $('#switchBtn').hidden=false; return; }
+  if(a==='create'){ card('<h2>Opening a room…</h2>'); let r, code; for(let i=0;i<4;i++){ code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
     if(r!==true) return lobby(r||'Online play is not available here.');
     MODE='host'; ME='h'; $('#testBadge').hidden=true; $('#switchBtn').hidden=true;
-    card(`<h2>Room code<small>${esc(NET.kind)}</small></h2><div class="code">${code}</div><p>Your friend opens this same page, types the code and taps Join.</p><p class="small" id="waitG">Waiting for your friend…</p>`);
+    card(`<h2>Room code<small>${esc(NET.kind)}</small></h2><div class="code">${code}</div><p>Your friend opens this same page, types the code and taps Join.</p><p class="small">Waiting for your friend…</p>`);
     const wait=setInterval(()=>{ if(MODE!=='host'){ clearInterval(wait); return; } if(guestHere){ clearInterval(wait); S=freshState(); newRun(); } }, 300); return; }
   if(a==='join'){ const code=($('#codeIn').value||'').trim().toUpperCase(); if(!/^[A-Z0-9]{4}$/.test(code)) return lobby('Type the 4-character code.');
     card('<h2>Joining…</h2>'); const r=await netJoin(code); if(r!==true) return lobby(r);
-    MODE='guest'; ME='g'; $('#testBadge').hidden=true; $('#switchBtn').hidden=true; card('<h2>Joined!<small>waiting for the host</small></h2>');
+    MODE='guest'; ME='g'; $('#testBadge').hidden=true; $('#switchBtn').hidden=true; if(!S) card('<h2>Joined!<small>waiting for the host</small></h2>');
     const keep=setInterval(()=>{ if(MODE!=='guest'){ clearInterval(keep); return; } sendGuest(); }, 400); return; }
   if(a==='ready'){ LOCAL.ready=true; if(MODE==='guest') sendGuest(true); else { S.ready.h=true; if(MODE==='local') S.ready.g=true; } shownPh=''; return; }
   if(a==='again'){ S=freshState(); newRun(); return; }
   if(a==='lobby'){ try{ NET.peer && NET.peer.destroy(); NET.room && NET.room.leave(); }catch(x){} location.reload(); }
 });
 
-// ---------- the scene (Phaser): cab + roof, both drawn once; crew sprites move; camera follows you ----------
-let SCN=null;
-class Train extends Phaser.Scene{
-  constructor(){ super('train'); }
-  preload(){ this.load.image('shiba','shiba.webp'); }
-  create(){
-    SCN=this; const g=this.add.graphics();
-    // ---- cab ----
-    g.fillStyle(0x3A2C2A); g.fillRect(0,0,960,560); g.fillStyle(0x8B6B4E); g.fillRect(50,70,860,440);           // walls + floor
-    g.lineStyle(2,0x7A5C42); for(let x=50;x<910;x+=40) g.lineBetween(x,70,x,510); g.lineStyle(5,0x2A211B); g.strokeRect(50,70,860,440);
-    for(let i=0;i<4;i++){ g.fillStyle(0x1A2050); g.fillRect(150+i*190,18,120,40); g.lineStyle(4,0x2A211B); g.strokeRect(150+i*190,18,120,40); } // windows
-    this.winLights=[]; for(let i=0;i<6;i++) this.winLights.push(this.add.rectangle(160+i*130, 30+(i%3)*9, 14, 3, 0xFFF8EE).setAlpha(.9));
-    // firebox + coal bin
-    g.fillStyle(0x4A4A52); g.fillRoundedRect(95,130,110,100,10); g.lineStyle(5,0x2A211B); g.strokeRoundedRect(95,130,110,100,10);
-    this.fire=this.add.ellipse(150,190,70,40,0xFF7A2E); g.fillStyle(0x5A4636); g.fillRect(95,400,110,80); g.strokeRect(95,400,110,80);
-    for(let i=0;i<9;i++){ g.fillStyle(0x1C1C22); g.fillCircle(110+(i%3)*38+(i>2?8:0), 420+Math.floor(i/3)*18, 12); }
-    this.label(150,120,'🔥'); this.label(150,392,'⛏');
-    // valves (colour only: the order word says which)
-    this.valves={}; COLORS.forEach(c=>{ const v=VALVE[c]; g.fillStyle(0x6B6F78); g.fillRect(v.x-6,v.y-50,12,100); const w=this.add.container(v.x,v.y);
-      const ring=this.add.circle(0,0,30,v.c).setStrokeStyle(5,0x2A211B); const sp=this.add.rectangle(0,0,50,8,0x2A211B), sp2=this.add.rectangle(0,0,8,50,0x2A211B);
-      w.add([ring,sp,sp2]); this.valves[c]=w; });
-    // brake wheel + ladder
-    this.brake=this.add.container(SPOT.brake.x, SPOT.brake.y+5); this.brake.add([this.add.circle(0,0,34,0xC9361F).setStrokeStyle(5,0x2A211B), this.add.rectangle(0,0,60,7,0x2A211B), this.add.rectangle(0,0,7,60,0x2A211B), this.add.circle(0,0,8,0x2A211B)]);
-    g.fillStyle(0xC8A060); g.fillRect(SPOT.ladder.x-26,40,6,100); g.fillRect(SPOT.ladder.x+20,40,6,100); for(let y=50;y<140;y+=16) g.fillRect(SPOT.ladder.x-24,y,46,5);
-    this.label(SPOT.ladder.x,30,'⬆ ROOF');
-    // ---- roof ----
-    this.ground=this.add.tileSprite(480, ROOFY+60, 960, 120, this.groundTex()); this.ground2=this.add.tileSprite(480, ROOFY+400, 960, 140, this.groundTex());
-    this.planet=this.add.circle(800, ROOFY+40, 26, 0xFF9A3C).setStrokeStyle(4,0x2A211B); this.planet2=this.add.circle(300, ROOFY+420, 18, 0x7FD7FF).setStrokeStyle(4,0x2A211B);
-    g.fillStyle(0x9A2E2A); g.fillRect(40,ROOFY+110,880,240); g.lineStyle(5,0x2A211B); g.strokeRect(40,ROOFY+110,880,240);
-    g.lineStyle(3,0x7A221F); for(let x=80;x<920;x+=60) g.lineBetween(x,ROOFY+112,x,ROOFY+348);
-    g.fillStyle(0x2A211B); g.fillRect(SPOT.hatch.x-34,SPOT.hatch.y-20,68,40); g.fillStyle(0xC8A060); for(let y=SPOT.hatch.y-14;y<SPOT.hatch.y+18;y+=10) g.fillRect(SPOT.hatch.x-28,y,56,4);
-    // junction lever + the sign board ahead (only readable from up here)
-    g.fillStyle(0x4A4A52); g.fillRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22); g.strokeRect(SPOT.lever.x-30,SPOT.lever.y+10,60,22);
-    this.lever=this.add.rectangle(SPOT.lever.x, SPOT.lever.y+12, 10, 56, 0xFFB23E).setStrokeStyle(3,0x2A211B).setOrigin(.5,1);
-    this.signs=this.add.container(640, ROOFY+60); this.signL=this.sign(-80,'');  this.signR=this.sign(80,''); this.signs.add([this.signL, this.signR]); this.signs.setVisible(false);
-    // ---- cargo car: crates, the water tank (みず) and two lamps (ランプ) ----
-    g.fillStyle(0x2E2A30); g.fillRect(0,CARGOY,960,560); g.fillStyle(0x6E5A48); g.fillRect(50,CARGOY+70,860,440);
-    g.lineStyle(2,0x5E4C3C); for(let y=CARGOY+90;y<CARGOY+510;y+=36) g.lineBetween(50,y,910,y); g.lineStyle(5,0x2A211B); g.strokeRect(50,CARGOY+70,860,440);
-    [[180,CARGOY+400],[250,CARGOY+440],[760,CARGOY+230],[820,CARGOY+170],[440,CARGOY+460]].forEach(([x,y])=>{ g.fillStyle(0xB07A47); g.fillRect(x-30,y-30,60,60); g.lineStyle(4,0x2A211B); g.strokeRect(x-30,y-30,60,60); g.lineBetween(x-30,y-30,x+30,y+30); });
-    g.fillStyle(0x4A5A6A); g.fillRoundedRect(SPOT.pump.x-60,CARGOY+90,90,120,12); g.lineStyle(5,0x2A211B); g.strokeRoundedRect(SPOT.pump.x-60,CARGOY+90,90,120,12);
-    this.tank=this.add.rectangle(SPOT.pump.x-15, CARGOY+205, 70, 100, 0x5BC0FF).setOrigin(.5,1).setAlpha(.9);
-    g.fillStyle(0x8C96A0); g.fillRect(SPOT.pump.x+34,CARGOY+150,30,50); g.strokeRect(SPOT.pump.x+34,CARGOY+150,30,50);
-    this.pumpH=this.add.rectangle(SPOT.pump.x+49, CARGOY+150, 8, 40, 0x2A211B).setOrigin(.5,1);
-    this.lampG={}; ['A','B'].forEach(k=>{ const sp=SPOT['lamp'+k]; g.fillStyle(0x2A211B); g.fillRect(sp.x-4, sp.y-60, 8, 40);
-      this.lampG[k]={ glow:this.add.circle(sp.x, sp.y-10, 46, 0xFFE9A0, .28), bulb:this.add.circle(sp.x, sp.y-10, 18, 0xFFE14D).setStrokeStyle(4,0x2A211B) }; });
-    // doors between the cab and the cargo car
-    g.fillStyle(0x5A3E2E); g.fillRect(52,SPOT.door.y-50,22,100); g.fillRect(886,SPOT.back.y-50,22,100); this.label(105,SPOT.door.y-70,'◀🚪'); this.label(855,SPOT.back.y-70,'🚪▶');
-    this.label(SPOT.pump.x-15, CARGOY+70+0, '💧');
-    // driver's seat + console, and the mop racks (one per room)
-    g.fillStyle(0x3A3A44); g.fillRoundedRect(SPOT.seat.x-40,SPOT.seat.y-50,80,34,8); g.lineStyle(4,0x2A211B); g.strokeRoundedRect(SPOT.seat.x-40,SPOT.seat.y-50,80,34,8);
-    g.fillStyle(0x7FD7FF); g.fillRect(SPOT.seat.x-30,SPOT.seat.y-45,60,20); g.fillStyle(0x8B2E2A); g.fillRoundedRect(SPOT.seat.x-26,SPOT.seat.y-8,52,44,10); g.strokeRoundedRect(SPOT.seat.x-26,SPOT.seat.y-8,52,44,10);
-    this.label(SPOT.seat.x+58,SPOT.seat.y-30,'🚂');
-    Object.values(RACK).forEach(r=>{ g.fillStyle(0x5A3E2E); g.fillRect(r.x-85,r.y-40,170,10); g.lineStyle(3,0x2A211B); g.strokeRect(r.x-85,r.y-40,170,10); });
-    MOPS.forEach(m=>{ g.fillStyle(VALVE[m.c].c); g.fillRect(m.x-11,m.y-34,22,58); g.lineStyle(3,0x2A211B); g.strokeRect(m.x-11,m.y-34,22,58); g.lineStyle(3,0x2A211B); g.lineBetween(m.x,m.y-26,m.x,m.y+14); g.lineBetween(m.x-6,m.y-14,m.x+6,m.y-14); }); // お札 charms: colour only
-    this.zm={};
-    // ---- crew ----
-    this.crew={}; ['h','g'].forEach(w=>{ const s=this.add.image(0,0,'shiba').setDisplaySize(64,79); if(w==='g') s.setTint(0x9DB8FF);
-      const tag=this.add.text(0,-56,w==='h'?'P1':'P2',{fontFamily:'Nunito',fontStyle:'900',fontSize:'16px',color:'#2A211B',backgroundColor:w==='h'?'#FFB23E':'#7FD7FF',padding:{x:6,y:2}}).setOrigin(.5);
-      const coal=this.add.circle(0,-36,11,0x1C1C22).setStrokeStyle(2,0x55555F).setVisible(false);
-      const mop=this.add.container(30,-10,[this.add.rectangle(0,0,1,1,0x000000,0), this.add.rectangle(0,0,18,44,0xFFFFFF).setStrokeStyle(3,0x2A211B), this.add.rectangle(0,0,3,30,0x2A211B)]).setVisible(false); mop.angle=15;
-      const c=this.add.container(0,0,[s,coal,mop,tag]); this.crew[w]={c,coal,mop,drawn:{x:0,y:0}}; });
-    this.ring=this.add.circle(0,0,REACH*.55,0xFFFFFF,0).setStrokeStyle(4,0xFFE14D,.9);
-    this.follow();
-  }
-  zombie(z){ // spooky-cute yokai: おばけ ghost, かっぱ, たぬき — each with a kana tag saying its colour
-    const O=0x2A211B, parts = z.type==='kappa' ? [ this.add.ellipse(0,8,46,52,0x7FC97A).setStrokeStyle(4,O), this.add.ellipse(0,-16,30,10,0xD9F2C8).setStrokeStyle(3,O), this.add.triangle(0,10,-7,0,7,0,0,9,0xF2C230).setStrokeStyle(2,O) ]
-      : z.type==='tanuki' ? [ this.add.ellipse(0,8,48,50,0xA87A52).setStrokeStyle(4,O), this.add.ellipse(0,0,36,14,0x5A3E2E), this.add.ellipse(6,-22,18,9,0x6FBF5F).setStrokeStyle(2,O), this.add.ellipse(0,26,22,14,0xF1DEC0) ]
-      : [ this.add.ellipse(0,4,46,56,0xF4F1FF).setStrokeStyle(4,O), this.add.triangle(-14,30,-10,0,10,0,0,12,0xF4F1FF).setStrokeStyle(3,O), this.add.triangle(12,30,-10,0,10,0,0,12,0xF4F1FF).setStrokeStyle(3,O), this.add.ellipse(0,14,12,8,0xFF9AA8) ];
-    const body=this.add.container(0,0,[ ...parts, this.add.circle(-9,-2,6,0xFFFFFF).setStrokeStyle(2,O), this.add.circle(9,-2,6,0xFFFFFF).setStrokeStyle(2,O), this.add.circle(-8,-1,2.5,O), this.add.circle(9,-1,2.5,O) ]);
-    if(z.type==='obake') body.setAlpha(.92);
-    const tag=this.add.text(0,-40,W[z.c].k,{fontFamily:'"Zen Maru Gothic"',fontStyle:'900',fontSize:'20px',color:'#2A211B',backgroundColor:'#FFF8EE',padding:{x:6,y:1}}).setOrigin(.5);
-    const c=this.add.container(z.x,z.y,[body,tag]); return {c, body, tx:z.x, ty:z.y}; }
-  sign(x, txt){ const c=this.add.container(x,0); const b=this.add.rectangle(0,0,140,58,0xFFFFFF).setStrokeStyle(5,0x2A211B); const t=this.add.text(0,-2,txt,{fontFamily:'"Zen Maru Gothic"',fontStyle:'900',fontSize:'32px',color:'#2A211B'}).setOrigin(.5);
-    const ar=this.add.text(0,30,'',{fontFamily:'Nunito',fontStyle:'900',fontSize:'18px',color:'#FFE14D'}).setOrigin(.5); c.add([b,t,ar]); c.t=t; c.ar=ar; return c; }
-  label(x,y,t){ this.add.text(x,y,t,{fontSize:'22px'}).setOrigin(.5); }
-  groundTex(){ if(this.textures.exists('stars')) return 'stars'; const g=this.make.graphics({add:false}); g.fillStyle(0x0B0F2C); g.fillRect(0,0,128,128); // the galaxy streaming past
-    for(let i=0;i<26;i++){ g.fillStyle(i%5?0xFFF8EE:0xFFE14D, .5+Math.random()*.5); g.fillRect(Math.random()*128, Math.random()*128, i%7?2:3, i%7?2:3); }
-    g.fillStyle(0xC9CFF0,.25); g.fillRect(0,62,128,3); g.generateTexture('stars',128,128); g.destroy(); return 'stars'; }
-  follow(){ const c=this.crew && this.crew[ME]; if(c) this.cameras.main.startFollow(c.c, true, .15, .15); }
-  shake(){ this.cameras.main.shake(220, .008); }
-  update(time, dtMs){
-    const dt=Math.min(.05, dtMs/1000);
-    // move me (joystick or keys), kept inside the area I'm in
-    const k=IN.keys; let dx=IN.dx+((k.arrowright||k.d)?1:0)-((k.arrowleft||k.a)?1:0), dy=IN.dy+((k.arrowdown||k.s)?1:0)-((k.arrowup||k.w)?1:0);
-    const L=Math.hypot(dx,dy); if(L>1){ dx/=L; dy/=L; }
-    const driving = S && S.ph==='run' && S.roles && S.roles.driver===ME;
-    if(driving){ pos[ME]={x:SPOT.seat.x, y:SPOT.seat.y+8, a:'cab'};          // seated: the joystick drives instead of walking
-      if(false && Math.abs(dy)>.35){ this.thrL=Math.max(0,Math.min(1,(this.thrL??S.thr)-dy*.7*dt)); if(time-(this._thrT||0)>160){ this._thrT=time; doAct({k:'thr', v:+this.thrL.toFixed(2)}); } } else this.thrL=S.thr;
-    }
-    else if(S && S.ph==='run'){ const p=pos[ME], A=AREA[p.a]; p.x=Math.max(A.x0,Math.min(A.x1,p.x+dx*240*dt)); p.y=Math.max(A.y0,Math.min(A.y1,p.y+dy*240*dt)); }
-    if(MODE==='host' || MODE==='local'){ hostTick(dt); if(MODE==='host' && S) pushState(); }
-    if(MODE==='guest') sendGuest();
-    if(!S) return;
-    // draw the crew: me where I am, my crewmate smoothed toward their last known place
-    ['h','g'].forEach(w=>{ const c=this.crew[w], target = (w===ME || MODE==='local') ? pos[w] : (MODE==='host' ? pos.g : pos.h), ty=target.a==='roof'?target.y:target.y;
-      const snap = w===ME || Math.abs(c.drawn.y-ty)>200; c.drawn.x = snap ? target.x : c.drawn.x+(target.x-c.drawn.x)*.25; c.drawn.y = snap ? ty : c.drawn.y+(ty-c.drawn.y)*.25;
-      c.c.setPosition(c.drawn.x, c.drawn.y); const cr=S.players[w].carry; c.coal.setVisible(cr==='coal'); c.mop.setVisible(COLORS.includes(cr)); if(COLORS.includes(cr)) c.mop.list[1].setFillStyle(VALVE[cr].c); c.c.setDepth(c.drawn.y); });
-    // the camera keeps to the area I'm in
-    const cam=this.cameras.main, a=pos[ME].a, top={cab:0, roof:ROOFY, cargo:CARGOY}[a], z=Math.max(.55, Math.min(1.5, this.scale.height/470)); if(Math.abs(cam.zoom-z)>.01) cam.setZoom(z); // fit the room's height on any phone
-    if(cam._a!==a){ cam._a=a; cam.setBounds(0, top, 960, a==='roof'?480:560); }
-    // zombies: one sprite per zombie, wobbling toward where the host says it is; a bonked one spins off
-    const live={}; (S.zs||[]).forEach(z=>{ live[z.id]=1; let o=this.zm[z.id]; if(!o){ o=this.zm[z.id]=this.zombie(z); } o.tx=z.x; o.ty=z.y;
-      o.c.x+=(o.tx-o.c.x)*.2; o.c.y+=(o.ty-o.c.y)*.2; o.body.y=Math.sin(time/180+z.id)*3; o.c.angle=Math.sin(time/260+z.id)*6; o.c.setDepth(o.c.y); });
-    Object.keys(this.zm).forEach(id=>{ if(!live[id]){ const o=this.zm[id]; delete this.zm[id];
-      this.tweens.add({targets:o.c, y:o.c.y-90, angle:540, scale:.2, alpha:0, duration:520, ease:'Cubic.easeOut', onComplete:()=>o.c.destroy()});
-      for(let i=0;i<10;i++){ const st=this.add.star(o.c.x,o.c.y,5,4,9,0xFFE14D).setDepth(5000); this.tweens.add({targets:st, x:o.c.x+(Math.random()-.5)*160, y:o.c.y-30-Math.random()*90, alpha:0, angle:200, duration:600, onComplete:()=>st.destroy()}); } } });
-    const n=nearest(); this.ring.setVisible(!!n); if(n){ this.ring.setPosition(n.sx, n.sy); this.ring.setScale(1+.06*Math.sin(time/120)); }
-    // the train is moving: ground scrolls past the roof, lights slide past the windows, the fire glows with its power
-    const v=(S.speed||0); this.ground.tilePositionX+=v*420*dt; this.ground2.tilePositionX+=v*420*dt;
-    this.winLights.forEach(l=>{ l.x-=v*260*dt; if(l.x<150) l.x=900; });
-    this.planet.x-=v*40*dt; if(this.planet.x<-40) this.planet.x=1000; this.planet2.x-=v*65*dt; if(this.planet2.x<-40) this.planet2.x=1000;
-    this.fire.setScale(.6+.5*S.power/100+.05*Math.sin(time/90)); this.fire.setFillStyle(S.power<25?0x8A3A20:0xFF7A2E);
-    COLORS.forEach(c=>{ const w=this.valves[c], want=S.valves[c]?Math.PI/4:0; w.rotation+=(want-w.rotation)*.2; });
-    this.tank.setScale(1, Math.max(.02, S.water/100)); this.tank.setFillStyle(S.water<25?0xE04A3C:0x5BC0FF);
-    ['A','B'].forEach(k=>{ const L=this.lampG[k], on=!!S.lamps[k]; L.bulb.setFillStyle(on?0xFFE14D:0x3A3A44); L.glow.setVisible(on); });
-    this.brake.rotation+=S.brakeHold*dt*4; this.lever.rotation = S.lever==='L' ? -.6 : S.lever==='R' ? .6 : 0;
-    if(S.sign){ this.signs.setVisible(true); this.signL.t.setText(W[S.sign.L].k); this.signR.t.setText(W[S.sign.R].k); this.signL.ar.setText('◀'); this.signR.ar.setText('▶'); } else this.signs.setVisible(false);
-    if(v>.2){ this._clk=(this._clk||0)+v*dt; if(this._clk>.45){ this._clk=0; SND.clack(v); } }
-    hudFrame();
-  }
+// ---------- main loop ----------
+let last=0;
+function loop(time){
+  requestAnimationFrame(loop);
+  const dt=last ? Math.min(.05,(time-last)/1000) : .016; last=time;
+  if(!S) return;
+  const drive=iDrive(), run=S.ph==='run';
+  if(run && drive) flyShip(dt);
+  if(MODE==='host' || MODE==='local'){ hostTick(dt); if(MODE==='host') pushState(); }
+  if(MODE==='guest') sendGuest();
+  if(drive && run){ initThree(); draw3(dt, time); engine(true, SHIP.boost); } else engine(false);
+  hudFrame();
 }
-new Phaser.Game({ type:Phaser.AUTO, parent:'game', backgroundColor:'#0E1230', scale:{mode:Phaser.Scale.RESIZE, width:960, height:540}, scene:Train, render:{antialias:true} });
+requestAnimationFrame(loop);
 lobby();
-// test hooks
-window.__mrc={ go:id=>doAct({k:'go', id}), MAP, NB, dir:()=>S&&S.dir, S:()=>S, mode:()=>MODE, me:()=>ME, pos, net:()=>NET.kind, place:(x,y,a)=>{ pos[ME]={x,y,a}; }, near:()=>nearest(), use:()=>useNearest(), act:a=>doAct(a), W };
+window.__grc={ S:()=>S, ship:SHIP, mode:()=>MODE, me:()=>ME, iDrive, P, W, act:a=>doAct(a), IN, three:()=>R3 };
 })();
 </script>
 </body>
