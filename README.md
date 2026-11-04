@@ -1,6 +1,8 @@
 # 真夜中の地下鉄 Midnight Rail Crew
 
-> **New prototype: [深夜ラーメン Midnight Ramen](https://lachende.github.io/midnight-rail-crew/ramen/)** (`ramen/`). A two-player busy-hands kitchen at a ramen stall under the train tracks: one cooks, one runs the counter, and customers order in real Japanese. Practise either station with しばBot, then play it with a friend.
+> **New: [百鬼夜行 Night Parade](https://lachende.github.io/midnight-rail-crew/night/)** (`night/`). A two-player car chase on the Shuto Expressway at 2 a.m. One drives the truck through traffic in 3D; the other rides backwards in the bed and fires お札 at the yokai carrying the called kana. Practise either seat with しばBot, then play it with a friend.
+>
+> **Also: [深夜ラーメン Midnight Ramen](https://lachende.github.io/midnight-rail-crew/ramen/)** (`ramen/`). A two-player busy-hands kitchen at a ramen stall under the train tracks: one cooks, one runs the counter, and customers order in real Japanese. Practise either station with しばBot, then play it with a friend.
 
 A co-op Japanese-learning game for two players: the last train of the night, lost in the secret tunnels under Tokyo.
 

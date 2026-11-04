@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Night Parade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Yuji+Syuku&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+/* 百鬼夜行 Night Parade: a two-player car chase on the Shuto Expressway at 2 a.m.
+   The Driver weaves through traffic in 3D; the Gunner rides backwards in the truck bed and fires お札 at the yokai
+   carrying the kana that gets called. Each phone runs its own half; snapshots and events travel between them. */
+:root{ --bg:#05070D; --ink:#F1E9DD; --dim:#A9A29A; --red:#E0352B; --amber:#FF9A4D; --cyan:#5BE0FF; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,sans-serif;overflow:hidden;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+button,input{touch-action:manipulation;font-family:inherit}
+[hidden]{display:none!important}
+#three{position:fixed;inset:0}
+#three canvas{display:block;width:100%;height:100%}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.hud{position:fixed;inset:0;z-index:3;pointer-events:none}
+.bars{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 12px);display:flex;flex-direction:column;gap:7px;width:min(200px,23vw)}
+.bar{display:flex;align-items:center;gap:8px;font:900 10px "Zen Kaku Gothic New";letter-spacing:.2em;color:var(--dim)}
+.bar span{width:46px;flex:none}
+.bar div{flex:1;height:7px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;transform-origin:0 50%;background:#7EE08A;transition:transform .15s}
+.bar.low i{background:var(--red)}
+.bar.boost i{background:linear-gradient(90deg,#5BE0FF,#B98CFF)}
+.score{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 8px);text-align:right;font:400 28px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.score small{display:block;font:900 11px "Zen Kaku Gothic New";letter-spacing:.16em;color:var(--dim);margin-top:2px}
+.mirror{position:absolute;border:3px solid #0B0D12;border-radius:10px;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 6px 18px rgba(0,0,0,.55)}
+.mirror span{position:absolute;left:8px;top:4px;font:900 9px "Zen Kaku Gothic New";letter-spacing:.2em;color:rgba(241,233,221,.75);text-shadow:0 1px 3px #000}
+.callD{position:absolute;left:50%;transform:translateX(-50%);font:900 12px "Zen Kaku Gothic New";letter-spacing:.06em;color:#FFE9D6;background:rgba(8,10,16,.78);border-radius:999px;padding:3px 12px;white-space:nowrap}
+.callD b{font:400 18px "Dela Gothic One";color:var(--amber);margin:0 5px}
+.callG{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);text-align:center;white-space:nowrap}
+.callG .lbl{font:900 10px "Zen Kaku Gothic New";letter-spacing:.32em;color:var(--amber)}
+.callG .k{font:400 50px/1.05 "Dela Gothic One";color:#FFE9D6;text-shadow:0 0 18px rgba(255,154,77,.55),0 2px 0 #000;letter-spacing:.04em}
+.callG .h{font:400 30px "Yuji Syuku";color:rgba(255,233,214,.8);margin-left:10px;vertical-align:6px}
+.callG .t{margin:5px auto 0;width:170px;height:5px;border-radius:4px;background:rgba(255,255,255,.16);overflow:hidden}
+.callG .t i{display:block;height:100%;background:var(--amber);transform-origin:0 50%}
+.callG.hot .k{color:#FF7A6E;text-shadow:0 0 24px rgba(224,53,43,.85),0 2px 0 #000}
+.callG.hot .t i{background:var(--red)}
+.speed{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 10px);transform:translateX(-50%);font:400 34px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.speed small{font:900 11px "Zen Kaku Gothic New";letter-spacing:.2em;color:var(--dim);margin-left:4px}
+.ctl button{position:absolute;pointer-events:auto;border:0;color:#F1E9DD;background:rgba(241,233,221,.10);box-shadow:inset 0 0 0 2px rgba(241,233,221,.38);font:400 30px "Dela Gothic One";touch-action:none;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.ctl [data-k=l]{left:max(14px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 14px);width:92px;height:92px;border-radius:22px}
+.ctl [data-k=r]{left:calc(max(14px,env(safe-area-inset-left)) + 104px);bottom:calc(env(safe-area-inset-bottom) + 14px);width:92px;height:92px;border-radius:22px}
+.ctl [data-k=boost]{right:max(14px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 14px);width:118px;height:118px;border-radius:50%;font-size:16px;letter-spacing:.12em;background:rgba(91,224,255,.16);box-shadow:inset 0 0 0 2px rgba(91,224,255,.7)}
+.ctl button.held{background:rgba(241,233,221,.3)}
+.ctl [data-k=boost].held{background:rgba(91,224,255,.48)}
+.count{position:fixed;inset:0;z-index:5;display:flex;align-items:center;gap:30px;padding:0 max(44px,env(safe-area-inset-right)) 0 max(44px,env(safe-area-inset-left));background:rgba(5,7,13,.74);pointer-events:none}
+.count ol{flex:1;margin:0;padding:0;list-style:none;counter-reset:s}
+.count h3{margin:0 0 10px;font:900 13px "Zen Kaku Gothic New";letter-spacing:.3em;color:var(--amber)}
+.count li{counter-increment:s;display:flex;gap:14px;align-items:baseline;font:700 16px/1.45 "Zen Kaku Gothic New";color:#F1E9DD;margin:7px 0}
+.count li::before{content:counter(s);font:400 20px "Dela Gothic One";color:var(--amber);width:18px;flex:none}
+.count .n{font:400 120px "Dela Gothic One";color:#FFE9D6;min-width:150px;text-align:right}
+.ui{position:fixed;inset:0;z-index:6;display:flex;align-items:center;padding:14px max(18px,env(safe-area-inset-left));background:linear-gradient(90deg,rgba(5,7,13,.94),rgba(5,7,13,.72) 52%,rgba(5,7,13,.1))}
+.panel{width:min(540px,100%);max-height:100%;overflow:auto;padding:2px}
+.kicker{font:700 11px "Zen Kaku Gothic New";letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
+h1{margin:6px 0 4px;font:400 54px/1 "Dela Gothic One";letter-spacing:.04em;color:#FFE9D6;text-shadow:0 0 26px rgba(224,53,43,.5)}
+h2{margin:6px 0 8px;font:400 28px/1.1 "Dela Gothic One";color:#FFE9D6}
+.lead{margin:10px 0 14px;font:500 14px/1.65 "Zen Kaku Gothic New";color:#C9C2B8;max-width:48ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{font:900 14px "Zen Kaku Gothic New";letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.btn.red{background:var(--red);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(241,233,221,.35)}
+.btn:active{transform:translateY(1px)}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.role{all:unset;cursor:pointer;display:block;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(241,233,221,.16)}
+.role:active{background:rgba(255,255,255,.09)}
+.role i{display:block;font:700 10px "Zen Kaku Gothic New";letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
+.role b{display:block;font:400 21px "Dela Gothic One";color:#FFE9D6}
+.role small{display:block;margin-top:6px;font:500 12.5px/1.5 "Zen Kaku Gothic New";color:var(--dim)}
+.code{font:400 44px "Dela Gothic One";letter-spacing:.24em;color:var(--amber)}
+input.codein{font:400 22px "Dela Gothic One";letter-spacing:.2em;text-transform:uppercase;width:130px;padding:9px 12px;border-radius:8px;border:0;background:var(--ink);color:#0B0E14}
+.note{font:500 12.5px/1.55 "Zen Kaku Gothic New";color:var(--dim);margin-top:10px}
+.err{color:#FF8A7E;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px "Zen Kaku Gothic New";letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.stats b{font:400 22px "Dela Gothic One";color:#FFE9D6;letter-spacing:0}
+.stars{font:400 30px "Dela Gothic One";color:var(--amber);letter-spacing:.1em;margin-top:2px}
+.stars .off{color:rgba(241,233,221,.16)}
+.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px "Zen Kaku Gothic New";text-align:center;padding:20px}
+@media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
+</style>
+</head>
+<body>
+<div id="three"></div>
+<canvas id="fx"></canvas>
+<div class="hud" id="hud" hidden>
+  <div class="bars"><div class="bar" id="hpBar"><span>TRUCK</span><div><i id="hpI"></i></div></div><div class="bar boost" id="boBar"><span>BOOST</span><div><i id="boI"></i></div></div></div>
+  <div class="score" id="score">0<small id="sub"></small></div>
+  <div class="mirror" id="mirror" hidden><span>バックカメラ</span></div>
+  <div class="callD" id="callD" hidden></div>
+  <div class="callG" id="callG" hidden></div>
+  <div class="speed" id="speed" hidden></div>
+  <div class="ctl" id="ctl" hidden><button data-k="l" aria-label="Steer left">◀</button><button data-k="r" aria-label="Steer right">▶</button><button data-k="boost">BOOST</button></div>
+</div>
+<div class="count" id="count" hidden></div>
+<div class="ui" id="ui"><div class="panel" id="panel"></div></div>
+<div class="rotate">Turn your phone sideways · 横にしてね</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------- the run: lanes, speeds, and the kana the parade carries ----------
+const LANES=[-5.25,-1.75,1.75,5.25], XMAX=5.8, V0=30, V1=42, VBOOST=14, RUN_T=150;
+const PHASES=[{t:0,kana:'あいうえお',max:3,every:6.5,traffic:.5},{t:25,kana:'あいうえおかきくけこ',max:5,every:5.2,traffic:.65},
+  {t:60,kana:'あいうえおかきくけこさしすせそ',max:6,every:4.4,traffic:.8},{t:100,kana:'あいうえおかきくけこさしすせそたちつてと',max:8,every:3.7,traffic:1}];
+const ROMA={あ:'a',い:'i',う:'u',え:'e',お:'o',か:'ka',き:'ki',く:'ku',け:'ke',こ:'ko',さ:'sa',し:'shi',す:'su',せ:'se',そ:'so',た:'ta',ち:'chi',つ:'tsu',て:'te',と:'to',な:'na',に:'ni',ぬ:'nu',ね:'ne',の:'no',
+  は:'ha',ひ:'hi',ふ:'fu',へ:'he',ほ:'ho',ま:'ma',み:'mi',む:'mu',め:'me',も:'mo',や:'ya',ゆ:'yu',よ:'yo',ら:'ra',り:'ri',る:'ru',れ:'re',ろ:'ro',わ:'wa',を:'wo',ん:'n'};
+const roma=k=>(ROMA[k]||k).toUpperCase();
+const phaseAt=t=>PHASES.reduce((p,q)=>t>=q.t?q:p,PHASES[0]);
+const store={ get(k,d){ try{ const v=localStorage.getItem('np_'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem('np_'+k, JSON.stringify(v)); }catch(e){} } };
+// the kana's shape stays next to the call until you have hit it three times
+const MASTER=store.get('kana',{}); const known=k=>(MASTER[k]||0)>=3; const learn=k=>{ MASTER[k]=(MASTER[k]||0)+1; store.set('kana',MASTER); };
+
+// ---------- sound ----------
+let AC=null, MG=null, NOISE=null, ENG=null, engT=0, jaVoice=null;
+function audio(){ try{ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); MG=AC.createGain(); MG.gain.value=.9; MG.connect(AC.destination);
+      const n=AC.sampleRate*2, b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; NOISE=b; loops(); }
+    if(AC.state==='suspended') AC.resume(); }catch(e){}
+  try{ if(!audio.warm){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; u.lang='ja-JP'; speechSynthesis.speak(u); audio.warm=1; } }catch(e){} }
+function nz(dur,o={}){ if(!AC) return; try{ const t=AC.currentTime+(o.at||0), s=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); s.buffer=NOISE; s.loop=true;
+  f.type=o.type||'bandpass'; f.frequency.setValueAtTime(o.f||1000,t); if(o.f2) f.frequency.exponentialRampToValueAtTime(o.f2,t+dur); f.Q.value=o.q||1;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.g||.2,t+(o.a||.005)); g.gain.exponentialRampToValueAtTime(.0001,t+dur); s.connect(f); f.connect(g); g.connect(MG); s.start(t,Math.random()*1.5); s.stop(t+dur+.05); }catch(e){} }
+function tn(fr,dur,o={}){ if(!AC) return; try{ const t=AC.currentTime+(o.at||0), s=AC.createOscillator(), g=AC.createGain(); s.type=o.type||'sine'; s.frequency.setValueAtTime(fr,t); if(o.f2) s.frequency.exponentialRampToValueAtTime(o.f2,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.g||.1,t+(o.a||.005)); g.gain.exponentialRampToValueAtTime(.0001,t+dur); s.connect(g); g.connect(MG); s.start(t); s.stop(t+dur+.05); }catch(e){} }
+function loops(){ // rain, the engine and the wind
+  const r=AC.createBufferSource(), hp=AC.createBiquadFilter(), lp=AC.createBiquadFilter(), rg=AC.createGain(); r.buffer=NOISE; r.loop=true; hp.type='highpass'; hp.frequency.value=700; lp.type='lowpass'; lp.frequency.value=3600; rg.gain.value=.035; r.connect(hp); hp.connect(lp); lp.connect(rg); rg.connect(MG); r.start();
+  const o1=AC.createOscillator(), o2=AC.createOscillator(), f=AC.createBiquadFilter(), g=AC.createGain(); o1.type='sawtooth'; o2.type='square'; o1.frequency.value=60; o2.frequency.value=30.4; f.type='lowpass'; f.frequency.value=400; g.gain.value=.0001; o1.connect(f); o2.connect(f); f.connect(g); g.connect(MG); o1.start(); o2.start();
+  const w=AC.createBufferSource(), wf=AC.createBiquadFilter(), wg=AC.createGain(); w.buffer=NOISE; w.loop=true; wf.type='bandpass'; wf.frequency.value=600; wf.Q.value=.6; wg.gain.value=.0001; w.connect(wf); wf.connect(wg); wg.connect(MG); w.start();
+  ENG={o1,o2,f,g,wf,wg}; }
+function engineTick(dt,on){ engT-=dt; if(!ENG || engT>0) return; engT=.1; try{ const t=AC.currentTime, sp=CAR.v/(V1+VBOOST), b=CAR.boosting?1:0;
+  ENG.g.gain.setTargetAtTime(on?.045+.03*b:.0001,t,.12); ENG.o1.frequency.setTargetAtTime(55+sp*95+b*25,t,.12); ENG.o2.frequency.setTargetAtTime(27.5+sp*47,t,.12); ENG.f.frequency.setTargetAtTime(300+sp*900+b*700,t,.12);
+  ENG.wg.gain.setTargetAtTime(on?.018+sp*.05:.0001,t,.2); ENG.wf.frequency.setTargetAtTime(400+sp*1000,t,.2); }catch(e){} }
+const SFX={
+  shot(){ nz(.08,{type:'highpass',f:2200,g:.16}); tn(220,.1,{type:'triangle',f2:70,g:.18}); }, boom(){ nz(.55,{type:'lowpass',f:1100,f2:120,g:.34}); tn(72,.45,{g:.3,f2:34}); },
+  roar(){ nz(.6,{f:520,f2:170,q:2,g:.22}); tn(150,.5,{type:'sawtooth',f2:70,g:.06}); }, crash(){ nz(.35,{type:'highpass',f:900,g:.34}); nz(.55,{type:'lowpass',f:320,g:.32}); tn(58,.32,{type:'square',g:.12}); },
+  scrape(){ nz(.25,{f:3400,q:4,g:.12}); }, whoosh(){ nz(.42,{f:500,f2:2600,q:.8,g:.2,a:.07}); }, charm(){ [1319,1760,2093].forEach((f,i)=>tn(f,.5,{g:.06,at:i*.06})); },
+  board(){ tn(90,.25,{type:'square',g:.12}); nz(.3,{f:800,q:1,g:.18}); }, knock(){ tn(230,.12,{type:'triangle',g:.16,f2:80}); nz(.12,{type:'lowpass',f:700,g:.2}); },
+  call(){ tn(988,.25,{type:'triangle',g:.08}); tn(1480,.35,{type:'triangle',g:.06,at:.08}); }, tick(){ tn(1100,.04,{type:'square',g:.04}); },
+  gong(){ tn(196,1.5,{g:.12}); tn(294,1.1,{g:.06}); nz(.4,{type:'lowpass',f:500,g:.07}); }, dawn(){ [523,659,784,1047,1319].forEach((f,i)=>tn(f,1.3,{type:'triangle',g:.07,at:i*.12})); } };
+const buzz=ms=>{ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+function say(k){ if(!k) return; try{ const u=new SpeechSynthesisUtterance(k); u.lang='ja-JP'; u.rate=.9; if(!jaVoice) jaVoice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; if(jaVoice) u.voice=jaVoice;
+  if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+
+// ---------- state ----------
+// MODE 'bot' | 'net'; ROLE 'driver' | 'gunner'. The driving phone owns the truck and the traffic; the gunner's phone owns the yokai.
+let MODE='', ROLE='', RUN=null, IS_HOST=false, ID=0, clock=0;
+const CAR={x:0, vx:0, v:24, boost:1, boosting:false, hp:100, dist:0, crashT:0, xT:0};
+let TRAFFIC=[], CHARMS=[], YOKAI=[], BOARD=[], CALL=null, DYING=[];
+const carHere=()=>!RUN || ROLE==='driver' || MODE==='bot', yokaiHere=()=>RUN && (ROLE==='gunner' || MODE==='bot');
+const FX={shake:0, pops:[], shots:[], recoil:0};
+let tSpawn=0, cSpawn=6, ySpawn=1, callT=5;
+function resetWorld(){ Object.assign(CAR,{x:0,vx:0,v:V0,boost:1,boosting:false,hp:100,dist:0,crashT:0,xT:0}); TRAFFIC=[]; CHARMS=[]; YOKAI=[]; BOARD=[]; CALL=null; DYING=[]; tSpawn=0; cSpawn=6; ySpawn=.8; callT=4.5; FX.pops=[]; FX.shots=[]; }
+function hurt(n){ if(!RUN || RUN.ph!=='run') return; FX.shake=Math.max(FX.shake, n>10?.9:.45);
+  if(carHere()){ CAR.hp=Math.max(0,CAR.hp-n); if(CAR.hp<=0) endRun(false); } else sendEvt({t:'dmg', n}); }
+const score=()=>{ const s=RUN?RUN.s:null; return s ? s.kscore+s.near*20+s.charms*30+Math.floor(CAR.dist/20) : 0; };
+
+// ---------- the truck and the traffic (the driving phone) ----------
+const CAR_COLS=[0x2B3A55,0x7A1F1F,0xC9CDD2,0x1E1E22,0x3D5C4A,0x8A6A2F,0xE6E1D3,0x4A3A6A];
+const IN={btn:{}, keys:{}};
+function driveInput(){ if(!RUN || (MODE==='bot' && ROLE==='gunner')) return {steer:BOTD.steer, boost:BOTD.boost};
+  const B=IN.btn, k=IN.keys; return {steer:((B.r||k.arrowright||k.d)?1:0)-((B.l||k.arrowleft||k.a)?1:0), boost:!!(B.boost||k[' ']||k.shift||k.arrowup||k.w)}; }
+function stepCar(dt){ const t=RUN?RUN.t:0, ph=phaseAt(t), inp=driveInput(), live=RUN && RUN.ph==='run';
+  const pull=BOARD.reduce((s,b)=>s+b.side*2.6,0);
+  CAR.vx+=(inp.steer*11+pull-CAR.vx)*Math.min(1,dt*7); CAR.x+=CAR.vx*dt;
+  if(Math.abs(CAR.x)>XMAX){ CAR.x=Math.sign(CAR.x)*XMAX; if(Math.abs(CAR.vx)>5 && live){ hurt(3); SFX.scrape(); sparks(CAR.x,.6,0,8); } CAR.vx*=-.3; }
+  const base=V0+(V1-V0)*clamp(t/RUN_T,0,1)-(RUN?0:6);
+  CAR.boosting=inp.boost && CAR.boost>.02 && live;
+  CAR.boost=CAR.boosting?Math.max(0,CAR.boost-dt*.3):Math.min(1,CAR.boost+dt*.04);
+  const want=base+(CAR.boosting?VBOOST:0)-(CAR.crashT>0?15:0); CAR.v+=(want-CAR.v)*Math.min(1,dt*(CAR.v<want?1.4:3));
+  if(live) CAR.dist+=CAR.v*dt; if(CAR.crashT>0) CAR.crashT-=dt;
+  tSpawn-=dt; if(tSpawn<=0){ spawnTraffic(base); tSpawn=(1.5-ph.traffic*.8)*rnd(.7,1.3); }
+  for(const c of TRAFFIC){ const pz=c.z; c.z+=(CAR.v-c.v)*dt; if(c.spin) c.x+=c.spin*dt*3;
+    const len=c.type==='truck'?3.6:2.1, w=c.type==='truck'?1.15:.95;
+    if(!c.hit && Math.abs(c.z)<len+2.1 && Math.abs(c.x-CAR.x)<w+.95) crash(c, live);
+    if(!c.near && !c.hit && pz<0 && c.z>=0 && Math.abs(c.x-CAR.x)<3.3 && live){ c.near=true; RUN.s.near++; CAR.boost=Math.min(1,CAR.boost+.14); SFX.whoosh(); pop('ニアミス！','#5BE0FF'); } }
+  TRAFFIC=TRAFFIC.filter(c=>c.z<160 && c.z>-260);
+  cSpawn-=dt; if(cSpawn<=0 && live){ cSpawn=rnd(7,12); CHARMS.push({id:++ID, x:pick(LANES)+rnd(-.4,.4), z:-230}); }
+  for(const ch of CHARMS){ ch.z+=CAR.v*dt; if(!ch.got && ch.z>-1.5 && ch.z<2 && Math.abs(ch.x-CAR.x)<1.7){ ch.got=true; CAR.hp=Math.min(100,CAR.hp+15); RUN.s.charms++; SFX.charm(); pop('お守り +15','#FFD27A'); } }
+  CHARMS=CHARMS.filter(ch=>ch.z<30 && !ch.got); }
+function spawnTraffic(base){ const lane=Math.floor(Math.random()*4), x=LANES[lane];
+  if(TRAFFIC.some(c=>Math.abs(c.x-x)<1 && c.z<-170)) return;
+  const far=TRAFFIC.filter(c=>c.z<-150).map(c=>Math.round((c.x+5.25)/3.5)); if(new Set([...far,lane]).size>=4) return;
+  TRAFFIC.push({id:++ID, x, z:-240, v:base*rnd(.42,.7), type:Math.random()<.22?'truck':'car', ci:Math.floor(Math.random()*CAR_COLS.length), near:false, hit:false, spin:0}); }
+function crash(c, live){ c.hit=true; c.spin=(c.x>CAR.x?1:-1)*.7; c.v=CAR.v*.96; CAR.vx=(CAR.x>c.x?1:-1)*10; CAR.crashT=.9;
+  if(live){ hurt(15); RUN.s.crashes++; SFX.crash(); buzz(40); sparks((CAR.x+c.x)/2,1,-2,16); } }
+
+// ---------- the parade (the gunner's phone) ----------
+function stepYokai(dt){ const ph=phaseAt(RUN.t), night=RUN.t<RUN_T-7;
+  ySpawn-=dt; if(ySpawn<=0){ ySpawn=rnd(1,2.2); if(night && YOKAI.length<ph.max) spawnYokai(ph); }
+  for(const y of YOKAI){ y.t+=dt; y.tt-=dt; if(y.tt<=0){ y.tt=rnd(2,4); y.tx=rnd(-6,6); }
+    if(y.st==='charge') y.tx=CAR.x;
+    y.x+=(y.tx-y.x)*Math.min(1,dt*(y.st==='charge'?2.4:.7));
+    y.vrel = y.st==='calm' ? clamp((y.hold-y.z)*.9,-30,12) : -(18+RUN.t*.06-(CAR.boosting?8:0));
+    y.z+=y.vrel*dt; if(y.st==='charge' && y.z<2.6) board(y); }
+  YOKAI=YOKAI.filter(y=>!y.gone && y.z<265);
+  if(CALL){ CALL.t+=dt; const y=YOKAI.find(q=>q.id===CALL.id); if(!y){ CALL=null; callT=rnd(1,1.8); } else if(y.st==='calm' && CALL.t>CALL.warn) y.st='charge'; }
+  else if(night){ callT-=dt; if(callT<=0){ startCall(); callT=ph.every; } }
+  for(const b of BOARD){ b.t+=dt; b.dmgT-=dt; if(b.dmgT<=0){ b.dmgT=1.1; hurt(5); } }
+  if(!night){ CALL=null; for(const y of YOKAI){ y.st='calm'; y.hold=300; } } }
+function spawnYokai(ph){ const used=new Set([...YOKAI.map(y=>y.k), ...BOARD.map(b=>b.k)]), pool=[...ph.kana].filter(k=>!used.has(k)); if(!pool.length) return;
+  YOKAI.push({id:++ID, k:pick(pool), x:rnd(-6,6), tx:rnd(-6,6), tt:rnd(2,4), z:rnd(125,155), hold:rnd(14,44), vrel:0, st:'calm', t:0, look:Math.floor(Math.random()*3)}); }
+function startCall(){ const c=YOKAI.filter(y=>y.st==='calm' && y.z>14 && y.z<90); if(!c.length){ callT=.8; return; } const y=pick(c);
+  CALL={id:y.id, k:y.k, t:0, warn:clamp(3.4-RUN.t*.012,1.8,3.4)}; SFX.call(); setTimeout(()=>say(y.k),130); }
+function board(y){ YOKAI=YOKAI.filter(q=>q!==y); if(CALL && CALL.id===y.id){ CALL=null; RUN.s.combo=0; callT=2; }
+  if(BOARD.length>=2){ hurt(14); SFX.crash(); return; }
+  const side=BOARD.some(b=>b.side<0)?1:BOARD.some(b=>b.side>0)?-1:(y.x>CAR.x?1:-1);
+  BOARD.push({id:y.id, k:y.k, side, hp:2, t:0, dmgT:.9, board:true, look:y.look}); hurt(10); SFX.board(); buzz(30); }
+// one お札: the called yokai or an angry one is banished; a calm one you hit gets angry and charges
+function shootTarget(t){ if(!t) return;
+  if(t.board){ t.hp--; SFX.knock(); burstAt(CAR.x+t.side*.6,1.6,3.5,0x7FD8FF,10); if(t.hp<=0){ BOARD=BOARD.filter(b=>b!==t); RUN.s.kills++; RUN.s.kscore+=40; popAt(CAR.x+t.side*.6,2.4,3.5,'ふりおとした！','#BFE8FF'); } return; }
+  if(!YOKAI.includes(t)) return; const called=CALL && CALL.id===t.id;
+  if(called || t.st==='charge'){ YOKAI=YOKAI.filter(y=>y!==t); DYING.push({...t, dt:0}); SFX.boom(); RUN.s.kills++; burstAt(t.x,2.2,t.z,0x7FD8FF,22); burstAt(t.x,3,t.z,0xFF9A4D,10);
+    if(called){ RUN.s.combo++; RUN.s.best=Math.max(RUN.s.best,RUN.s.combo); const pts=100*Math.min(5,RUN.s.combo); RUN.s.kscore+=pts; learn(t.k); popAt(t.x,3.6,t.z,`たいじ！ +${pts}`,'#FFE9D6'); CALL=null; callT=Math.min(callT,1.3); }
+    else { RUN.s.kscore+=50; popAt(t.x,3.6,t.z,'+50','#FFE9D6'); }
+    if(MODE==='net') sendEvt({t:'kill', x:+t.x.toFixed(2), z:+t.z.toFixed(1), k:t.k, look:t.look}); }
+  else { t.st='charge'; t.angry=true; RUN.s.wrong++; RUN.s.combo=0; SFX.roar(); popAt(t.x,3.6,t.z,'ちがう！','#FF7A6E'); } }
+
+// ---------- しばBot: drives or shoots when you practise ----------
+const BOTD={steer:0, boost:false, lane:1, react:0}, BOTG={t:0};
+function botDriver(dt){ BOTD.react-=dt; if(BOTD.react<=0){ BOTD.react=rnd(.18,.34);
+    const free=l=>{ let d=999; for(const c of TRAFFIC) if(Math.abs(c.x-LANES[l])<2 && c.z<5) d=Math.min(d,-c.z); return d; };
+    const cur=LANES.reduce((bi,x,i)=>Math.abs(x-CAR.x)<Math.abs(LANES[bi]-CAR.x)?i:bi,0); let best=BOTD.lane, bd=free(BOTD.lane);
+    if(bd<60) for(const l of [cur-1,cur+1,cur-2,cur+2]){ if(l<0||l>3) continue; const d=free(l); if(d>bd+12){ bd=d; best=l; } }
+    const ch=CHARMS.find(c=>c.z<-12 && c.z>-70); if(ch){ const l=LANES.reduce((bi,x,i)=>Math.abs(x-ch.x)<Math.abs(LANES[bi]-ch.x)?i:bi,0); if(Math.abs(l-cur)<=1 && free(l)>45) best=l; }
+    BOTD.lane=best; BOTD.boost=bd>100 && CAR.boost>.35 && Math.random()<.5; }
+  const dx=LANES[BOTD.lane]-CAR.x; BOTD.steer=Math.abs(dx)<.3?0:Math.sign(dx); }
+function botGunner(dt){ BOTG.t-=dt; if(BOTG.t>0) return; BOTG.t=.15;
+  if(BOARD.length){ BOTG.t=rnd(.35,.6); botShot(BOARD[0]); return; }
+  if(CALL && CALL.t>rnd(.7,1.2)){ const y=YOKAI.find(q=>q.id===CALL.id); if(y){ BOTG.t=rnd(.3,.5); const w=Math.random()<.05 && YOKAI.find(q=>q.id!==y.id && q.st==='calm'); botShot(w||y); return; } }
+  const c=YOKAI.find(y=>y.st==='charge' && y.z<45); if(c){ BOTG.t=rnd(.4,.7); botShot(c); } }
+function botShot(t){ tracer(t.board?{x:CAR.x+t.side*.6,y:1.6,z:3.5}:{x:t.x,y:2.9,z:t.z}); SFX.shot(); shootTarget(t); }
+
+// ---------- three.js: the expressway at night ----------
+let R3=null;
+const TEXC={};
+function ctex(key,w,h,draw){ if(TEXC[key]) return TEXC[key]; const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); return TEXC[key]=new THREE.CanvasTexture(c); }
+function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+const glowTex=()=>ctex('glow',64,64,(g)=>{ const r=g.createRadialGradient(32,32,0,32,32,32); r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(.3,'rgba(255,255,255,.55)'); r.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=r; g.fillRect(0,0,64,64); });
+const poolTex=()=>ctex('pool',128,128,(g)=>{ const r=g.createRadialGradient(64,64,0,64,64,64); r.addColorStop(0,'rgba(255,255,255,.85)'); r.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=r; g.fillRect(0,0,128,128); });
+function glow(color,size,op=1){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(), color, transparent:true, opacity:op, depthWrite:false, blending:THREE.AdditiveBlending})); s.scale.set(size,size,1); return s; }
+function lanternTex(k){ return ctex('lan'+k,128,160,(g)=>{ g.fillStyle='#1A1210'; rr(g,36,4,56,16,4); g.fill(); rr(g,36,140,56,16,4); g.fill();
+  const r=g.createRadialGradient(64,72,6,64,80,64); r.addColorStop(0,'#FFC88A'); r.addColorStop(.45,'#E8552E'); r.addColorStop(1,'#721810'); g.fillStyle=r; g.beginPath(); g.ellipse(64,80,54,62,0,0,TAU); g.fill();
+  g.strokeStyle='rgba(60,15,8,.4)'; g.lineWidth=2; for(let yy=26;yy<140;yy+=11){ const half=54*Math.sqrt(Math.max(0,1-((yy-80)/62)**2)); g.beginPath(); g.moveTo(64-half,yy); g.lineTo(64+half,yy); g.stroke(); }
+  g.fillStyle='#160806'; g.font='400 70px "Yuji Syuku"'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(k,64,84); }); }
+function neonTex(txt,col,vert){ return ctex('neon'+txt,vert?96:256,vert?72+txt.length*64:96,(g,w,h)=>{ g.font='400 58px "Dela Gothic One"'; g.textAlign='center'; g.textBaseline='middle';
+  const put=()=>{ if(vert) [...txt].forEach((ch,i)=>g.fillText(ch,w/2,48+i*64)); else g.fillText(txt,w/2,h/2+2); };
+  g.shadowColor=col; g.shadowBlur=18; g.fillStyle=col; put(); put(); g.shadowBlur=3; g.fillStyle='rgba(255,255,255,.88)'; put(); }); }
+const GANTRY=[['渋谷','Shibuya'],['新宿','Shinjuku'],['銀座','Ginza'],['羽田','Haneda'],['横浜','Yokohama'],['池袋','Ikebukuro'],['湾岸線','Bayshore'],['都心環状','C1 Inner Loop']];
+const gantryTex=i=>ctex('gan'+i,512,160,(g,w,h)=>{ const [a,b]=GANTRY[i]; g.fillStyle='#0E5A35'; g.fillRect(0,0,w,h); g.strokeStyle='#E8F2EA'; g.lineWidth=5; g.strokeRect(8,8,w-16,h-16);
+  g.fillStyle='#F2F7F2'; g.textBaseline='middle'; g.textAlign='left'; g.font='400 62px "Dela Gothic One"'; g.fillText(a,30,h/2-14); g.font='700 26px "Zen Kaku Gothic New"'; g.fillText(b,34,h/2+42); g.textAlign='right'; g.font='400 62px "Dela Gothic One"'; g.fillText('↑',w-34,h/2); });
+// one mesh from many parts, coloured per part (keeps the draw calls down)
+function mergeParts(parts){ const pos=[], nor=[], col=[], m=new THREE.Matrix4(), e=new THREE.Euler(), q=new THREE.Quaternion(), s=new THREE.Vector3(1,1,1), p=new THREE.Vector3(), c=new THREE.Color();
+  for(const pt of parts){ const g=pt.g.index?pt.g.toNonIndexed():pt.g.clone(); e.set(pt.rx||0,pt.ry||0,pt.rz||0); q.setFromEuler(e); p.set(pt.x||0,pt.y||0,pt.z||0); m.compose(p,q,s); g.applyMatrix4(m);
+    const P=g.attributes.position.array, N=g.attributes.normal.array; c.set(pt.c); for(let i=0;i<P.length;i++){ pos.push(P[i]); nor.push(N[i]); } for(let i=0;i<P.length/3;i++) col.push(c.r,c.g,c.b); }
+  const out=new THREE.BufferGeometry(); out.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); out.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3)); out.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); return out; }
+const B=(w,h,d)=>new THREE.BoxGeometry(w,h,d);
+function mkPts(max,size,op){ const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(max*3),3)); g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(max*3),3));
+  const p=new THREE.Points(g,new THREE.PointsMaterial({size, map:glowTex(), vertexColors:true, transparent:true, opacity:op, depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true})); p.frustumCulled=false; return {p,g,n:0,max}; }
+function addPt(P,x,y,z,col){ if(P.n>=P.max) return; const i=P.n++*3, pa=P.g.attributes.position.array, ca=P.g.attributes.color.array; pa[i]=x; pa[i+1]=y; pa[i+2]=z; ca[i]=(col>>16&255)/255; ca[i+1]=(col>>8&255)/255; ca[i+2]=(col&255)/255; }
+function flushPts(P){ P.g.setDrawRange(0,P.n); P.g.attributes.position.needsUpdate=true; P.g.attributes.color.needsUpdate=true; P.n=0; }
+function initThree(){ if(R3 || !window.THREE) return; const T=THREE;
+  const renderer=new T.WebGLRenderer({antialias:false, powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(1.5,devicePixelRatio||1)); $('#three').appendChild(renderer.domElement);
+  const scene=new T.Scene(); scene.background=new T.Color(0x060912); scene.fog=new T.Fog(0x0B1122,45,235);
+  scene.add(new T.HemisphereLight(0x8090C0,0x101018,.95)); const dl=new T.DirectionalLight(0xC8D6FF,.55); dl.position.set(-30,50,20); scene.add(dl);
+  const chase=new T.PerspectiveCamera(60,2,.1,260), rear=new T.PerspectiveCamera(44,2,.1,260), mirror=new T.PerspectiveCamera(40,2.4,.1,170);
+  // road, barriers, reflector posts
+  const roadT=ctex('road',256,512,(g,w,h)=>{ g.fillStyle='#17191E'; g.fillRect(0,0,w,h); for(let i=0;i<2600;i++){ const v=20+Math.random()*32|0; g.fillStyle=`rgb(${v},${v},${v+5})`; g.fillRect(Math.random()*w,Math.random()*h,2,2); }
+    const px=m=>(m+7.3)/14.6*w; g.fillStyle='rgba(236,236,226,.85)'; [-3.5,0,3.5].forEach(m=>g.fillRect(px(m)-2,0,4,h*.42)); g.fillStyle='rgba(240,200,90,.8)'; g.fillRect(px(-7)-2,0,4,h); g.fillRect(px(7)-2,0,4,h); });
+  roadT.wrapS=roadT.wrapT=T.RepeatWrapping; roadT.repeat.set(1,600/24);
+  const road=new T.Mesh(new T.PlaneGeometry(14.6,600),new T.MeshBasicMaterial({map:roadT})); road.rotation.x=-Math.PI/2; road.position.z=-50; scene.add(road);
+  const wallM=new T.MeshLambertMaterial({color:0x585D66}); [-1,1].forEach(s=>{ const w=new T.Mesh(B(.6,1.1,600),wallM); w.position.set(s*7.6,.55,-50); scene.add(w); });
+  const NP=50, posts=new T.InstancedMesh(B(.2,.28,.2),new T.MeshBasicMaterial({color:0xFFC24A}),NP*2); scene.add(posts);
+  // streetlights: poles, arms, sodium heads, glows and light pools on the wet road
+  const NL=14, poles=new T.InstancedMesh(B(.2,8.6,.2),new T.MeshLambertMaterial({color:0x3A3F48}),NL*2), arms=new T.InstancedMesh(B(2.5,.14,.14),new T.MeshLambertMaterial({color:0x3A3F48}),NL*2),
+    heads=new T.InstancedMesh(B(1,.2,.45),new T.MeshBasicMaterial({color:0xFFC48A}),NL*2), pools=new T.InstancedMesh(new T.PlaneGeometry(10,17).rotateX(-Math.PI/2),new T.MeshBasicMaterial({map:poolTex(),color:0xFF9A4D,transparent:true,opacity:.24,depthWrite:false,blending:T.AdditiveBlending}),NL*2);
+  [poles,arms,heads,pools].forEach(m=>scene.add(m));
+  // the city around the elevated road: lit towers, neon, overhead signs
+  const WINT=[0,1,2].map(i=>{ const t=ctex('win'+i,64,128,(g,w,h)=>{ g.fillStyle=['#0C1018','#100C14','#0A0F12'][i]; g.fillRect(0,0,w,h); for(let y=4;y<h-4;y+=8) for(let x=4;x<w-4;x+=8){ const r=Math.random(); if(r<[.3,.2,.36][i]){ g.fillStyle=r<.12?'rgba(255,214,150,.95)':r<.2?'rgba(170,210,255,.8)':'rgba(255,240,200,.55)'; g.fillRect(x,y,5,5); } } }); t.wrapS=t.wrapT=T.RepeatWrapping; t.magFilter=T.NearestFilter; return t; });
+  const NEON=[['らーめん','#FF4D8D'],['カラオケ','#FFB23E'],['ホテル','#5BE0FF'],['居酒屋','#FF6B4A'],['薬','#7CFFB2'],['焼肉','#FF4D4D'],['パチンコ','#FFE45B'],['24H','#B98CFF']];
+  const builds=[]; for(let i=0;i<30;i++){ const side=i%2?1:-1, w=rnd(12,26), h=rnd(18,70), d=rnd(12,24), tex=WINT[i%3].clone(); tex.needsUpdate=true; tex.repeat.set(Math.max(1,w/9),Math.max(1,h/11));
+    const m=new T.Mesh(B(w,h,d),new T.MeshBasicMaterial({map:tex})); const x=side*(rnd(17,62)+w/2); m.position.set(x,h/2-26,0); m.userData={z0:i*20+rnd(0,12), side};
+    if(Math.random()<.5){ const [txt,col]=pick(NEON), vert=txt.length>1&&Math.random()<.6, nt=neonTex(txt,col,vert), sp=new T.Sprite(new T.SpriteMaterial({map:nt,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));
+      const sw=vert?3.2:8, sh=vert?3.2*nt.image.height/nt.image.width:8*nt.image.height/nt.image.width; sp.scale.set(sw,sh,1); sp.position.set(-side*(w/2+.2),rnd(-h/2+30,h/2-4),rnd(-d/3,d/3)); m.add(sp); }
+    scene.add(m); builds.push(m); }
+  const gantries=[0,1].map(i=>{ const g=new T.Group(), gm=new T.MeshLambertMaterial({color:0x4A505A}); [-1,1].forEach(s=>{ const p=new T.Mesh(B(.45,8,.45),gm); p.position.set(s*8.3,4.6,0); g.add(p); }); const beam=new T.Mesh(B(17,.5,.5),gm); beam.position.y=8.4; g.add(beam);
+    const signs=[-3.6,3.6].map(x=>{ const s=new T.Mesh(new T.PlaneGeometry(6.2,1.95),new T.MeshBasicMaterial({map:gantryTex((i*2+(x>0?1:0))%GANTRY.length)})); s.position.set(x,7.2,.3); g.add(s); return s; });
+    g.userData={z0:i*300, signs, n:i*2}; scene.add(g); return g; });
+  // the truck: one coloured mesh for the body, one for the lights
+  const T2=mergeParts([{g:B(1.92,.5,4.4),y:.72,c:0x223047},{g:B(1.84,.78,1.75),y:1.36,z:-1.2,c:0x223047},{g:B(1.7,.6,.06),y:1.42,z:-2.08,rx:-.32,c:0x1A2438},{g:B(1.72,.5,.06),y:1.45,z:-.33,c:0x1A2438},
+    {g:B(.08,.42,2.35),x:-.92,y:1.16,z:.98,c:0x0E1118},{g:B(.08,.42,2.35),x:.92,y:1.16,z:.98,c:0x0E1118},{g:B(1.84,.42,.08),y:1.16,z:2.17,c:0x0E1118},
+    {g:B(1.96,.16,.25),y:.5,z:2.25,c:0x8A939C},{g:B(1.96,.16,.25),y:.5,z:-2.25,c:0x8A939C},
+    ...[[-1,-1.4],[1,-1.4],[-1,1.4],[1,1.4]].map(([sx,sz])=>({g:new T.CylinderGeometry(.4,.4,.32,14),x:sx*.97,y:.4,z:sz,rz:Math.PI/2,c:0x0A0A0C}))]);
+  const truck=new T.Group(); truck.add(new T.Mesh(T2,new T.MeshLambertMaterial({vertexColors:true})));
+  truck.add(new T.Mesh(mergeParts([{g:B(.36,.14,.04),x:-.72,y:.88,z:2.21,c:0xFF2A2A},{g:B(.36,.14,.04),x:.72,y:.88,z:2.21,c:0xFF2A2A},{g:B(.32,.14,.04),x:-.68,y:.86,z:-2.21,c:0xFFF4D8},{g:B(.32,.14,.04),x:.68,y:.86,z:-2.21,c:0xFFF4D8}]),new T.MeshBasicMaterial({vertexColors:true})));
+  const beam=new T.Mesh(new T.PlaneGeometry(6,18),new T.MeshBasicMaterial({map:poolTex(),color:0xFFF2D0,transparent:true,opacity:.3,depthWrite:false,blending:T.AdditiveBlending})); beam.rotation.x=-Math.PI/2; beam.position.set(0,.05,-12); truck.add(beam);
+  const gunner=new T.Mesh(mergeParts([{g:B(.5,.85,.36),y:1.85,c:0x14161D},{g:new T.SphereGeometry(.19,10,8),y:2.45,c:0xD8B48C},{g:B(.12,.12,.8),x:.22,y:2.05,z:.35,c:0x8A939C}]),new T.MeshLambertMaterial({vertexColors:true})); gunner.position.z=1; truck.add(gunner);
+  scene.add(truck);
+  // traffic and the parade, pooled by id; their lights and eyes are point sprites
+  const carGeo=mergeParts([{g:B(1.9,.62,4.2),y:.62,c:0xFFFFFF},{g:B(1.7,.52,2.1),y:1.18,z:.2,c:0x2A2E36}]), trkGeo=mergeParts([{g:B(2.3,2.5,6.8),y:1.75,z:.4,c:0xB8BCC2},{g:B(2.2,1.6,1.8),y:1.2,z:-3.2,c:0x2A2E36},{g:B(2.2,.3,.1),y:2.2,z:-4.11,c:0x9AB4D0}]);
+  const carMats=CAR_COLS.map(c=>new T.MeshLambertMaterial({color:c,vertexColors:true})), trkMat=new T.MeshLambertMaterial({vertexColors:true});
+  const yGeo=mergeParts([{g:B(.5,.5,1.8),y:.6,c:0x1C1E25},{g:new T.CylinderGeometry(.34,.34,.16,10),y:.34,z:-.72,rz:Math.PI/2,c:0x0A0A0C},{g:new T.CylinderGeometry(.34,.34,.16,10),y:.34,z:.72,rz:Math.PI/2,c:0x0A0A0C},
+    {g:B(.62,.85,.46),y:1.36,z:.12,c:0xFFFFFF},{g:new T.SphereGeometry(.25,10,8),y:1.98,z:.05,c:0xFFFFFF},{g:B(.05,1.3,.05),y:2.3,z:.48,c:0x3A2A1E}]);
+  const yMats=[0x101118,0x1E0E14,0x0E1520].map(c=>new T.MeshLambertMaterial({color:c,vertexColors:true}));
+  const pts={sm:mkPts(160,.45,1), md:mkPts(260,1.15,.95), lg:mkPts(120,2.2,.8)}; Object.values(pts).forEach(P=>scene.add(P.p));
+  const charmT=ctex('charm',64,128,(g)=>{ g.fillStyle='#F4EEDF'; g.fillRect(8,4,48,120); g.strokeStyle='#B5281E'; g.lineWidth=4; g.strokeRect(13,9,38,110); g.fillStyle='#B5281E'; g.font='400 34px "Yuji Syuku"'; g.textAlign='center'; g.textBaseline='middle'; g.fillText('守',32,48); g.fillText('札',32,88); });
+  R3={renderer, scene, chase, rear, mirror, roadT, posts, poles, arms, heads, pools, NP, NL, builds, gantries, truck, gunner, carGeo, trkGeo, carMats, trkMat, yGeo, yMats, pts, charmT,
+    cars:new Map(), yk:new Map(), charms:new Map(), fx:[], tracers:[], scroll:0, camX:0, bg:new T.Color(0x060912), fogN:new T.Color(0x0B1122)};
+  const size=()=>{ const w=innerWidth, h=innerHeight; renderer.setSize(w,h,false); chase.aspect=rear.aspect=w/h; chase.updateProjectionMatrix(); rear.updateProjectionMatrix(); }; size(); addEventListener('resize', size); }
+const M4=()=>R3.m4||(R3.m4=new THREE.Matrix4());
+function placeInst(im,i,x,y,z){ const m=M4(); m.makeTranslation(x,y,z); im.setMatrixAt(i,m); }
+function poolGet(map,id,make){ let o=map.get(id); if(!o){ o=make(); R3.scene.add(o); map.set(id,o); } o.userData.seen=true; return o; }
+function poolSweep(map){ for(const [id,o] of map){ if(!o.userData.seen){ R3.scene.remove(o); map.delete(id); } else o.userData.seen=false; } }
+function sparks(x,y,z,n){ for(let i=0;i<n;i++) R3 && R3.fx.push({x,y,z,vx:rnd(-6,6),vy:rnd(1,6),vz:rnd(-2,6),t:0,max:rnd(.25,.5),c:0xFFB347,sz:'sm'}); }
+function burstAt(x,y,z,c,n){ for(let i=0;i<n;i++) R3 && R3.fx.push({x,y,z,vx:rnd(-4,4),vy:rnd(-1,5),vz:rnd(-3,3),t:0,max:rnd(.4,.8),c,sz:i%3?'md':'lg'}); }
+function tracer(to){ if(R3) R3.tracers.push({to, t:0}); }
+function draw3(dt){ const R=R3, T=THREE, v=CAR.v; R.scroll+=v*dt;
+  R.roadT.offset.y=(R.scroll/24)%1;
+  for(let i=0;i<R.NP*2;i++){ const side=i<R.NP?-1:1, z=((i%R.NP)*12+R.scroll)%600-350; placeInst(R.posts,i,side*7.45,1.22,z); } R.posts.instanceMatrix.needsUpdate=true;
+  for(let i=0;i<R.NL*2;i++){ const side=i<R.NL?-1:1, z=((i%R.NL)*40+(side>0?20:0)+R.scroll)%560-320; placeInst(R.poles,i,side*8.4,5.4,z); placeInst(R.arms,i,side*7.3,9.6,z); placeInst(R.heads,i,side*6.3,9.5,z); placeInst(R.pools,i,side*4.4,.04,z);
+    addPt(R.pts.lg,side*6.3,9.3,z,0xFF9A4D); }
+  R.pools.instanceMatrix.needsUpdate=R.poles.instanceMatrix.needsUpdate=R.arms.instanceMatrix.needsUpdate=R.heads.instanceMatrix.needsUpdate=true;
+  for(const b of R.builds) b.position.z=(b.userData.z0+R.scroll*.985)%600-350;
+  for(const g of R.gantries){ const z=(g.userData.z0+R.scroll)%600-350; if(g.position.z>100 && z<0){ g.userData.n=(g.userData.n+2)%GANTRY.length; g.userData.signs.forEach((s,i)=>{ s.material.map=gantryTex((g.userData.n+i)%GANTRY.length); s.material.needsUpdate=true; }); } g.position.z=z; }
+  // the truck, rolling into its turns
+  R.truck.position.x=CAR.x; R.truck.rotation.y=-CAR.vx*.028; R.truck.rotation.z=CAR.vx*.012; R.gunner.visible=ROLE!=='gunner'||!RUN;
+  addPt(R.pts.md,CAR.x-.72,.88,2.3,0xFF3A2A); addPt(R.pts.md,CAR.x+.72,.88,2.3,0xFF3A2A); addPt(R.pts.lg,CAR.x-.68,.86,-2.4,0xFFF2D0); addPt(R.pts.lg,CAR.x+.68,.86,-2.4,0xFFF2D0);
+  if(CAR.boosting) for(let i=0;i<3;i++) addPt(R.pts.lg,CAR.x+rnd(-.5,.5),.6,2.6+rnd(0,1.6),0x5BE0FF);
+  // traffic
+  for(const c of TRAFFIC){ const m=poolGet(R.cars,c.id,()=>{ const o=new T.Mesh(c.type==='truck'?R.trkGeo:R.carGeo, c.type==='truck'?R.trkMat:R.carMats[c.ci]); return o; });
+    m.position.set(c.x,0,c.z); m.rotation.y=c.spin?Math.sin(clock*9)*.3:0; const L=c.type==='truck'?3.8:2.12, H=c.type==='truck'?4.1:2.12;
+    addPt(R.pts.md,c.x-.7,.8,c.z+L,0xFF2A2A); addPt(R.pts.md,c.x+.7,.8,c.z+L,0xFF2A2A); addPt(R.pts.md,c.x-.7,.8,c.z-H,0xFFF0D0); addPt(R.pts.md,c.x+.7,.8,c.z-H,0xFFF0D0); }
+  poolSweep(R.cars);
+  // the parade
+  const yk=(id,look,k)=>poolGet(R.yk,id,()=>{ const g=new T.Group(); g.add(new T.Mesh(R.yGeo,R.yMats[look%3])); const lan=new T.Sprite(new T.SpriteMaterial({map:lanternTex(k)})); lan.scale.set(1.9,2.4,1); lan.position.set(0,3.35,.48); g.add(lan);
+    const aura=glow(0xFF2A1A,5,.75); aura.position.set(0,1.7,0); g.add(aura); g.userData.aura=aura; g.userData.lan=lan; return g; });
+  const showY=(y,o)=>{ o.scale.setScalar(1); o.userData.lan.visible=true; o.userData.aura.scale.set(5,5,1); o.position.set(y.x,Math.sin(clock*3+y.id)*.06,y.z); o.rotation.y=(y.tx-y.x)*.05; const hot=y.st==='charge';
+    o.userData.aura.visible=hot; if(hot) o.userData.aura.material.opacity=.55+Math.sin(clock*18)*.2;
+    addPt(R.pts.sm,y.x-.09,1.99,y.z-.24,hot?0xFF3020:0x7FE8FF); addPt(R.pts.sm,y.x+.09,1.99,y.z-.24,hot?0xFF3020:0x7FE8FF); addPt(R.pts.md,y.x,.75,y.z-.95,0xBFE6FF);
+    for(let i=0;i<2;i++) addPt(R.pts.lg,y.x+rnd(-.3,.3),.6+rnd(0,.8),y.z+1.1+rnd(0,1.2),hot?0xFF5A2A:0x3A7BFF); };
+  for(const y of YOKAI) showY(y,yk(y.id,y.look,y.k));
+  for(const d of DYING){ d.dt+=dt; const o=yk(d.id,d.look,d.k); o.position.set(d.x,d.dt*1.5,d.z+d.dt*30); o.rotation.z=d.dt*5; o.rotation.x=d.dt*3; o.userData.aura.visible=false; o.userData.lan.material.opacity=Math.max(0,1-d.dt*1.4); }
+  DYING=DYING.filter(d=>d.dt<.9);
+  for(const b of BOARD){ const o=yk(b.id,b.look,b.k); o.scale.setScalar(.85); o.position.set(CAR.x+b.side*.62,.1+Math.sin(clock*14)*.06,3.5); o.rotation.set(.45,0,b.side*.35); o.userData.lan.visible=false; o.userData.aura.visible=true; o.userData.aura.scale.set(2.4,2.4,1); }
+  poolSweep(R.yk);
+  // お守り on the road
+  for(const ch of CHARMS){ const o=poolGet(R.charms,ch.id,()=>{ const s=new T.Sprite(new T.SpriteMaterial({map:R.charmT})); s.scale.set(.8,1.6,1); return s; }); o.position.set(ch.x,1.3+Math.sin(clock*4+ch.id)*.15,ch.z); addPt(R.pts.lg,ch.x,1.3,ch.z,0xFFD27A); addPt(R.pts.lg,ch.x,.15,ch.z,0xFFB347); }
+  poolSweep(R.charms);
+  // sparks, spirit fire, お札 tracers
+  for(const f of R.fx){ f.t+=dt; f.x+=f.vx*dt; f.y+=f.vy*dt; f.z+=(f.vz+v*.0)*dt; f.vy-=6*dt; if(f.t<f.max) addPt(R.pts[f.sz],f.x,f.y,f.z,f.c); } R.fx=R.fx.filter(f=>f.t<f.max);
+  for(const tr of R.tracers){ tr.t+=dt; const k=Math.min(1,tr.t/.09); for(let i=0;i<6;i++){ const u=k*(i+1)/6; addPt(R.pts.md,CAR.x+(tr.to.x-CAR.x)*u,2.1+(tr.to.y-2.1)*u,1.4+(tr.to.z-1.4)*u,0x9FEFFF); } } R.tracers=R.tracers.filter(t=>t.t<.14);
+  Object.values(R.pts).forEach(flushPts);
+  // dawn: the sky warms up and the parade fades
+  const dawn=RUN?clamp((RUN.t-(RUN_T-12))/12,0,1):0; R.scene.background.copy(R.bg).lerp(new T.Color(0x6A4A5E),dawn); R.scene.fog.color.copy(R.fogN).lerp(new T.Color(0xC98A72),dawn);
+  // cameras
+  const sh=FX.shake, jx=sh?rnd(-1,1)*sh*.35:0, jy=sh?rnd(-1,1)*sh*.25:0;
+  R.camX+=(CAR.x*.82-R.camX)*Math.min(1,dt*5);
+  const {chase,rear,mirror,renderer}=R, W=innerWidth, H=innerHeight;
+  chase.position.set(R.camX+jx,3.25+jy,8.4); chase.lookAt(R.camX*.95,1.1,-12); chase.rotateZ(-CAR.vx*.005);
+  const fov=58+(CAR.v-V0)*.55+(CAR.boosting?10:0); chase.fov+=(fov-chase.fov)*Math.min(1,dt*3); chase.updateProjectionMatrix();
+  rear.position.set(CAR.x+jx*.6,2.72+jy,.5); rear.lookAt(CAR.x*.55,1,45); rear.rotateZ(CAR.vx*.012+Math.sin(clock*13)*.005*CAR.v/V1);
+  if(ROLE==='gunner' && RUN){ renderer.setScissorTest(false); renderer.setViewport(0,0,W,H); renderer.render(R.scene,rear); return; }
+  renderer.setScissorTest(false); renderer.setViewport(0,0,W,H); renderer.render(R.scene,chase);
+  if(RUN && ROLE==='driver'){ const mw=Math.round(W*.3), mh=Math.round(H*.17), mx=Math.round((W-mw)/2), top=Math.round(H*.025)+8;
+    mirror.position.set(CAR.x,2.4,4.9); mirror.lookAt(CAR.x*.7,1.7,50); mirror.aspect=mw/mh; mirror.updateProjectionMatrix();
+    renderer.setScissorTest(true); renderer.setScissor(mx,H-top-mh,mw,mh); renderer.setViewport(mx,H-top-mh,mw,mh); renderer.render(R.scene,mirror); renderer.setScissorTest(false);
+    const fr=$('#mirror'); const k=`${mx},${top},${mw},${mh}`; if(fr.dataset.k!==k){ fr.dataset.k=k; Object.assign(fr.style,{left:mx-3+'px',top:top-3+'px',width:mw+6+'px',height:mh+6+'px'}); $('#callD').style.top=top+mh+8+'px'; } } }
+function scrOf(x,y,z){ const v=(R3.v3||(R3.v3=new THREE.Vector3())).set(x,y,z).project(ROLE==='gunner'?R3.rear:R3.chase); return {x:(v.x+1)/2*innerWidth, y:(1-v.y)/2*innerHeight, ok:v.z<1}; }
+
+// ---------- the 2D layer: rain, speed lines, floating words, the gunner's launcher ----------
+const fxc=$('#fx'), fg=fxc.getContext('2d'); let FW=0, FH=0;
+function fxResize(){ FW=innerWidth; FH=innerHeight; fxc.width=FW; fxc.height=FH; } addEventListener('resize', fxResize); fxResize();
+const DROPS=Array.from({length:110},()=>({x:Math.random(), y:Math.random(), s:rnd(.6,1.4)}));
+const pop=(txt,col)=>FX.pops.push({txt,col,t:0,scr:true});
+const popAt=(x,y,z,txt,col)=>FX.pops.push({txt,col,t:0,w:{x,y,z}});
+function drawFX(dt){ fg.clearRect(0,0,FW,FH); const sp=CAR.v/V1;
+  fg.strokeStyle='rgba(180,200,255,.22)'; fg.lineWidth=1; fg.beginPath();
+  for(const d of DROPS){ d.y+=dt*(1.1+sp*.9)*d.s; d.x+=dt*(ROLE==='gunner'&&RUN?.05:-.05)*d.s; if(d.y>1){ d.y=0; d.x=Math.random(); } const x=d.x*FW, y=d.y*FH, l=(10+sp*16)*d.s; fg.moveTo(x,y); fg.lineTo(x+(ROLE==='gunner'&&RUN?-2:2),y-l); } fg.stroke();
+  if(CAR.boosting && ROLE!=='gunner'){ fg.strokeStyle='rgba(190,240,255,.35)'; fg.lineWidth=2; fg.beginPath(); for(let i=0;i<22;i++){ const a=Math.random()*TAU, r1=rnd(.3,.45)*FW, r2=r1+rnd(40,140); fg.moveTo(FW/2+Math.cos(a)*r1,FH*.45+Math.sin(a)*r1*.6); fg.lineTo(FW/2+Math.cos(a)*r2,FH*.45+Math.sin(a)*r2*.6); } fg.stroke(); }
+  if(CAR.hp<35 && RUN && RUN.ph==='run'){ const a=.18+Math.sin(clock*6)*.08; const gr=fg.createRadialGradient(FW/2,FH/2,FH*.3,FW/2,FH/2,FH*.9); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,`rgba(224,53,43,${a.toFixed(2)})`); fg.fillStyle=gr; fg.fillRect(0,0,FW,FH); }
+  // the gunner's お札 launcher and shots
+  if(ROLE==='gunner' && RUN){ FX.recoil=Math.max(0,FX.recoil-dt*6); const bx=FW*.84, by=FH+30+FX.recoil*18;
+    for(const s of FX.shots){ s.t+=dt; const k=Math.min(1,s.t/.08); fg.strokeStyle=`rgba(160,240,255,${(1-s.t/.18).toFixed(2)})`; fg.lineWidth=4; fg.beginPath(); fg.moveTo(bx-46,by-96); fg.lineTo(bx-46+(s.x-bx+46)*k,by-96+(s.y-by+96)*k); fg.stroke();
+      if(s.t<.2){ fg.strokeStyle='rgba(255,255,255,.8)'; fg.lineWidth=2; fg.beginPath(); fg.arc(s.x,s.y,10+s.t*120,0,TAU); fg.stroke(); } }
+    FX.shots=FX.shots.filter(s=>s.t<.25);
+    fg.save(); fg.translate(bx,by); fg.rotate(-.55); fg.fillStyle='rgba(18,20,26,.92)'; rr(fg,-16,-118,32,128,8); fg.fill(); fg.strokeStyle='rgba(201,161,74,.8)'; fg.lineWidth=2; fg.strokeRect(-16,-118,32,14); fg.fillStyle='#F4EEDF'; fg.fillRect(-8,-138,16,26); fg.fillStyle='#B5281E'; fg.fillRect(-8,-138,16,4); fg.fillRect(-8,-116,16,4); fg.restore(); }
+  for(const p of FX.pops){ p.t+=dt; let x=FW/2, y=FH*.32-p.t*30; if(p.w){ const s=scrOf(p.w.x,p.w.y,p.w.z); if(!s.ok) continue; x=s.x; y=s.y-p.t*40; }
+    const a=Math.min(1,(1.1-p.t)*2.5); if(a<=0) continue; fg.globalAlpha=a; fg.font=`400 ${p.scr?26:22}px "Dela Gothic One"`; fg.textAlign='center'; fg.lineWidth=5; fg.strokeStyle='rgba(0,0,0,.7)'; fg.strokeText(p.txt,x,y); fg.fillStyle=p.col; fg.fillText(p.txt,x,y); }
+  fg.globalAlpha=1; FX.pops=FX.pops.filter(p=>p.t<1.1); }
+
+// ---------- HUD ----------
+function hudTick(){ if(!RUN) return; const drive=ROLE==='driver';
+  $('#hpI').style.transform=`scaleX(${(CAR.hp/100).toFixed(3)})`; $('#hpBar').classList.toggle('low',CAR.hp<35); $('#boI').style.transform=`scaleX(${CAR.boost.toFixed(3)})`; $('#boBar').hidden=!drive;
+  const sc=String(score()), se=$('#score'); if(se.firstChild.nodeValue!==sc) se.firstChild.nodeValue=sc;
+  const sub=`${(CAR.dist/1000).toFixed(1)} km${RUN.s.combo>1?' · combo ×'+RUN.s.combo:''}`; if($('#sub').textContent!==sub) $('#sub').textContent=sub;
+  $('#speed').hidden=!drive; if(drive){ const kmh=String(Math.round(CAR.v*3.6)); const sp=$('#speed'); if(sp.dataset.k!==kmh){ sp.dataset.k=kmh; sp.innerHTML=`${kmh}<small>KM/H</small>`; } }
+  $('#ctl').hidden=!drive; $('#mirror').hidden=!drive;
+  const cd=$('#callD'), cg=$('#callG');
+  if(CALL){ const hot=CALL.t>CALL.warn, ck=CALL.id+':'+hot;
+    if(drive){ cd.hidden=false; if(cd.dataset.k!==ck){ cd.dataset.k=ck; cd.innerHTML=`${hot?'⚠ ':''}GUNNER, SHOOT<b>${CALL.k}</b>${roma(CALL.k)}`; } cg.hidden=true; }
+    else { cg.hidden=false; if(cg.dataset.k!==ck){ cg.dataset.k=ck; cg.classList.toggle('hot',hot); cg.innerHTML=`<div class="lbl">${hot?'IT\'S COMING · うて！':'SHOOT THE YOKAI CARRYING'}</div><div><span class="k">${roma(CALL.k)}</span>${known(CALL.k)?'':`<span class="h">${CALL.k}</span>`}</div><div class="t"><i></i></div>`; }
+      const ti=cg.querySelector('.t i'); if(ti) ti.style.transform=`scaleX(${clamp(1-CALL.t/CALL.warn,0,1).toFixed(3)})`; cd.hidden=true; } }
+  else { cd.hidden=true; cg.hidden=true; cd.dataset.k=''; cg.dataset.k=''; } }
+
+// ---------- input ----------
+document.querySelectorAll('#ctl [data-k]').forEach(b=>{ const k=b.dataset.k;
+  b.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); IN.btn[k]=1; b.classList.add('held'); try{ b.setPointerCapture(e.pointerId); }catch(x){} });
+  const up=()=>{ IN.btn[k]=0; b.classList.remove('held'); }; ['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,up)); });
+addEventListener('blur', ()=>{ IN.btn={}; IN.keys={}; });
+addEventListener('keydown', e=>{ if(e.target.tagName==='INPUT') return; IN.keys[e.key.toLowerCase()]=1; if(e.key===' ') e.preventDefault(); });
+addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; });
+let lastShot=0;
+// the gunner taps a yokai (boarders first, then the closest lantern near the tap)
+function gunnerTap(px,py){ const now=performance.now(); if(now-lastShot<160) return; lastShot=now; FX.recoil=1; FX.shots.push({x:px,y:py,t:0}); SFX.shot(); buzz(8);
+  let best=null, bd=1e9;
+  for(const b of BOARD){ const s=scrOf(CAR.x+b.side*.62,1.6,3.5); const d=Math.hypot(s.x-px,s.y-py); if(d<120 && d<bd){ bd=d; best=b; } }
+  if(!best) for(const y of YOKAI){ const s=scrOf(y.x,2.9,y.z); if(!s.ok) continue; const r=Math.max(46,1900/Math.max(6,y.z)), d=Math.hypot(s.x-px,s.y-py); if(d<r && d<bd){ bd=d; best=y; } }
+  if(best) shootTarget(best); }
+$('#three').addEventListener('pointerdown', e=>{ audio(); if(ROLE!=='gunner' || !RUN || RUN.ph!=='run') return; e.preventDefault(); gunnerTap(e.clientX,e.clientY); });
+let lastTouchEnd=0;
+document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-lastTouchEnd<350 && !e.target.closest('.ui')) e.preventDefault(); lastTouchEnd=now; }, {passive:false});
+['gesturestart','gesturechange','dblclick'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
+
+// ---------- flow: lobby, countdown, results ----------
+const ui=html=>{ $('#panel').innerHTML=html; $('#ui').hidden=false; };
+const hideUI=()=>{ $('#ui').hidden=true; };
+const ROLE_CARDS=p=>`<div class="roles">
+  <button class="role" data-a="${p}driver"><i>Front seat</i><b>運転 Driver</b><small>Hold ◀ ▶ to weave through traffic, hold BOOST to outrun the parade, drive over お守り to repair. Near misses charge your boost.</small></button>
+  <button class="role" data-a="${p}gunner"><i>Truck bed</i><b>射手 Gunner</b><small>Face backwards. Hear the kana, find the yokai carrying it, tap to fire. Hit the wrong one and it charges. Knock off anything that climbs aboard.</small></button></div>`;
+const STEPS={driver:['Hold ◀ ▶ to change lanes · dodge the traffic','Hold BOOST to outrun the parade · near misses refill it','Drive over the glowing お守り to repair the truck','When a yokai climbs on, it drags your steering · yell at your gunner!','Survive until dawn'],
+  gunner:['You ride backwards in the truck bed','A kana is called · you hear it, and see it in letters','Tap the yokai whose lantern shows that kana','Don\'t shoot the others · they get angry and charge','Tap anything that climbs aboard to knock it off']};
+function lobbyUI(msg){ MODE=''; ROLE=''; RUN=null;
+  ui(`<div class="kicker">2 players · co-op · action</div><h1>百鬼夜行</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Night Parade</div>
+    <p class="lead">2 a.m. on the Shuto Expressway. A parade of yokai is chasing your truck. One of you drives. The other rides in the back and fires お札 at the yokai, but only at the one whose kana gets called.</p>
+    ${msg?`<p class="err">${esc(msg)}</p>`:''}
+    <div class="row"><button class="btn red" data-a="friend">Play with a friend</button><button class="btn ghost" data-a="practice">Practice with しばBot</button></div>`); }
+function friendUI(msg){ ui(`<div class="kicker">Play with a friend</div><h2>Ride together</h2><p class="lead">One of you creates a room and picks a seat. The other types the code.</p>${msg?`<p class="err">${esc(msg)}</p>`:''}
+  <div class="row"><button class="btn red" data-a="create">Create a room</button><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn" data-a="join">Join</button></div>
+  <div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`); }
+function roomUI(){ ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><div class="code">${esc(NET.code)}</div>
+  <p class="lead">${guestHere?`Your friend is here. You ${ROLE==='driver'?'drive, they shoot':'shoot, they drive'}. Ready?`:`Send this code to your friend. You're the <b>${ROLE==='driver'?'Driver':'Gunner'}</b>; they'll be the ${ROLE==='driver'?'Gunner':'Driver'}.`}</p>
+  <div class="row">${guestHere?'<button class="btn red" data-a="start">Hit the road</button>':'<span class="note">Waiting for your friend…</span>'}<button class="btn ghost" data-a="lobby">Leave</button></div>`); }
+function guestUI(){ ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><h2>${ROLE?(ROLE==='driver'?'You drive':'You shoot'):'Connected'}</h2><p class="lead">${ROLE?'The host starts the run.':'Waiting for the host…'}</p><div class="row"><button class="btn ghost" data-a="lobby">Leave</button></div>`); }
+function newRun(){ const first=!store.get('seen_'+ROLE,false); store.set('seen_'+ROLE,true); initThree();
+  RUN={ph:'count', cd:first?7:4, t:0, s:{kills:0,wrong:0,combo:0,best:0,kscore:0,near:0,charms:0,crashes:0}, win:false, shown:false};
+  resetWorld(); hideUI(); $('#hud').hidden=false; IN.btn={};
+  const c=$('#count'); c.hidden=false; c.innerHTML=`<div><h3>${ROLE==='driver'?'YOU DRIVE · 運転':'YOU SHOOT · 射手'}</h3><ol>${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div><div class="n" id="cdN"></div>`; }
+function endRun(win){ if(!RUN || RUN.ph!=='run') return; RUN.ph='over'; RUN.win=win; CALL=null;
+  if(MODE==='net' && ROLE==='driver') sendEvt({t:'over', win, s:RUN.s, d:Math.round(CAR.dist)});
+  if(win) SFX.dawn(); else { SFX.crash(); FX.shake=1.2; } setTimeout(results, win?1500:1000); }
+function results(){ if(!RUN || RUN.shown) return; RUN.shown=true; const s=RUN.s, sc=score(), key='best_'+MODE+'_'+ROLE, best=Math.max(store.get(key,0),sc); store.set(key,best);
+  const stars=(RUN.win?1:0)+(sc>=4000?1:0)+(sc>=7000?1:0), again=MODE==='bot'||IS_HOST?'<button class="btn red" data-a="again">Run it again</button>':'<span class="note">The host can start the next run.</span>';
+  $('#hud').hidden=true;
+  ui(`<div class="kicker">${RUN.win?'夜明け · Dawn':'大破 · Wrecked'}</div><h2>${RUN.win?'逃げ切った！':'やられた…'}</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
+    <div class="stats"><span>Score<b>${sc}</b></span><span>退治<b>${s.kills}</b></span><span>ちがう<b>${s.wrong}</b></span><span>Distance<b>${(CAR.dist/1000).toFixed(1)}km</b></span></div>
+    <p class="note">ニアミス ${s.near} · お守り ${s.charms} · best combo ×${s.best}. Your best as ${ROLE==='driver'?'driver':'gunner'}${MODE==='bot'?' with しばBot':''}: ${best}</p>
+    <div class="row">${again}<button class="btn ghost" data-a="lobby">Lobby</button></div>`); }
+document.addEventListener('click', async e=>{ const b=e.target.closest('button'); if(!b || !b.dataset.a) return; audio(); const a=b.dataset.a;
+  if(a==='practice') return ui(`<div class="kicker">Practice with しばBot</div><h2>Pick your seat</h2><p class="lead">しばBot takes the other seat so you can learn yours. The real fun is with a friend.</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`);
+  if(a==='pdriver'||a==='pgunner'){ MODE='bot'; ROLE=a==='pdriver'?'driver':'gunner'; newRun(); return; }
+  if(a==='friend') return friendUI();
+  if(a==='create') return ui(`<div class="kicker">Create a room</div><h2>Your seat?</h2>${ROLE_CARDS('h')}<div class="row"><button class="btn ghost" data-a="friend">Back</button></div>`);
+  if(a==='hdriver'||a==='hgunner'){ ROLE=a==='hdriver'?'driver':'gunner'; ui('<h2>Opening a room…</h2>'); let r, code;
+    for(let i=0;i<4;i++){ code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
+    if(r!==true) return friendUI(r||'Online play is not available here.'); MODE='net'; IS_HOST=true; roomUI(); return; }
+  if(a==='join'){ const code=($('#codeIn').value||'').trim().toUpperCase(); if(!/^[A-Z0-9]{4}$/.test(code)) return friendUI('Type the 4-character code.');
+    ROLE=''; IS_HOST=false; ui('<h2>Joining…</h2>'); const r=await netJoin(code); if(r!==true) return friendUI(r); MODE='net'; if(!RUN) guestUI(); return; }
+  if(a==='start'||a==='again'){ if(MODE==='net'){ if(!IS_HOST) return; sendEvt({t:'start'}); } newRun(); return; }
+  if(a==='lobby'){ try{ NET && NET.peer && NET.peer.destroy(); NET && NET.room && NET.room.leave(); }catch(x){} location.reload(); } });
+
+// ---------- online: claude.ai room inside claude.ai, PeerJS anywhere else ----------
+// each phone streams a snapshot of what it owns ~10× a second; one-off events (damage, kills, start, over) are numbered so none get lost
+let NET=null, guestHere=false, snapT=0, flushAt=0, flushQ=false;
+async function roomApi(){ try{ return window.claude && claude.use ? await claude.use('room') : null; }catch(e){ return null; } }
+function onGuest(){ guestHere=true; sendEvt({t:'hello', role:ROLE}); if(!RUN || RUN.ph==='over') roomUI(); }
+function flush(){ if(!NET || !NET.room) return; const now=performance.now(); const go=()=>{ flushAt=performance.now(); NET.room.presence({role:IS_HOST?'host':'guest', snap:NET.snap||null, out:NET.out}).catch(()=>{}); };
+  if(now-flushAt>140) go(); else if(!flushQ){ flushQ=true; setTimeout(()=>{ flushQ=false; go(); },150); } }
+function sendSnap(s){ if(!NET) return; if(NET.peer){ if(NET.conn && NET.conn.open) NET.conn.send({s}); } else { NET.snap=s; flush(); } }
+function sendEvt(m){ if(!NET) return; if(NET.peer){ if(NET.conn && NET.conn.open) NET.conn.send({e:m}); } else { NET.outN++; NET.out.push({n:NET.outN, m}); if(NET.out.length>40) NET.out.shift(); flush(); } }
+function onData(d){ if(!d) return; if(d.e) onEvt(d.e); if(d.s) onSnap(d.s); }
+function onPresence(p){ if(!p) return; if(p.out) for(const x of p.out) if(x.n>NET.inN){ NET.inN=x.n; onEvt(x.m); } if(p.snap) onSnap(p.snap); }
+function onEvt(m){
+  if(m.t==='hello'){ ROLE=m.role==='driver'?'gunner':'driver'; if(!RUN) guestUI(); return; }
+  if(m.t==='start'){ if(ROLE) newRun(); return; }
+  if(!RUN) return;
+  if(m.t==='dmg' && ROLE==='driver'){ CAR.hp=Math.max(0,CAR.hp-m.n); FX.shake=Math.max(FX.shake,.6); if(CAR.hp<=0) endRun(false); return; }
+  if(m.t==='kill' && ROLE==='driver'){ DYING.push({id:-(++ID), x:m.x, z:m.z, k:m.k, look:m.look, dt:0}); burstAt(m.x,2.2,m.z,0x7FD8FF,18); SFX.boom(); return; }
+  if(m.t==='over' && ROLE==='gunner'){ Object.assign(RUN.s,{near:m.s.near,charms:m.s.charms,crashes:m.s.crashes}); CAR.dist=m.d; RUN.ph='run'; endRun(m.win); } }
+// the other phone's objects keep moving between snapshots, then ease toward the true positions
+function onSnap(s){ if(!RUN) return;
+  if(s.t==='car' && ROLE==='gunner'){ CAR.xT=s.x; CAR.vx=s.vx; CAR.v=s.v; CAR.boost=s.b; CAR.boosting=!!s.bo; CAR.hp=s.hp; CAR.dist=s.d; if(s.cr>CAR.crashT+.3){ FX.shake=Math.max(FX.shake,.9); SFX.crash(); } CAR.crashT=s.cr;
+    TRAFFIC=s.tr.map(a=>{ const o=TRAFFIC.find(c=>c.id===a[0]); return o?Object.assign(o,{x:a[1],z:o.z+(a[2]-o.z)*.5,v:a[3],hit:!!a[6]}):{id:a[0],x:a[1],z:a[2],v:a[3],type:a[4]?'truck':'car',ci:a[5],hit:!!a[6],spin:a[6]?.5:0}; });
+    CHARMS=s.ch.map(a=>{ const o=CHARMS.find(c=>c.id===a[0]); return o?Object.assign(o,{x:a[1],z:o.z+(a[2]-o.z)*.5}):{id:a[0],x:a[1],z:a[2]}; });
+    Object.assign(RUN.s,{near:s.s.near,charms:s.s.charms,crashes:s.s.crashes}); }
+  if(s.t==='yk' && ROLE==='driver'){ YOKAI=s.y.map(a=>{ const o=YOKAI.find(y=>y.id===a[0]); const st=a[4]?'charge':'calm'; return o?Object.assign(o,{x:o.x+(a[2]-o.x)*.5,z:o.z+(a[3]-o.z)*.5,st,vrel:a[6],tx:a[2]}):{id:a[0],k:a[1],x:a[2],tx:a[2],z:a[3],st,look:a[5],vrel:a[6]}; });
+    BOARD=s.bd.map(a=>({id:a[0],k:a[1],side:a[2],hp:a[3],look:a[4],board:true}));
+    const nc=s.call?{id:s.call[0],k:s.call[1],t:s.call[2],warn:s.call[3]}:null; if(nc && (!CALL || CALL.id!==nc.id)){ SFX.call(); setTimeout(()=>say(nc.k),130); } CALL=nc;
+    Object.assign(RUN.s,{kills:s.s.kills,wrong:s.s.wrong,combo:s.s.combo,best:s.s.best,kscore:s.s.kscore}); } }
+function netTick(dt){ if(MODE!=='net' || !NET || !RUN) return; snapT-=dt; if(snapT>0) return; snapT=NET.room?.15:.1;
+  if(ROLE==='driver') sendSnap({t:'car', x:+CAR.x.toFixed(2), vx:+CAR.vx.toFixed(2), v:+CAR.v.toFixed(2), b:+CAR.boost.toFixed(2), bo:CAR.boosting?1:0, hp:Math.round(CAR.hp), d:Math.round(CAR.dist), cr:+CAR.crashT.toFixed(2),
+    tr:TRAFFIC.map(c=>[c.id,+c.x.toFixed(2),+c.z.toFixed(1),+c.v.toFixed(1),c.type==='truck'?1:0,c.ci,c.hit?1:0]), ch:CHARMS.map(c=>[c.id,+c.x.toFixed(2),+c.z.toFixed(1)]), s:{near:RUN.s.near,charms:RUN.s.charms,crashes:RUN.s.crashes}});
+  else sendSnap({t:'yk', y:YOKAI.map(q=>[q.id,q.k,+q.x.toFixed(2),+q.z.toFixed(1),q.st==='charge'?1:0,q.look,+q.vrel.toFixed(1)]), bd:BOARD.map(b=>[b.id,b.k,b.side,b.hp,b.look]),
+    call:CALL?[CALL.id,CALL.k,+CALL.t.toFixed(2),CALL.warn]:null, s:{kills:RUN.s.kills,wrong:RUN.s.wrong,combo:RUN.s.combo,best:RUN.s.best,kscore:RUN.s.kscore}}); }
+async function netHost(code){ const R=await roomApi();
+  if(R){ const room=await R.join('night-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; flush();
+    room.onPeers(ch=>{ const gp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='guest'); if(gp && !guestHere) onGuest(); if(gp) onPresence(gp.presence); }); return true; }
+  if(!window.Peer) return 'PeerJS did not load';
+  return new Promise(res=>{ const peer=new Peer('kotoba-night-'+code.toLowerCase(), {debug:0}); NET={kind:'online', code, peer};
+    peer.on('open', ()=>res(true)); peer.on('error', e=>res(e.type==='unavailable-id' ? 'taken' : 'Could not open a room: '+e.type));
+    peer.on('connection', c=>{ NET.conn=c; c.on('open', onGuest); c.on('data', onData); c.on('close', ()=>{ guestHere=false; }); }); }); }
+async function netJoin(code){ const R=await roomApi();
+  if(R){ const room=await R.join('night-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; flush();
+    room.onPeers(ch=>{ const hp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='host'); if(hp) onPresence(hp.presence); }); return true; }
+  if(!window.Peer) return 'PeerJS did not load';
+  return new Promise(res=>{ const peer=new Peer({debug:0}); NET={kind:'online', code, peer}; let done=false;
+    const t=setTimeout(()=>{ if(!done){ done=true; res('No room with that code (or the connection is blocked).'); } }, 12000);
+    peer.on('error', e=>{ if(!done){ done=true; clearTimeout(t); res(e.type==='peer-unavailable' ? 'No room with that code.' : 'Connection problem: '+e.type); } });
+    peer.on('open', ()=>{ const c=peer.connect('kotoba-night-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
+      c.on('open', ()=>{ if(!done){ done=true; clearTimeout(t); res(true); } }); c.on('data', onData); }); }); }
+
+// ---------- main loop ----------
+let last=0;
+function frame(now){ requestAnimationFrame(frame); const dt=last?Math.min(.05,(now-last)/1000):.016; last=now; clock+=dt;
+  if(RUN && RUN.ph==='count'){ const before=Math.ceil(RUN.cd); RUN.cd-=dt; const n=Math.ceil(RUN.cd); if(n!==before && RUN.cd>0) SFX.tick(); const el=$('#cdN'); if(el && el.textContent!==String(Math.max(1,n))) el.textContent=String(Math.max(1,n));
+    if(RUN.cd<=0){ RUN.ph='run'; $('#count').hidden=true; SFX.gong(); } }
+  const run=RUN && RUN.ph==='run';
+  if(!RUN || run || RUN.ph==='count'){
+    if(carHere()){ if(!RUN || (MODE==='bot' && ROLE==='gunner')) botDriver(dt); stepCar(dt); }
+    else { CAR.x+=(CAR.xT-CAR.x)*Math.min(1,dt*12); for(const c of TRAFFIC) c.z+=(CAR.v-c.v)*dt; for(const ch of CHARMS) ch.z+=CAR.v*dt; } }
+  if(run){ RUN.t+=dt;
+    if(yokaiHere()){ stepYokai(dt); if(MODE==='bot' && ROLE==='driver') botGunner(dt); }
+    else for(const y of YOKAI){ y.z+=(y.vrel||0)*dt; }
+    if(carHere() && RUN.t>=RUN_T) endRun(true);
+    netTick(dt); }
+  if(R3) draw3(dt);
+  drawFX(dt); hudTick(); engineTick(dt, !!R3); }
+requestAnimationFrame(frame);
+lobbyUI();
+// build the 3D scene once the fonts are in, so signs and lanterns draw with them
+Promise.race([document.fonts ? Promise.all(['400 40px "Dela Gothic One"','400 40px "Yuji Syuku"','700 20px "Zen Kaku Gothic New"'].map(f=>document.fonts.load(f,'渋谷新宿らーめんカラオケあいうえお守札'))) : Promise.resolve(), new Promise(r=>setTimeout(r,2500))]).then(initThree);
+window.__night={ RUN:()=>RUN, CAR, T:()=>TRAFFIC, CH:()=>CHARMS, Y:()=>YOKAI, B:()=>BOARD, CALL:()=>CALL, role:()=>ROLE, mode:()=>MODE, IN, three:()=>R3,
+  shoot:id=>{ const t=YOKAI.find(y=>y.id===id)||BOARD.find(b=>b.id===id); shootTarget(t); }, scrY:id=>{ const y=YOKAI.find(q=>q.id===id); return y?scrOf(y.x,2.9,y.z):null; }, scrB:i=>{ const b=BOARD[i]; return b?scrOf(CAR.x+b.side*.62,1.6,3.5):null; },
+  car:(x,z,lane)=>{ TRAFFIC.push({id:++ID, x:x, z, v:CAR.v*.5, type:'car', ci:0, near:false, hit:false, spin:0}); }, charm:(x,z)=>CHARMS.push({id:++ID,x,z}),
+  yokai:(k,z,st)=>{ const y={id:++ID,k,x:CAR.x,tx:CAR.x,tt:9,z,hold:z,vrel:0,st:st||'calm',t:0,look:0}; YOKAI.push(y); return y.id; }, call:id=>{ const y=YOKAI.find(q=>q.id===id); CALL={id,k:y.k,t:0,warn:3}; } };
+})();
+</script>
+</body>
+</html>
