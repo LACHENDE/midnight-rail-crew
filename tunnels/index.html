@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Midnight Subway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Yuji+Syuku&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap">
+<style>
+/* 真夜中の地下鉄 Midnight Subway: the last train under Tokyo, for two.
+   The Driver is in the cab: speed, brakes, the horn, and the passengers' tickets (only on this screen, in kana).
+   The Navigator is in the control room: the live map, the points at every junction (only on this screen), the ghost train.
+   The host phone runs the line; the driving phone runs the train and sends it. */
+:root{ --bg:#04060B; --ink:#F1E9DD; --dim:#A9A29A; --line:rgba(241,233,221,.14); --red:#E0352B; --amber:#FF9A4D; --green:#5CE08A; --cyan:#5BE0FF;
+  --sl:env(safe-area-inset-left); --sr:env(safe-area-inset-right); --st:env(safe-area-inset-top); --sb:env(safe-area-inset-bottom); --ui:"Zen Kaku Gothic New",system-ui,sans-serif; }
+:root[data-lang=zh]{ --ui:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif; }
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--ui);overflow:hidden;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+button,input{touch-action:manipulation;font-family:inherit}
+[hidden]{display:none!important}
+#three{position:fixed;inset:0}
+#three canvas{display:block;width:100%;height:100%}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;background:radial-gradient(ellipse 80% 75% at 50% 50%,rgba(0,0,0,0) 45%,rgba(60,220,150,.55))}
+#cab{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse 80% 74% at 50% 46%,rgba(0,0,0,0) 60%,rgba(0,0,0,.6) 84%,rgba(0,0,0,.92))}
+.hud{position:fixed;inset:0;z-index:3;pointer-events:none}
+.bars{position:absolute;z-index:4;left:max(14px,var(--sl));top:calc(var(--st) + 12px);display:flex;flex-direction:column;gap:6px;width:min(190px,22vw)}
+.bar{display:flex;align-items:center;gap:8px;font:900 10px var(--ui);letter-spacing:.2em;color:var(--dim)}
+.bar span{width:46px;flex:none}
+.bar div{flex:1;height:7px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;transform-origin:0 50%;background:#7EE08A;transition:transform .15s}
+.bar.low i{background:var(--red)}
+.time{font:700 11px var(--ui);letter-spacing:.12em;color:var(--dim)}
+.score{position:absolute;z-index:4;right:max(14px,var(--sr));top:calc(var(--st) + 8px);text-align:right;font:400 26px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.score small{display:block;font:900 10px var(--ui);letter-spacing:.16em;color:var(--dim);margin-top:2px}
+/* the driver: tickets along the top, the next station, the controls */
+#drv::before{content:"";position:absolute;left:0;right:0;top:0;height:calc(var(--st) + 84px);background:linear-gradient(rgba(4,6,11,.82),rgba(4,6,11,0));pointer-events:none}
+.tix{position:absolute;left:50%;transform:translateX(-50%);top:calc(var(--st) + 8px);display:flex;gap:7px;pointer-events:auto;max-width:56vw}
+.tk{all:unset;position:relative;display:flex;align-items:center;gap:7px;padding:6px 10px 9px 8px;border-radius:9px;background:rgba(10,13,20,.86);box-shadow:inset 0 0 0 1px rgba(241,233,221,.22);cursor:pointer;min-width:74px}
+.tk:active{background:rgba(40,46,60,.9)}
+.tk .pw{width:14px;height:22px;border-radius:7px 7px 3px 3px;flex:none;position:relative}
+.tk .pw::before{content:"";position:absolute;left:2px;top:-9px;width:10px;height:10px;border-radius:50%;background:#D9B796}
+.tk b{display:block;font:900 20px/1.05 var(--ui);color:#fff;white-space:nowrap}
+.tk small{display:block;font:700 9.5px var(--ui);color:#9FB4C8;white-space:nowrap;letter-spacing:.04em}
+.tk em{position:absolute;left:8px;right:8px;bottom:4px;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.tk em i{display:block;height:100%;background:var(--green);transform-origin:0 50%}
+.tk em i.low{background:var(--red)}
+.tk u{position:absolute;right:-5px;top:-6px;width:17px;height:17px;border-radius:50%;background:var(--amber);color:#0B0E14;font:900 10px/17px var(--ui);text-align:center;text-decoration:none}
+.tk.sent{box-shadow:inset 0 0 0 2px var(--amber)}
+.tixhint{font:700 11px var(--ui);color:#FFD6B0;background:rgba(10,13,20,.8);border-radius:8px;padding:6px 10px;align-self:center;white-space:nowrap}
+.next{position:absolute;right:max(14px,var(--sr));top:calc(var(--st) + 62px);display:flex;align-items:center;gap:10px;pointer-events:none}
+.sign{background:#10151F;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);padding:5px 12px 7px;text-align:center;position:relative;overflow:hidden;min-width:96px}
+.sign::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--c,#5B6B86)}
+.sign i{display:block;font:900 9px var(--ui);letter-spacing:.24em;color:var(--dim);font-style:normal}
+.sign b{display:block;font:900 21px/1.15 var(--ui);color:#fff}
+.sign small{display:block;font:700 10px var(--ui);color:#9FB4C8}
+.lim{width:46px;height:46px;border-radius:50%;background:#F4F0E6;box-shadow:inset 0 0 0 5px #D8342B;display:flex;align-items:center;justify-content:center;font:400 17px "Dela Gothic One";color:#111}
+.lim.over{animation:blink .35s steps(2) infinite}
+.pts{font:900 12px var(--ui);color:#FFE9D6;background:rgba(10,13,20,.8);padding:5px 8px;border-radius:7px;white-space:nowrap}
+.pts b{font:400 16px "Dela Gothic One";color:var(--green);margin:0 2px}
+.warn{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);font:400 22px "Dela Gothic One";color:#FF6B5E;text-shadow:0 0 18px rgba(224,53,43,.8),0 2px 0 #000;white-space:nowrap;animation:blink .4s steps(2) infinite;text-align:center}
+.warn small{display:block;font:900 12px var(--ui);letter-spacing:.2em;color:#FFD6B0}
+@keyframes blink{50%{opacity:.35}}
+.speed{position:absolute;left:50%;bottom:calc(var(--sb) + 10px);transform:translateX(-50%);font:400 32px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.speed small{font:900 10px var(--ui);letter-spacing:.2em;color:var(--dim);margin-left:4px}
+.ctl button{position:absolute;pointer-events:auto;border:0;color:#F1E9DD;background:rgba(241,233,221,.10);box-shadow:inset 0 0 0 2px rgba(241,233,221,.38);font:900 15px var(--ui);letter-spacing:.12em;touch-action:none;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.ctl [data-k=brake]{left:max(14px,var(--sl));bottom:calc(var(--sb) + 14px);width:108px;height:108px;border-radius:50%;background:rgba(224,53,43,.16);box-shadow:inset 0 0 0 2px rgba(255,122,110,.75)}
+.ctl [data-k=go]{right:max(14px,var(--sr));bottom:calc(var(--sb) + 14px);width:122px;height:122px;border-radius:50%;background:rgba(92,224,138,.14);box-shadow:inset 0 0 0 2px rgba(92,224,138,.75);font-size:20px}
+.ctl [data-k=horn]{right:calc(max(14px,var(--sr)) + 136px);bottom:calc(var(--sb) + 22px);width:84px;height:62px;border-radius:16px;background:rgba(255,154,77,.14);box-shadow:inset 0 0 0 2px rgba(255,154,77,.75);font-size:13px}
+.ctl button.held{background:rgba(241,233,221,.32)}
+.ctl [data-k=horn].hot{animation:pulse .5s ease-in-out infinite alternate}
+@keyframes pulse{to{background:rgba(255,154,77,.55)}}
+/* the navigator: the control room */
+.desk{position:fixed;inset:0;z-index:2;pointer-events:auto;background:radial-gradient(90% 90% at 40% 40%,#0C1424,#04060B 80%)}
+.mapw{position:absolute;left:max(8px,var(--sl));top:calc(var(--st) + 44px);bottom:calc(var(--sb) + 6px);right:calc(max(8px,var(--sr)) + min(240px,30vw))}
+#map{width:100%;height:100%;display:block;touch-action:none}
+#map .ln{fill:none;stroke:#1C273C;stroke-width:14;stroke-linecap:round}
+#map .ln2{fill:none;stroke:#7186AC;stroke-width:4;stroke-linecap:round}
+#map .ln.closed{stroke:#141A28;stroke-width:6;stroke-dasharray:6 9}
+#map .route{fill:none;stroke:#FF9A4D;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+#map .blade{fill:none;stroke:#FFE9D6;stroke-width:6;stroke-linecap:round}
+#map .blade.lock{stroke:#FF9A4D}
+#map .stub{fill:none;stroke:#E0352B;stroke-width:4;stroke-linecap:round;opacity:.7}
+#map .st circle.ring{fill:#0B1220;stroke-width:4}
+#map .st.closed{opacity:.22}
+#map .st.junc circle.ring{stroke-dasharray:none}
+#map .ic path,#map .ic circle,#map .ic ellipse{fill:none;stroke:#F1E9DD;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#map .ic .f{fill:#F1E9DD;stroke:none}
+#map .ic .pk{fill:#F2A7C3;stroke:none}
+#map .ic .gr{fill:#8FD19E;stroke:none}
+#map .ic .k{fill:#E8C547;stroke:none}
+#map .wt circle,#map .wt path{fill:#F1E9DD}
+#map .wt rect{fill:rgba(10,13,20,.9);stroke:rgba(241,233,221,.3)}
+#map .lbl rect{fill:#F1E9DD}
+#map .lbl text{fill:#0B0E14;font:900 17px var(--ui);text-anchor:middle;dominant-baseline:central}
+#map .hz circle{fill:#E0352B}
+#map .hz text{fill:#fff;font:900 13px var(--ui);text-anchor:middle;dominant-baseline:central}
+#map .tap{fill:transparent}
+.side{position:absolute;right:max(8px,var(--sr));top:calc(var(--st) + 44px);bottom:calc(var(--sb) + 8px);width:min(232px,29vw);display:flex;flex-direction:column;gap:7px;pointer-events:auto}
+.side h4{margin:0;font:900 10px var(--ui);letter-spacing:.28em;color:var(--amber);text-transform:uppercase}
+.ab{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line);border-radius:9px;padding:6px 8px;min-height:40px;position:relative}
+.ab .pw{width:12px;height:19px;border-radius:6px 6px 3px 3px;flex:none;position:relative;margin-top:6px}
+.ab .pw::before{content:"";position:absolute;left:1px;top:-8px;width:10px;height:10px;border-radius:50%;background:#D9B796}
+.ab b{flex:1;font:900 19px var(--ui);color:#fff;white-space:nowrap;overflow:hidden}
+.ab b.q{color:var(--dim);font-size:12px;font-weight:700}
+.ab button{flex:none;width:30px;height:28px;border-radius:7px;border:0;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink);font:900 12px var(--ui);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.ab svg{width:22px;height:22px}
+.ab .mi path,.ab .mi circle,.ab .mi ellipse{fill:none;stroke:#F1E9DD;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ab .mi .f{fill:#F1E9DD;stroke:none} .ab .mi .pk{fill:#F2A7C3;stroke:none} .ab .mi .gr{fill:#8FD19E;stroke:none} .ab .mi .k{fill:#E8C547;stroke:none}
+.ab em{position:absolute;left:8px;right:8px;bottom:3px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.ab em i{display:block;height:100%;background:var(--green);transform-origin:0 50%}
+.ab.new{animation:flash .6s ease-out}
+@keyframes flash{from{box-shadow:inset 0 0 0 2px var(--amber)}}
+.none{font:700 12px/1.5 var(--ui);color:var(--dim)}
+.alarm{border-radius:9px;background:rgba(60,220,150,.14);box-shadow:inset 0 0 0 1px rgba(120,255,190,.6);color:#BFFFE0;font:900 12px var(--ui);letter-spacing:.08em;padding:8px 10px;animation:blink .6s steps(2) infinite}
+.navtop{position:absolute;left:calc(max(14px,var(--sl)) + min(190px,22vw) + 16px);top:calc(var(--st) + 10px);font:700 11px var(--ui);color:var(--dim);letter-spacing:.06em;max-width:46vw}
+.navtop b{color:#FFE9D6}
+/* shared */
+.banner{position:absolute;left:50%;top:calc(var(--st) + 56px);transform:translateX(-50%);background:rgba(10,13,20,.92);box-shadow:inset 0 0 0 1px rgba(241,233,221,.25);border-radius:12px;padding:8px 12px;display:flex;gap:10px;align-items:center;white-space:nowrap;z-index:6}
+.banner .k{font:900 10px var(--ui);letter-spacing:.24em;color:var(--amber);writing-mode:vertical-rl}
+.banner .w{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.05)}
+.banner .w svg{width:28px;height:28px}
+.banner .w b{display:block;font:900 18px/1.1 var(--ui);color:#fff}
+.banner .w small{display:block;font:700 10px var(--ui);color:#9FB4C8}
+.banner .mi path,.banner .mi circle,.banner .mi ellipse{fill:none;stroke:#F1E9DD;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.banner .mi .f{fill:#F1E9DD;stroke:none} .banner .mi .pk{fill:#F2A7C3;stroke:none} .banner .mi .gr{fill:#8FD19E;stroke:none} .banner .mi .k{fill:#E8C547;stroke:none}
+.toast{position:absolute;z-index:8;left:50%;top:25%;transform:translate(-50%,-50%);font:400 22px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 2px #000;opacity:0;white-space:nowrap;text-align:center}
+.toast small{display:block;font:900 12px var(--ui);letter-spacing:.06em;color:#E6DED2;margin-top:2px}
+.toast.ok{color:#9CF2B4}.toast.bad{color:#FF7A6E}.toast.go{color:var(--amber)}
+:root[data-lang=zh] .toast{font-family:var(--ui);font-weight:900}
+#scare{position:fixed;inset:0;z-index:12;pointer-events:none;display:flex;align-items:center;justify-content:center;font:400 120px "Dela Gothic One";color:#E8FFF4;text-shadow:0 0 40px rgba(120,255,190,.9)}
+.count{position:fixed;inset:0;z-index:7;display:flex;align-items:center;gap:30px;padding:0 max(44px,var(--sr)) 0 max(44px,var(--sl));background:rgba(4,6,11,.8);pointer-events:none}
+.count ol{flex:1;margin:0;padding:0;list-style:none;counter-reset:s}
+.count h3{margin:0 0 10px;font:900 13px var(--ui);letter-spacing:.3em;color:var(--amber)}
+.count li{counter-increment:s;display:flex;gap:14px;align-items:baseline;font:700 15px/1.4 var(--ui);color:#F1E9DD;margin:6px 0}
+.count li::before{content:counter(s);font:400 19px "Dela Gothic One";color:var(--amber);width:18px;flex:none}
+.count .n{font:400 120px "Dela Gothic One";color:#FFE9D6;min-width:150px;text-align:right}
+.ui{position:fixed;inset:0;z-index:9;display:flex;align-items:center;padding:14px max(18px,var(--sl));background:linear-gradient(90deg,rgba(4,6,11,.95),rgba(4,6,11,.74) 52%,rgba(4,6,11,.15))}
+.panel{width:min(560px,100%);max-height:100%;overflow:auto;padding:2px}
+.kicker{font:700 11px var(--ui);letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
+h1{margin:6px 0 4px;font:400 50px/1 "Dela Gothic One";letter-spacing:.04em;color:#FFE9D6;text-shadow:0 0 26px rgba(91,224,255,.35)}
+h2{margin:6px 0 8px;font:400 28px/1.1 "Dela Gothic One";color:#FFE9D6}
+:root[data-lang=zh] h2,:root[data-lang=zh] .role b{font-family:var(--ui);font-weight:900;letter-spacing:.02em}
+.lead{margin:10px 0 12px;font:500 14px/1.65 var(--ui);color:#C9C2B8;max-width:50ch}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.btn{font:900 14px var(--ui);letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.btn.red{background:var(--red);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(241,233,221,.35)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.55}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.role{all:unset;cursor:pointer;display:block;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(241,233,221,.16)}
+.role:active{background:rgba(255,255,255,.09)}
+.role i{display:block;font:700 10px var(--ui);letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
+.role b{display:block;font:400 21px "Dela Gothic One";color:#FFE9D6}
+.role small{display:block;margin-top:6px;font:500 12.5px/1.5 var(--ui);color:var(--dim)}
+.steps{margin:6px 0 2px;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:10px;align-items:baseline;font:700 13px/1.45 var(--ui);color:#E6DED2;margin:4px 0}
+.steps li::before{content:counter(s);font:400 16px "Dela Gothic One";color:var(--amber);width:14px;flex:none}
+.note{font:500 12.5px/1.55 var(--ui);color:var(--dim);margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px var(--ui);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.stats b{font:400 22px "Dela Gothic One";color:#FFE9D6;letter-spacing:0}
+.stars{font:400 30px "Dela Gothic One";color:var(--amber);letter-spacing:.1em;margin-top:2px}
+.stars .off{color:rgba(241,233,221,.16)}
+.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px var(--ui);text-align:center;padding:20px}
+@media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
+@media (max-height:400px){ .count li{font-size:14px;margin:4px 0} .ctl [data-k=go]{width:110px;height:110px} .ctl [data-k=brake]{width:96px;height:96px} }
+</style>
+</head>
+<body>
+<div id="three"></div>
+<div id="cab" hidden></div>
+<div id="vig"></div>
+<div class="hud" id="hud" hidden>
+  <div id="drv" hidden>
+    <div class="tix" id="tix"></div>
+    <div class="next" id="next"></div>
+    <div class="warn" id="warn" hidden></div>
+    <div class="speed" id="speed"></div>
+    <div class="ctl"><button data-k="brake">BRAKE</button><button data-k="horn">HORN</button><button data-k="go">GO</button></div>
+  </div>
+  <div class="desk" id="nav" hidden>
+    <div class="navtop" id="navTop"></div>
+    <div class="mapw"><svg id="map" viewBox="0 0 780 480" preserveAspectRatio="xMidYMid meet" aria-label="The line"></svg></div>
+    <div class="side" id="side"></div>
+  </div>
+  <div class="bars"><div class="bar" id="hpBar"><span id="hpL">TRAIN</span><div><i id="hpI"></i></div></div><div class="time" id="time"></div></div>
+  <div class="score" id="score">0<small id="sub"></small></div>
+  <div class="banner" id="banner" hidden></div>
+  <div class="toast" id="toast"></div>
+</div>
+<div id="scare" hidden></div>
+<div class="count" id="count" hidden></div>
+<div class="ui" id="ui"><div class="panel" id="panel"></div></div>
+<div class="rotate" id="rot">横にしてね</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// inside 夜ふかし (the hub page) the hub holds the connection, the seats and the language; on its own this page is practice with しばBot
+const HUB=(()=>{ try{ const h=window.parent!==window && window.parent.HUBAPI; return h && h.v ? h : null; }catch(e){ return null; } })();
+const LANG=HUB ? HUB.lang : (()=>{ try{ const v=JSON.parse(localStorage.getItem('yofu_lang')); if(v==='zh'||v==='en') return v; }catch(e){} return /^zh/i.test(navigator.language||'')?'zh':'en'; })();
+const T=(en,zh)=>LANG==='zh'?zh:en;
+document.documentElement.dataset.lang=LANG;
+const store={ get(k,d){ try{ const v=localStorage.getItem('ms_'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem('ms_'+k, JSON.stringify(v)); }catch(e){} } };
+
+// ---------- the line: eleven stations, opening in three phases ----------
+const WD={ tokyo:{k:'とうきょう',ro:'tōkyō',m:['Tokyo','东京']}, umi:{k:'うみ',ro:'umi',m:['sea','海']}, yama:{k:'やま',ro:'yama',m:['mountain','山']},
+  tsuki:{k:'つき',ro:'tsuki',m:['moon','月亮']}, kitsune:{k:'きつね',ro:'kitsune',m:['fox','狐狸']}, jinja:{k:'じんじゃ',ro:'jinja',m:['shrine','神社']},
+  sakura:{k:'さくら',ro:'sakura',m:['cherry blossom','樱花']}, neko:{k:'ねこ',ro:'neko',m:['cat','猫']}, inu:{k:'いぬ',ro:'inu',m:['dog','狗']},
+  hoshi:{k:'ほし',ro:'hoshi',m:['star','星星']}, dango:{k:'だんご',ro:'dango',m:['dango','团子']} };
+const mean=id=>T(WD[id].m[0], WD[id].m[1]);
+const NODES={ depot:{x:2,z:4,ph:0}, tokyo:{x:2,z:3,ph:0}, umi:{x:.8,z:3,ph:0}, yama:{x:3.2,z:3,ph:0}, kitsune:{x:2,z:2,ph:0}, tsuki:{x:.8,z:2,ph:0}, jinja:{x:3.2,z:2,ph:0},
+  sakura:{x:2,z:1,ph:1}, neko:{x:.8,z:1,ph:1}, inu:{x:3.2,z:1,ph:1}, hoshi:{x:2,z:0,ph:2}, dango:{x:.8,z:0,ph:2} };
+const LINKS=[['depot','tokyo'],['tokyo','umi'],['tokyo','yama'],['tokyo','kitsune'],['umi','tsuki'],['tsuki','kitsune'],['yama','jinja'],['kitsune','jinja'],['kitsune','sakura'],
+  ['tsuki','neko'],['neko','sakura'],['jinja','inu'],['sakura','inu'],['sakura','hoshi'],['hoshi','dango'],['neko','dango']];
+const PH=[{t:0, open:['tokyo','umi','yama','tsuki','kitsune','jinja']},{t:50, open:['sakura','neko','inu']},{t:110, open:['hoshi','dango']}];
+const COL={depot:'#5B6B86', tokyo:'#E0352B', umi:'#2E8BE0', yama:'#5CA84A', tsuki:'#C9A14A', kitsune:'#E07A2E', jinja:'#C0392B', sakura:'#E07AA0', neko:'#8E7CC3', inu:'#B08A5A', hoshi:'#E8C547', dango:'#7FB8A0'};
+const COATS=['#6E4A3A','#3E5568','#7A3E48','#4A5E3F','#5B4E78','#8C6A3F'];
+const RUN_T=180, G=120, RH=16, RT=4.5, FLOOR=-2.7, CEIL=8, EYE=-.5, VMAX=24, VJ=15, ACC=7, BRK=16, FRI=.8, ZONE=12, LOCK=20;
+const KMH=v=>Math.round(v*3);
+// line-drawn pictures for the stations: the navigator's map has these, never the words
+const ICON={
+  tokyo:'<path d="M-9 18 L0 -17 L9 18 M-6.4 8 H6.4 M-3.4 -3 H3.4 M-13 18 H13 M0 -17 V-22"/>',
+  umi:'<path d="M-17 -3 q4.25 -7 8.5 0 t8.5 0 t8.5 0 t8.5 0 M-17 8 q4.25 -7 8.5 0 t8.5 0 t8.5 0 t8.5 0"/>',
+  yama:'<path d="M-18 14 L-4 -13 L3 0 L8 -6 L18 14 Z"/><path class="f" d="M-9.5 -2.5 L-4 -13 L1.4 -3 L-1.2 -1.2 L-4 -4 L-6.8 -1.2 Z"/>',
+  tsuki:'<path class="f" d="M5 -16 A16 16 0 1 0 5 16 A12.5 12.5 0 1 1 5 -16 Z"/>',
+  kitsune:'<path d="M-15 -15 L-6 -4 L6 -4 L15 -15 L13 3 L0 16 L-13 3 Z"/><circle class="f" cx="-5" cy="2" r="1.7"/><circle class="f" cx="5" cy="2" r="1.7"/>',
+  jinja:'<path d="M-19 -13 Q0 -18 19 -13 M-15 -6 H15 M-10 -14 V17 M10 -14 V17"/>',
+  sakura:[0,1,2,3,4].map(i=>{ const a=i*72-90, r=a*Math.PI/180, x=(Math.cos(r)*8).toFixed(1), y=(Math.sin(r)*8).toFixed(1); return `<ellipse class="pk" cx="${x}" cy="${y}" rx="5.6" ry="8" transform="rotate(${a+90} ${x} ${y})"/>`; }).join('')+'<circle class="k" r="3"/>',
+  neko:'<path d="M-12 -2 L-10 -16 L-3 -9 Q0 -10 3 -9 L10 -16 L12 -2 Q13 14 0 14 Q-13 14 -12 -2 Z"/><path d="M-18 4 H-8 M-18 9 L-8 7 M18 4 H8 M18 9 L8 7"/>',
+  inu:'<path d="M-9 -10 Q0 -15 9 -10 Q12 0 8 10 Q0 16 -8 10 Q-12 0 -9 -10 Z"/><path d="M-9 -10 Q-18 -8 -15 6 Q-12 4 -10 -2 M9 -10 Q18 -8 15 6 Q12 4 10 -2"/><circle class="f" cy="5" r="2.4"/>',
+  hoshi:'<path d="M0 -17 L4.9 -5.5 L16.2 -5.3 L7.5 2.3 L10.2 14 L0 7.5 L-10.2 14 L-7.5 2.3 L-16.2 -5.3 L-4.9 -5.5 Z"/>',
+  dango:'<path d="M-16 16 L16 -16"/><circle class="pk" cx="-7" cy="7" r="5.4"/><circle class="f" r="5.4"/><circle class="gr" cx="7" cy="-7" r="5.4"/>',
+  depot:'<path d="M-11 -12 H11 Q14 -12 14 -8 V8 Q14 12 10 12 H-10 Q-14 12 -14 8 V-8 Q-14 -12 -11 -12 Z M-14 0 H14 M-8 16 L-5 12 M8 16 L5 12"/>' };
+const miniIcon=id=>`<svg class="mi" viewBox="-21 -21 42 42">${ICON[id]}</svg>`;
+
+// ---------- the tunnel network ----------
+for(const id in NODES){ const n=NODES[id]; n.id=id; n.X=(n.x-2)*G; n.Z=(n.z-2)*G; n.adj=[]; }
+const EDGES=LINKS.map(([a,b],i)=>{
+  const A=NODES[a], B=NODES[b], dx=B.X-A.X, dz=B.Z-A.Z, L=Math.hypot(dx,dz), bend=((i*7)%5-2)*.07*L;
+  const cx=(A.X+B.X)/2-dz/L*bend, cz=(A.Z+B.Z)/2+dx/L*bend;
+  // sample the curve finely, then every 1 unit of length, so a position along a tunnel is a lookup
+  const raw=[], cum=[0];
+  for(let k=0;k<=240;k++){ const t=k/240, u=1-t; raw.push([u*u*A.X+2*u*t*cx+t*t*B.X, u*u*A.Z+2*u*t*cz+t*t*B.Z]); if(k) cum.push(cum[k-1]+Math.hypot(raw[k][0]-raw[k-1][0], raw[k][1]-raw[k-1][1])); }
+  const len=cum[240], n=Math.ceil(len), px=new Float32Array(n+1), pz=new Float32Array(n+1);
+  for(let s=0,k=0;s<=n;s++){ const ss=Math.min(s,len); while(k<239 && cum[k+1]<ss) k++; const f=(ss-cum[k])/((cum[k+1]-cum[k])||1); px[s]=raw[k][0]+(raw[k+1][0]-raw[k][0])*f; pz[s]=raw[k][1]+(raw[k+1][1]-raw[k][1])*f; }
+  A.adj.push(i); B.adj.push(i);
+  return {i, a, b, len, n, px, pz, cx, cz, ph:Math.max(A.ph,B.ph), depot:a==='depot'||b==='depot'};
+});
+function epos(e,s){ s=clamp(s,0,e.len); const k=Math.min(Math.floor(s),e.n-1), f=s-k; return {x:e.px[k]+(e.px[k+1]-e.px[k])*f, z:e.pz[k]+(e.pz[k+1]-e.pz[k])*f}; }
+function edir(e,s){ const a=epos(e,s-1), b=epos(e,s+1), dx=b.x-a.x, dz=b.z-a.z, l=Math.hypot(dx,dz)||1; return {x:dx/l, z:dz/l}; }
+let S=null;
+const phase=()=>S?S.phase:0;
+const isOpen=j=>EDGES[j].ph<=phase();
+const nodeOpen=id=>NODES[id].ph<=phase();
+const STATIONS=Object.keys(WD);
+const openStations=()=>STATIONS.filter(nodeOpen);
+const tpos=t=>epos(EDGES[t.e],t.s);
+const nearNode=t=>{ const e=EDGES[t.e]; return t.s<ZONE ? {id:e.a, off:t.s} : e.len-t.s<ZONE ? {id:e.b, off:e.len-t.s} : null; };
+const ahead=t=>{ const e=EDGES[t.e]; return t.d>0 ? {node:e.b, dist:e.len-t.s} : {node:e.a, dist:t.s}; };
+const legs=node=>NODES[node].adj.filter(j=>isOpen(j) && !EDGES[j].depot);
+const isJunction=node=>legs(node).length>=3;
+// the tunnels you can take out of a station, with their angle as seen from the cab (for the straight-on default)
+function exitsAt(node, inE){
+  const n=NODES[node], ie=EDGES[inE], b=epos(ie, node===ie.b ? ie.len-RH : RH); let fx=n.X-b.x, fz=n.Z-b.z; const fl=Math.hypot(fx,fz)||1; fx/=fl; fz/=fl;
+  return n.adj.filter(j=>j!==inE && isOpen(j) && !EDGES[j].depot).map(j=>{ const e=EDGES[j], m=epos(e, node===e.a ? RH : e.len-RH); let x=m.x-n.X, z=m.z-n.Z; const l=Math.hypot(x,z)||1; x/=l; z/=l;
+    const th=Math.atan2(x*fz-z*fx, x*fx+z*fz); return {j, to:node===e.a?e.b:e.a, th, code:Math.abs(th)<.5?'s':th>0?'l':'r'}; });
+}
+const defaultExit=ex=>ex.reduce((p,q)=>Math.abs(q.th)<Math.abs(p.th)?q:p);
+// the points: the navigator sets each junction to one of its tunnels; arriving down that very tunnel, the train goes straight on
+function swExit(node, inE){ const ex=exitsAt(node,inE); if(!ex.length) return null; const set=S && S.sw ? S.sw[node] : null; return ex.find(x=>x.j===set)||defaultExit(ex); }
+const ARROW={l:'◀', s:'▲', r:'▶'};
+let DIST=null, distP=-1;
+function dists(){ const p=phase(); if(distP===p && DIST) return DIST; distP=p; const ids=Object.keys(NODES), D={};
+  ids.forEach(a=>{ D[a]={}; ids.forEach(b=>D[a][b]=a===b?0:1e9); });
+  EDGES.forEach(e=>{ if(isOpen(e.i)){ D[e.a][e.b]=Math.min(D[e.a][e.b],e.len); D[e.b][e.a]=D[e.a][e.b]; } });
+  ids.forEach(k=>ids.forEach(a=>ids.forEach(b=>{ if(D[a][k]+D[k][b]<D[a][b]) D[a][b]=D[a][k]+D[k][b]; })));
+  return DIST=D; }
+// follow the track ahead through the points as they are set: tunnel pieces {e, from, to, d, at} and stations {node, at}
+function walk(t, max){ const out=[]; let e=EDGES[t.e], s=t.s, d=t.d, acc=0;
+  for(let guard=0; guard<8 && acc<max; guard++){ const toEnd=d>0?e.len-s:s, len=Math.min(toEnd, max-acc);
+    out.push({e:e.i, from:s, to:s+d*len, d, at:acc}); acc+=len; if(len<toEnd-1e-6) break;
+    const node=d>0?e.b:e.a; out.push({node, at:acc}); const x=swExit(node, e.i); if(!x) break;
+    const ne=EDGES[x.j]; e=ne; d=ne.a===node?1:-1; s=d>0?0:ne.len; }
+  return out; }
+function onRoute(segs, ej, s){ for(const g of segs){ if(g.e!==ej) continue; const lo=Math.min(g.from,g.to), hi=Math.max(g.from,g.to); if(s>=lo-.01 && s<=hi+.01) return g.at+Math.abs(s-g.from); } return null; }
+
+// ---------- sound: synthesized foley, no samples ----------
+let AC=null, MG=null, NOISE=null, RUMB=null, engT=0, jaVoice=null;
+function audio(){ try{ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); MG=AC.createGain(); MG.gain.value=.9; MG.connect(AC.destination);
+      const n=AC.sampleRate*2, b=AC.createBuffer(1,n,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1; NOISE=b; rumble(); }
+    if(AC.state==='suspended') AC.resume(); }catch(e){}
+  try{ if(!audio.warm){ const u=new SpeechSynthesisUtterance(' '); u.volume=0; u.lang='ja-JP'; speechSynthesis.speak(u); audio.warm=1; } }catch(e){} }
+function nz(dur,o={}){ if(!AC) return; try{ const t=AC.currentTime+(o.at||0), s=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); s.buffer=NOISE; s.loop=true;
+  f.type=o.type||'bandpass'; f.frequency.setValueAtTime(o.f||1000,t); if(o.f2) f.frequency.exponentialRampToValueAtTime(o.f2,t+dur); f.Q.value=o.q||1;
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.g||.2,t+(o.a||.005)); g.gain.exponentialRampToValueAtTime(.0001,t+dur); s.connect(f); f.connect(g); g.connect(MG); s.start(t,Math.random()*1.5); s.stop(t+dur+.05); }catch(e){} }
+function tn(fr,dur,o={}){ if(!AC) return; try{ const t=AC.currentTime+(o.at||0), s=AC.createOscillator(), g=AC.createGain(); s.type=o.type||'sine'; s.frequency.setValueAtTime(fr,t); if(o.f2) s.frequency.exponentialRampToValueAtTime(o.f2,t+dur);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(o.g||.1,t+(o.a||.005)); g.gain.exponentialRampToValueAtTime(.0001,t+dur); s.connect(g); g.connect(MG); s.start(t); s.stop(t+dur+.05); }catch(e){} }
+function rumble(){ // the train: low rumble, a motor whine that rises with speed, a brake squeal
+  try{ const n=AC.createBufferSource(), lp=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=NOISE; n.loop=true; lp.type='lowpass'; lp.frequency.value=180; g.gain.value=.0001; n.connect(lp); lp.connect(g); g.connect(MG); n.start();
+    const o=AC.createOscillator(), of=AC.createBiquadFilter(), og=AC.createGain(); o.type='sawtooth'; o.frequency.value=80; of.type='bandpass'; of.frequency.value=600; of.Q.value=3; og.gain.value=.0001; o.connect(of); of.connect(og); og.connect(MG); o.start();
+    const b=AC.createBufferSource(), bf=AC.createBiquadFilter(), bg=AC.createGain(); b.buffer=NOISE; b.loop=true; bf.type='bandpass'; bf.frequency.value=3300; bf.Q.value=14; bg.gain.value=.0001; b.connect(bf); bf.connect(bg); bg.connect(MG); b.start();
+    RUMB={lp,g,o,of,og,bg}; }catch(e){} }
+function engineTick(dt,on,v,braking){ engT-=dt; if(!RUMB || engT>0) return; engT=.1; try{ const t=AC.currentTime, k=v/VMAX;
+  RUMB.g.gain.setTargetAtTime(on?.05+.13*k:.0001,t,.15); RUMB.lp.frequency.setTargetAtTime(120+k*380,t,.15);
+  RUMB.og.gain.setTargetAtTime(on&&k>.04?.01+.02*k:.0001,t,.2); RUMB.o.frequency.setTargetAtTime(70+k*250,t,.2); RUMB.of.frequency.setTargetAtTime(400+k*1300,t,.2);
+  RUMB.bg.gain.setTargetAtTime(on&&braking?.012+.05*k:.0001,t,.06); }catch(e){} }
+const SND={
+  clack(v){ nz(.05,{type:'highpass',f:1800,g:.05+.1*v}); tn(140,.05,{type:'square',g:.03+.04*v}); nz(.05,{type:'highpass',f:1500,g:.04+.08*v,at:.09}); },
+  horn(v=1){ [311,370].forEach(f=>tn(f,.85,{type:'sawtooth',g:.06*v,a:.03})); nz(.85,{f:700,q:.6,g:.03*v,a:.05}); },
+  chime(){ [880,698,587,880].forEach((f,i)=>tn(f,.45,{type:'triangle',g:.065,at:i*.17})); }, door(){ nz(.35,{f:900,q:.8,g:.08,a:.05}); tn(90,.3,{g:.06}); },
+  sw(){ tn(220,.05,{type:'square',g:.08}); nz(.08,{type:'lowpass',f:900,g:.2}); tn(118,.12,{type:'triangle',g:.12,at:.04}); },
+  locked(){ tn(160,.12,{type:'square',g:.05}); tn(120,.15,{type:'square',g:.05,at:.09}); },
+  derail(){ nz(.5,{type:'highpass',f:1400,g:.3}); tn(70,.4,{type:'square',g:.14,f2:40}); nz(.3,{f:3000,q:5,g:.12,at:.05}); },
+  thud(){ nz(.35,{type:'lowpass',f:400,g:.42}); tn(60,.35,{g:.3,f2:30}); }, shoo(){ nz(.4,{f:600,f2:2200,q:1,g:.12}); tn(523,.2,{type:'triangle',g:.05,at:.1}); },
+  del(){ [784,988,1319].forEach((f,i)=>tn(f,.45,{type:'triangle',g:.08,at:i*.08})); }, board(){ tn(1047,.12,{type:'triangle',g:.06}); tn(1319,.18,{type:'triangle',g:.06,at:.09}); },
+  call(){ tn(988,.2,{type:'triangle',g:.07}); tn(1480,.3,{type:'triangle',g:.05,at:.08}); }, bell(v){ tn(1046,.7,{g:.12*v}); tn(1568,.45,{g:.05*v}); },
+  boo(){ nz(.6,{f:400,f2:120,q:2,g:.3}); tn(90,.6,{type:'sawtooth',g:.12,f2:45}); }, purify(){ [784,988,1175,1568].forEach((f,i)=>tn(f,.7,{g:.07,at:i*.07})); nz(.6,{type:'highpass',f:5000,g:.04}); },
+  tick(){ tn(1100,.04,{type:'square',g:.04}); }, gong(){ tn(196,1.5,{g:.12}); tn(294,1.1,{g:.06}); nz(.4,{type:'lowpass',f:500,g:.07}); },
+  dawn(){ [523,659,784,1047,1319].forEach((f,i)=>tn(f,1.3,{type:'triangle',g:.07,at:i*.12})); }, bad(){ tn(116,.3,{type:'square',g:.06}); nz(.2,{type:'lowpass',f:420,g:.09}); },
+  ping(){ tn(1500,.12,{g:.05,f2:900}); }, newst(){ [659,880,1175].forEach((f,i)=>tn(f,.6,{type:'triangle',g:.06,at:i*.12})); } };
+const buzz=ms=>{ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} };
+function say(w){ try{ const u=new SpeechSynthesisUtterance(w); u.lang='ja-JP'; u.rate=.85; if(!jaVoice) jaVoice=speechSynthesis.getVoices().find(v=>/^ja/i.test(v.lang))||null; if(jaVoice) u.voice=jaVoice;
+  if(speechSynthesis.speaking||speechSynthesis.pending) speechSynthesis.cancel(); speechSynthesis.speak(u); }catch(e){} }
+
+// ---------- state ----------
+// MODE 'bot' | 'net'; ROLE 'driver' | 'nav'. ME is this phone ('h' runs the line, 'g' is the other phone; with しばBot, ME is 'h').
+let MODE='', ROLE='', IS_HOST=false, ME='h', PAUSED=false;
+const TR={e:0, s:20, d:1, v:0, stopAt:null, clack:0, stamp:'', braking:false};
+const LOCAL={ seenEv:0, callN:0, look:null, snap:false, gp:null, bellT:0, hit:{}, ready:false, reported:false, sentAt:{}, tm:null, gm:null, routeT:0, lbl:null, shownPh:'', banner:0, swK:'', hzK:'', wtK:'', abK:'', tixK:'', nextK:'' };
+let WM=store.get('words',{});   // deliveries per station: romaji and meanings fade once you know a word
+const knowW=id=>(WM[id]||0)>=2;
+function freshState(){ const drv=ROLE==='driver'?ME:(ME==='h'?'g':'h'), j0=EDGES.findIndex(e=>e.depot), e0=EDGES[j0], d0=e0.b==='tokyo'?1:-1;
+  return { ph:'ready', ready:{h:false, g:MODE==='bot'}, cd:0, t:0, gid:Math.floor(Math.random()*1e9), hp:100, score:0, roles:{driver:drv, nav:drv==='h'?'g':'h'},
+    tr:{e:j0, s:d0>0?22:e0.len-22, d:d0, v:0}, sw:{}, phase:0, pax:[], wait:[], pid:0, nextW:7, gh:null, ghNext:45, hz:[], hzNext:24, hid:0,
+    call:{n:0, w:'', pid:0}, evN:0, evq:[], stats:{del:0, perfect:0, missed:0, caught:0, banished:0, shoo:0, hits:0, derails:0, calls:0, hints:0}, win:false }; }
+const ev=(k,data)=>{ S.evN++; S.evq.push(Object.assign({n:S.evN, k}, data||{})); if(S.evq.length>10) S.evq.shift(); };
+const trSnap=()=>({e:TR.e, s:+TR.s.toFixed(2), d:TR.d, v:+TR.v.toFixed(2)});
+const iDrive=()=>ROLE==='driver';
+
+// ---------- the line (run by the host phone): phases, passengers, the ghost train, things on the tracks ----------
+function initSwitches(){ for(const id in NODES){ if(!nodeOpen(id) || !isJunction(id)) continue; const ok=legs(id); if(!ok.includes(S.sw[id])) S.sw[id]=ok[0]; } }
+function newWait(at){ const a=ahead(S.tr).node, nn=nearNode(S.tr), busy=new Set(S.wait.map(w=>w.at));
+  const opts=at?[at]:openStations().filter(id=>id!==a && (!nn||id!==nn.id) && !busy.has(id)); if(!opts.length) return null;
+  S.pid++; return {id:S.pid, at:pick(opts), look:Math.floor(Math.random()*COATS.length), until:S.t+55, life:55}; }
+function hostTick(dt){ if(!S) return;
+  if(S.ph==='ready'){ if(S.ready.h && S.ready.g){ S.ph='count'; S.cd=3.2; } return; }
+  if(S.ph==='count'){ S.cd-=dt; if(S.cd<=0){ S.ph='run'; initSwitches(); S.wait.push(newWait('tokyo')); ev('go'); } return; }
+  if(S.ph!=='run') return;
+  S.t+=dt;
+  const ph=PH.filter(p=>S.t>=p.t).length-1; if(ph>S.phase){ S.phase=ph; initSwitches(); ev('new',{ph}); }
+  const want=[2,3,4][S.phase]-(S.hp<35?1:0);
+  if(S.t>=S.nextW && S.wait.length+S.pax.length<want){ const w=newWait(); if(w){ S.wait.push(w); ev('wait'); } S.nextW=S.t+rnd(5,9)-S.phase*1.2; }
+  S.wait=S.wait.filter(w=>{ if(S.t<w.until) return true; ev('left',{at:w.at}); return false; });
+  S.pax=S.pax.filter(p=>{ if(S.t<p.until) return true; S.stats.missed++; S.hp-=5; S.score=Math.max(0,S.score-50); ev('gaveup',{w:p.dest}); return false; });
+  ghostTick(dt);
+  if(S.t>=S.hzNext && S.hz.length<2){ spawnHazard(); S.hzNext=S.t+rnd(10,15)-S.phase*1.5; }
+  S.hz=S.hz.filter(h=>S.t<h.until);
+  if(S.hp<=0){ S.hp=0; S.ph='over'; S.win=false; ev('down'); }
+  else if(S.t>=RUN_T){ S.ph='over'; S.win=true; ev('dawn'); } }
+function stopAt(node, off){ if(!WD[node] || !nodeOpen(node)) return;
+  const out=S.pax.filter(p=>p.dest===node), inn=S.wait.filter(w=>w.at===node);
+  if(out.length){ let pts=0; for(const p of out){ pts+=100+Math.round(clamp((p.until-S.t)/p.life,0,1)*100); } const perfect=off<3.5; if(perfect){ pts+=50*out.length; S.stats.perfect++; }
+    S.pax=S.pax.filter(p=>p.dest!==node); S.stats.del+=out.length; S.hp=Math.min(100,S.hp+3*out.length); S.score+=pts; ev('del',{w:node, n:out.length, pts, perfect}); }
+  if(inn.length){ S.wait=S.wait.filter(w=>w.at!==node); const D=dists(), dests=openStations().filter(id=>id!==node), far=dests.filter(id=>D[node][id]>G*1.3), life=80-6*S.phase;
+    inn.forEach(w=>S.pax.push({id:w.id, look:w.look, dest:pick(far.length?far:dests), until:S.t+life, life, called:0})); ev('board',{w:node, n:inn.length}); }
+  if(node==='jinja' && S.gh){ S.gh=null; S.ghNext=S.t+22; S.stats.banished++; S.score+=300; ev('purify'); }
+  else if(!out.length && !inn.length) ev('stop',{w:node}); }
+// how far the ghost is from the train if it sets off from this station
+function toTrain(node){ const D=dists(), t=S.tr, e=EDGES[t.e]; return Math.min(D[node][e.a]+t.s, D[node][e.b]+e.len-t.s); }
+function ghostNext(node, from){ const t=S.tr; let best=null, bd=1e12;
+  for(const j of NODES[node].adj){ if(!isOpen(j) || EDGES[j].depot) continue; const ne=EDGES[j], other=ne.a===node?ne.b:ne.a;
+    let d=j===t.e ? (ne.a===node?t.s:ne.len-t.s) : ne.len+toTrain(other); if(j===from) d+=60; if(d<bd){ bd=d; best=j; } }
+  return best; }
+function spawnGhost(){ const nn=nearNode(S.tr); let best=null, bd=-1;
+  for(const id of openStations()){ if(id==='jinja' || (nn&&nn.id===id)) continue; const d=toTrain(id); if(d<1e8 && d>bd){ bd=d; best=id; } }
+  if(!best) return; const j=ghostNext(best,-1); if(j==null) return; const e=EDGES[j];
+  S.gh={e:j, s:e.a===best?0:e.len, d:e.a===best?1:-1, until:S.t+32}; ev('ghost'); }
+function ghostTick(dt){ if(S.t<45) return;
+  if(!S.gh){ if(S.t>=S.ghNext) spawnGhost(); return; }
+  const g=S.gh, t=S.tr; if(S.t>g.until){ S.gh=null; S.ghNext=S.t+16; ev('ghostgone'); return; }
+  let move=VMAX*(.5+.07*S.phase)*dt, guard=0;
+  while(move>0 && guard++<4){ const e=EDGES[g.e];
+    if(g.e===t.e){ g.d=t.s>=g.s?1:-1; g.s+=g.d*Math.min(move, Math.abs(t.s-g.s)); break; }
+    const toEnd=g.d>0?e.len-g.s:g.s; if(move<toEnd){ g.s+=g.d*move; break; }
+    g.s=g.d>0?e.len:0; move-=toEnd; const node=g.d>0?e.b:e.a, j=ghostNext(node, g.e); if(j==null) break;
+    const ne=EDGES[j]; g.e=j; g.d=ne.a===node?1:-1; g.s=g.d>0?0:ne.len; }
+  const gp=epos(EDGES[g.e],g.s), tp=tpos(t);
+  if(Math.hypot(gp.x-tp.x, gp.z-tp.z)<7){ const nn=nearNode(t);
+    if(nn && nn.id==='jinja' && t.v<1){ S.gh=null; S.ghNext=S.t+22; S.stats.banished++; S.score+=300; ev('purify'); }
+    else { S.gh=null; S.ghNext=S.t+14; S.hp-=20; S.score=Math.max(0,S.score-100); S.stats.caught++; ev('boo'); } } }
+// something on the tracks, a little way down the route the train is on
+function spawnHazard(){ const segs=walk(S.tr, 260), want=rnd(110,190); let at=null;
+  for(const g of segs){ if(g.e==null) continue; const len=Math.abs(g.to-g.from); if(g.at+len<want) continue; const e=EDGES[g.e]; at={e:g.e, s:clamp(g.from+g.d*(want-g.at), RH+8, e.len-RH-8)}; break; }
+  if(!at){ const open=EDGES.filter(e=>isOpen(e.i) && !e.depot && e.i!==S.tr.e), e=pick(open); at={e:e.i, s:rnd(RH+8,e.len-RH-8)}; }
+  S.hid++; S.hz.push({id:S.hid, e:at.e, s:+at.s.toFixed(1), until:S.t+45}); ev('hz'); }
+// points are locked only when the train will be on them within about a second (stopped in the station, they can still be thrown)
+const lockedNode=()=>{ const a=ahead(S.tr); return a.dist<Math.max(3, S.tr.v*.9) ? a.node : null; };
+function hostAct(who, a){ if(!S || S.ph!=='run' || !a) return; const drv=MODE==='bot'||S.roles.driver===who, nav=MODE==='bot'||S.roles.nav===who;
+  if(a.k==='sw' && nav){ const n=NODES[a.node]; if(!n || !n.adj.includes(a.j) || !isOpen(a.j) || EDGES[a.j].depot || !isJunction(a.node)) return; if(lockedNode()===a.node){ ev('locked',{w:a.node}); return; } S.sw[a.node]=a.j; return; }
+  if(a.k==='hint' && nav){ const p=S.pax.find(p=>p.id===a.pid); if(p && !p.hint){ p.hint=1; S.stats.hints++; } return; }
+  if(!drv) return;
+  if(a.k==='stop') stopAt(a.node, a.off);
+  else if(a.k==='call'){ const p=S.pax.find(p=>p.id===a.pid); if(!p) return; p.called=(p.called||0)+1; S.call={n:S.call.n+1, w:p.dest, pid:p.id}; S.stats.calls++; }
+  else if(a.k==='derail'){ S.hp-=8; S.stats.derails++; ev('derail'); }
+  else if(a.k==='hit'){ const h=S.hz.find(h=>h.id===a.id); if(!h) return; S.hz=S.hz.filter(x=>x!==h); S.hp-=12; S.stats.hits++; ev('hit'); }
+  else if(a.k==='horn'){ const ids=a.ids||[]; let n=0; S.hz=S.hz.filter(h=>{ if(ids.includes(h.id)){ n++; return false; } return true; }); if(n){ S.stats.shoo+=n; S.score+=20*n; ev('shoo',{n}); } ev('horn'); } }
+function doAct(a){ if(MODE==='net' && !IS_HOST){ if(NET) NET.send({a}, true); } else hostAct(ME, a); }
+
+// ---------- the train (run on the driving phone, so the buttons never wait for the network) ----------
+const IN={btn:{}, keys:{}};
+function driveTrain(dt){
+  const stamp=S.gid+':'+S.roles.driver; if(TR.stamp!==stamp){ Object.assign(TR, S.tr, {stamp, stopAt:null, clack:0}); LOCAL.snap=true; LOCAL.hit={}; }
+  const B=IN.btn, k=IN.keys, end=S.ph!=='run'; let go=!end && (B.go||k.arrowup||k.w), br=end||B.brake||k.arrowdown||k.s;
+  if(MODE==='bot' && ROLE==='nav' && !end){ const c=botDrive(dt); go=c.go; br=c.brake; }
+  TR.v = go ? Math.min(VMAX, TR.v+ACC*dt) : Math.max(0, TR.v-(br?BRK:FRI)*dt); TR.braking=!!br && TR.v>3;
+  let move=TR.v*dt, guard=0;
+  while(move>0 && guard++<4){
+    const e=EDGES[TR.e], toEnd=TR.d>0?e.len-TR.s:TR.s;
+    if(move<toEnd){ TR.s+=TR.d*move; break; }
+    TR.s=TR.d>0?e.len:0; move-=toEnd;
+    const node=TR.d>0?e.b:e.a, x=swExit(node, TR.e);
+    if(!x){ TR.v=0; break; }
+    // through the points too fast: a lurch, and the train loses half its speed
+    if(isJunction(node) && TR.v>VJ+.8){ doAct({k:'derail', node}); TR.v*=.45; if(iDrive()){ FX.shake=.9; SND.derail(); buzz(40); } }
+    const ne=EDGES[x.j]; TR.e=x.j; TR.d=ne.a===node?1:-1; TR.s=TR.d>0?0:ne.len; }
+  TR.clack+=TR.v*dt; if(TR.clack>7){ TR.clack=0; if(iDrive()) SND.clack(TR.v/VMAX); }
+  if(IS_HOST || MODE==='bot') S.tr=trSnap();
+  // stopping in a station lets passengers off and on
+  const nn=nearNode(TR);
+  if(TR.v<.35 && nn && WD[nn.id] && S.ph==='run'){ if(TR.stopAt!==nn.id){ TR.stopAt=nn.id; doAct({k:'stop', node:nn.id, off:+nn.off.toFixed(1)}); } }
+  else if(TR.v>2 || !nn) TR.stopAt=null;
+  // something on the tracks: the horn scares it off, hitting it hurts
+  if(S.ph==='run' && S.hz.length){ const segs=walk(TR, 12);
+    for(const h of S.hz){ const d=onRoute(segs, h.e, h.s); if(d!=null && d<2.5 && !LOCAL.hit[h.id]){ LOCAL.hit[h.id]=1; doAct({k:'hit', id:h.id}); TR.v*=.35; if(iDrive()){ FX.shake=1; SND.thud(); buzz(60); } } } } }
+function horn(){ if(!S || S.ph!=='run') return; if(iDrive()){ SND.horn(); buzz(15); } const segs=walk(TR, 90), ids=S.hz.filter(h=>{ const d=onRoute(segs,h.e,h.s); return d!=null && d<85; }).map(h=>h.id); doAct({k:'horn', ids}); }
+function callTicket(pid){ const now=performance.now(); if(now-(LOCAL.sentAt[pid]||0)<1100) return; LOCAL.sentAt[pid]=now; doAct({k:'call', pid}); if(iDrive()) SND.call(); }
+
+// ---------- しばBot: plays the other seat when you practise ----------
+// as navigator it only knows the destinations you have told it (tap a ticket); as driver it calls every ticket out to you
+const BN={t:0}, BD={wait:0, callT:2.5, honk:{}};
+function botTarget(){ if(S.gh) return 'jinja';
+  const known=S.pax.filter(p=>p.called).sort((a,b)=>a.until-b.until); if(known.length) return known[0].dest;
+  if(S.wait.length){ const D=dists(), n=ahead(S.tr).node; return S.wait.slice().sort((a,b)=>D[n][a.at]-D[n][b.at])[0].at; } return null; }
+function botNav(dt){ BN.t-=dt; if(BN.t>0) return; BN.t=rnd(.5,.9); const tgt=botTarget(); if(!tgt) return;
+  const D=dists(); let e=EDGES[S.tr.e], node=S.tr.d>0?e.b:e.a, inE=e.i;
+  for(let k=0;k<3;k++){ if(node===tgt) break; const ex=exitsAt(node,inE); if(!ex.length) break; let best=ex[0], bd=1e12; for(const x of ex){ const c=EDGES[x.j].len+D[x.to][tgt]; if(c<bd){ bd=c; best=x; } }
+    if(isJunction(node) && S.sw[node]!==best.j && lockedNode()!==node) hostAct(S.roles.nav, {k:'sw', node, j:best.j});
+    const ne=EDGES[best.j]; inE=ne.i; node=ne.a===node?ne.b:ne.a; } }
+function botDrive(dt){ const segs=walk(TR, 140), nx=segs.find(g=>g.node!=null);
+  const wantStop=nx && WD[nx.node] && (S.pax.some(p=>p.dest===nx.node) || S.wait.some(w=>w.at===nx.node) || (nx.node==='jinja' && S.gh));
+  if(TR.v<.4 && TR.stopAt){ BD.wait+=dt; if(BD.wait<1.1) return {go:false, brake:true}; } else BD.wait=0;
+  let target=VMAX*.9;
+  if(nx){ if(wantStop && TR.stopAt!==nx.node) target=Math.min(target, Math.sqrt(2*BRK*.75*Math.max(0,nx.at-1.5))); else if(isJunction(nx.node) && nx.at<55) target=Math.min(target, VJ-1.5); }
+  for(const h of S.hz){ const d=onRoute(segs,h.e,h.s); if(d!=null && d<70 && !BD.honk[h.id]){ BD.honk[h.id]=1; horn(); } }
+  BD.callT-=dt; const un=S.pax.find(p=>!p.called);
+  if(un && BD.callT<10){ callTicket(un.id); BD.callT=12; } else if(BD.callT<=0 && S.pax.length){ callTicket(S.pax.slice().sort((a,b)=>a.until-b.until)[0].id); BD.callT=12; }
+  return {go:TR.v<target-.6, brake:TR.v>target+1.2}; }
+
+// ---------- online (inside the hub): the host pushes the line, the other phone sends its actions and, if it drives, the train ----------
+let NET=null, lastPush=0, lastSend=0;
+function onNet(m){ if(!m) return;
+  if(m.st){ if(IS_HOST) return; const fresh=!S || S.gid!==m.st.gid; S=m.st; if(fresh) onNewRun(); return; }
+  if(!IS_HOST || !S) return;
+  if(m.rd && S.ph==='ready') S.ready.g=true;
+  if(m.tr && S.roles.driver==='g') S.tr=m.tr;
+  if(m.a) hostAct('g', m.a); }
+function netTick(){ if(MODE!=='net' || !NET) return; const t=performance.now();
+  if(IS_HOST){ if(S && t-lastPush>80){ lastPush=t; NET.send({st:S}, false); } }
+  else if(t-lastSend>70){ lastSend=t; NET.send({rd:LOCAL.ready?1:0, tr:S && S.roles.driver==='g' && (S.ph==='run'||S.ph==='count') ? trSnap() : null}, false); } }
+
+// ---------- 3D: tunnels, tiled station halls, enamel signs, lanterns, the ghost train ----------
+const FX={shake:0};
+let R3=null;
+const TEXC={};
+function ctex(key,w,h,draw,rep){ if(TEXC[key]) return TEXC[key]; const c=document.createElement('canvas'); c.width=w; c.height=h; draw(c.getContext('2d'),w,h); const t=new THREE.CanvasTexture(c); if(rep){ t.wrapS=t.wrapT=THREE.RepeatWrapping; } return TEXC[key]=t; }
+function rr(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+const personTex=i=>ctex('p'+i,64,128,(c)=>{ c.fillStyle=COATS[i%COATS.length]; c.beginPath(); c.moveTo(13,126); c.quadraticCurveTo(11,64,32,58); c.quadraticCurveTo(53,64,51,126); c.closePath(); c.fill();
+  c.fillStyle='rgba(0,0,0,.25)'; c.fillRect(31,62,2,62); c.fillStyle='#D9B796'; c.beginPath(); c.arc(32,42,14,0,TAU); c.fill(); c.fillStyle='#17120F'; c.beginPath(); c.arc(32,37,14.5,Math.PI,TAU); c.fill(); });
+const lurkTex=()=>ctex('lurk',96,160,(c)=>{ const g=c.createLinearGradient(0,20,0,160); g.addColorStop(0,'#0A0B10'); g.addColorStop(1,'rgba(10,11,16,0)'); c.fillStyle=g;
+  c.beginPath(); c.moveTo(48,14); c.quadraticCurveTo(84,30,82,90); c.lineTo(92,160); c.lineTo(4,160); c.lineTo(14,90); c.quadraticCurveTo(12,30,48,14); c.fill();
+  c.fillStyle='#FF2A1A'; c.shadowColor='#FF2A1A'; c.shadowBlur=14; c.beginPath(); c.ellipse(36,58,6,3.5,.2,0,TAU); c.fill(); c.beginPath(); c.ellipse(60,58,6,3.5,-.2,0,TAU); c.fill(); });
+function initThree(){
+  if(R3 || !window.THREE) return; const T3=THREE;
+  const renderer=new T3.WebGLRenderer({antialias:false, powerPreference:'high-performance'}); renderer.setPixelRatio(Math.min(1.5, devicePixelRatio||1)); $('#three').appendChild(renderer.domElement);
+  const scene=new T3.Scene(); scene.background=new T3.Color(0x040508); scene.fog=new T3.Fog(0x040508, 6, 84);
+  const cam=new T3.PerspectiveCamera(64, 2, .2, 130);
+  const brick=ctex('brick',128,128,(c,w,h)=>{ c.fillStyle='#24201E'; c.fillRect(0,0,w,h);
+    for(let r=0;r<8;r++) for(let k=0;k<5;k++){ c.fillStyle=`hsl(${18+Math.random()*14},${10+Math.random()*10}%,${17+Math.random()*10}%)`; c.fillRect(k*32-(r%2)*16+1, r*16+1, 30, 14); }
+    c.fillStyle='#100D0C'; c.fillRect(0,46,w,4); c.fillStyle='rgba(120,150,170,.08)'; for(let i=0;i<12;i++) c.fillRect(Math.random()*w,0,1+Math.random()*2,h); },true);
+  const track=ctex('track',64,64,(c,w,h)=>{ c.fillStyle='#1E1B19'; c.fillRect(0,0,w,h); for(let i=0;i<140;i++){ const g=80+Math.random()*70|0; c.fillStyle=`rgba(${g},${g-8},${g-16},.4)`; c.fillRect(Math.random()*w,Math.random()*h,2,2); }
+    c.fillStyle='#3E2E22'; c.fillRect(2,24,60,16); c.fillStyle='#8A949E'; c.fillRect(13,0,5,h); c.fillRect(46,0,5,h); c.fillStyle='#DDE3E8'; c.fillRect(14,0,2,h); c.fillRect(47,0,2,h); },true);
+  const glow=ctex('glow',64,64,(c,w,h)=>{ const g=c.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.25,'rgba(255,255,255,.7)'); g.addColorStop(1,'rgba(255,255,255,0)'); c.fillStyle=g; c.fillRect(0,0,w,h); });
+  const stripes=ctex('stripes',64,64,(c,w,h)=>{ c.fillStyle='#E8B830'; c.fillRect(0,0,w,h); c.fillStyle='#16130F'; for(let i=-64;i<64;i+=22){ c.beginPath(); c.moveTo(i,0); c.lineTo(i+11,0); c.lineTo(i+75,64); c.lineTo(i+64,64); c.closePath(); c.fill(); } },true);
+  const floorT=ctex('floor',256,256,(c,w,h)=>{ c.fillStyle='#34302D'; c.fillRect(0,0,w,h); c.strokeStyle='rgba(0,0,0,.25)'; for(let i=0;i<w;i+=16){ c.beginPath(); c.moveTo(i,0); c.lineTo(i,h); c.moveTo(0,i); c.lineTo(w,i); c.stroke(); }
+    c.strokeStyle='#D8B83A'; c.lineWidth=7; c.beginPath(); c.arc(128,128,104,0,TAU); c.stroke(); c.fillStyle='#D8B83A'; c.beginPath(); c.arc(128,128,18,0,TAU); c.fill(); c.fillStyle='#34302D'; c.beginPath(); c.arc(128,128,10,0,TAU); c.fill(); });
+  const ceilT=ctex('ceil',64,64,(c,w,h)=>{ c.fillStyle='#16141A'; c.fillRect(0,0,w,h); c.fillStyle='#221F27'; c.fillRect(0,30,w,4); c.fillRect(30,0,4,h); },true);
+  const M=map=>new T3.MeshBasicMaterial({map, side:T3.DoubleSide});
+  const brickM=M(brick), trackM=M(track), floorM=M(floorT), ceilM=M(ceilT), barM=M(stripes);
+  const geo=(pos,uv,idx)=>{ const g=new T3.BufferGeometry(); g.setAttribute('position',new T3.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new T3.Float32BufferAttribute(uv,2)); g.setIndex(idx); return g; };
+  // a tunnel: rings of an arch with a flat floor, every 2 units along the curve
+  function tube(e,s0,s1){ const seg=12, pos=[], uv=[], idx=[]; let ring=0;
+    for(let s=s0;;s+=2){ const ss=Math.min(s,s1), p=epos(e,ss), d=edir(e,ss), sx=-d.z, sz=d.x;
+      for(let k=0;k<=seg;k++){ const a=k/seg*TAU, cx=Math.cos(a)*RT, cy=Math.max(FLOOR, Math.sin(a)*RT); pos.push(p.x+sx*cx, cy, p.z+sz*cx); uv.push(k/seg*3, ss/5); }
+      if(ring){ const o=(ring-1)*(seg+1); for(let k=0;k<seg;k++) idx.push(o+k, o+seg+1+k, o+k+1, o+seg+1+k, o+seg+2+k, o+k+1); }
+      ring++; if(ss>=s1) break; }
+    return geo(pos,uv,idx); }
+  function ribbon(e){ const pos=[], uv=[], idx=[]; let ring=0;
+    for(let s=0;;s+=2){ const ss=Math.min(s,e.len), p=epos(e,ss), d=edir(e,ss), sx=-d.z, sz=d.x;
+      pos.push(p.x-sx*1.7, FLOOR+.06, p.z-sz*1.7, p.x+sx*1.7, FLOOR+.06, p.z+sz*1.7); uv.push(0, ss/2.2, 1, ss/2.2);
+      if(ring){ const o=(ring-1)*2; idx.push(o,o+2,o+1, o+1,o+2,o+3); } ring++; if(ss>=e.len) break; }
+    return geo(pos,uv,idx); }
+  const lp=[], lc=[], lantern=(x,y,z,r,g,b)=>{ lp.push(x,y,z); lc.push(r,g,b); };
+  EDGES.forEach(e=>{ scene.add(new T3.Mesh(tube(e, RH-.5, e.len-RH+.5), brickM)); scene.add(new T3.Mesh(ribbon(e), trackM));
+    let side=1; for(let s=RH+9; s<e.len-RH-6; s+=17){ const p=epos(e,s), d=edir(e,s), warm=Math.random()<.5; side=-side; lantern(p.x-d.z*(RT-.8)*side, 1.8, p.z+d.x*(RT-.8)*side, 1, warm?.55:.32, warm?.2:.22); } });
+  // enamel station signs: white kana on a dark board, a band in the station's colour (romaji until you know the word)
+  const SIGNS=[];
+  const drawSign=sg=>{ const c=sg.cv.getContext('2d'); c.clearRect(0,0,256,128);
+    c.fillStyle='#10151F'; rr(c,6,10,244,108,10); c.fill(); c.strokeStyle='rgba(255,255,255,.2)'; c.lineWidth=2; c.stroke(); c.fillStyle=COL[sg.id]||'#5B6B86'; c.fillRect(8,100,240,8);
+    c.textAlign='center'; c.textBaseline='middle'; const w=WD[sg.id];
+    if(!w){ c.fillStyle='#F1E9DD'; c.font='900 30px "Zen Kaku Gothic New", sans-serif'; c.fillText(T('DEPOT','车库'),128,56); }
+    else { const fresh=!knowW(sg.id); c.fillStyle='#FFFFFF'; c.font=`900 ${w.k.length>4?40:52}px "Zen Kaku Gothic New", sans-serif`; c.fillText(w.k,128,fresh?46:56); if(fresh){ c.font='700 18px "Zen Kaku Gothic New", sans-serif'; c.fillStyle='#9FB4C8'; c.fillText(w.ro,128,82); } }
+    sg.tex.needsUpdate=true; };
+  const signTex=id=>{ const cv=document.createElement('canvas'); cv.width=256; cv.height=128; const tex=new T3.CanvasTexture(cv), sg={cv,tex,id}; SIGNS.push(sg); drawSign(sg); return tex; };
+  const mouthsAll=[], plat={};
+  Object.values(NODES).forEach((n,ni)=>{
+    const mouths=n.adj.map(j=>{ const e=EDGES[j], m=epos(e, n.id===e.a?RH:e.len-RH); return {j, to:n.id===e.a?e.b:e.a, a:Math.atan2(m.z-n.Z, m.x-n.X)}; });
+    const hue=COL[n.id]||'#5B6B86', tiles=ctex('tiles'+n.id,128,128,(c,w,h)=>{ c.fillStyle='#C9C0AE'; c.fillRect(0,0,w,h); c.strokeStyle='#8F887A'; c.lineWidth=2;
+      for(let i=0;i<=w;i+=16){ c.beginPath(); c.moveTo(i,0); c.lineTo(i,h); c.stroke(); c.beginPath(); c.moveTo(0,i); c.lineTo(w,i); c.stroke(); }
+      c.fillStyle=hue; c.fillRect(0,h*.36,w,h*.14); c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(0,h*.9,w,h*.1); },true);
+    const seg=48, half=Math.asin((RT+.4)/RH), pos=[], uv=[], idx=[];
+    for(let k=0;k<seg;k++){ const a0=k/seg*TAU, a1=(k+1)/seg*TAU, mid=(a0+a1)/2, open=mouths.some(mo=>Math.abs(Math.atan2(Math.sin(mid-mo.a),Math.cos(mid-mo.a)))<half), y0=open?RT*.95:FLOOR, o=pos.length/3, v0=(y0-FLOOR)/(CEIL-FLOOR);
+      pos.push(n.X+Math.cos(a0)*RH, y0, n.Z+Math.sin(a0)*RH, n.X+Math.cos(a1)*RH, y0, n.Z+Math.sin(a1)*RH, n.X+Math.cos(a1)*RH, CEIL, n.Z+Math.sin(a1)*RH, n.X+Math.cos(a0)*RH, CEIL, n.Z+Math.sin(a0)*RH);
+      uv.push(k/6, v0, (k+1)/6, v0, (k+1)/6, 1, k/6, 1); idx.push(o,o+1,o+2, o,o+2,o+3); }
+    scene.add(new T3.Mesh(geo(pos,uv,idx), M(tiles)));
+    const fl=new T3.Mesh(new T3.CircleGeometry(RH,36), floorM); fl.rotation.x=-Math.PI/2; fl.position.set(n.X,FLOOR,n.Z); scene.add(fl);
+    const ce=new T3.Mesh(new T3.CircleGeometry(RH,36), ceilM); ce.rotation.x=Math.PI/2; ce.position.set(n.X,CEIL,n.Z); scene.add(ce);
+    [[5,5],[-5,5],[5,-5],[-5,-5]].forEach(([dx,dz])=>lantern(n.X+dx, CEIL-.6, n.Z+dz, 1, .95, .8));
+    if(WD[n.id]){ const bm=new T3.MeshBasicMaterial({map:signTex(n.id), transparent:true}), at=[];
+      for(let k=0;k<16 && at.length<4;k++){ const a=k/16*TAU+.2; if(mouths.every(mo=>Math.abs(Math.atan2(Math.sin(a-mo.a),Math.cos(a-mo.a)))>.75) && at.every(q=>Math.abs(Math.atan2(Math.sin(a-q),Math.cos(a-q)))>1.2)) at.push(a); }
+      at.forEach(a=>{ const pl=new T3.Mesh(new T3.PlaneGeometry(9,4.5), bm); pl.position.set(n.X+Math.cos(a)*(RH-.4), 4.4, n.Z+Math.sin(a)*(RH-.4)); pl.lookAt(n.X, 4.4, n.Z); scene.add(pl); }); }
+    mouths.forEach(mo=>{ const e=EDGES[mo.j], m=epos(e, n.id===e.a?RH-1.2:e.len-RH+1.2);
+      const sign=new T3.Sprite(new T3.SpriteMaterial({map:signTex(mo.to), transparent:true})); sign.scale.set(8,4,1); sign.position.set(m.x, 5.6, m.z); scene.add(sign);
+      const lamp=new T3.Sprite(new T3.SpriteMaterial({map:glow, color:0x333333, transparent:true, depthWrite:false, blending:T3.AdditiveBlending})); lamp.scale.set(2.8,2.8,1); lamp.position.set(m.x, 7.4, m.z); scene.add(lamp);
+      const bar=new T3.Mesh(new T3.PlaneGeometry(RT*2, RT*.95-FLOOR), barM); bar.position.set(m.x, (RT*.95+FLOOR)/2, m.z); bar.lookAt(n.X, (RT*.95+FLOOR)/2, n.Z); scene.add(bar);
+      mouthsAll.push({node:n.id, j:mo.j, sign, lamp, bar}); });
+    // waiting passengers stand on the platform, away from the tunnel mouths
+    const slots=[]; for(let k=0;k<24 && slots.length<3;k++){ const a=k/24*TAU+.13; if(mouths.every(mo=>Math.abs(Math.atan2(Math.sin(a-mo.a),Math.cos(a-mo.a)))>.6)) slots.push(a); }
+    plat[n.id]=slots.map(a=>{ const sp=new T3.Sprite(new T3.SpriteMaterial({transparent:true, fog:true})); sp.scale.set(1.5,3,1); sp.position.set(n.X+Math.cos(a)*(RH-3), FLOOR+1.5, n.Z+Math.sin(a)*(RH-3)); sp.visible=false; scene.add(sp); return sp; });
+  });
+  const lg=new T3.BufferGeometry(); lg.setAttribute('position',new T3.Float32BufferAttribute(lp,3)); lg.setAttribute('color',new T3.Float32BufferAttribute(lc,3));
+  scene.add(new T3.Points(lg, new T3.PointsMaterial({size:2.6, map:glow, vertexColors:true, transparent:true, depthWrite:false, blending:T3.AdditiveBlending, fog:false})));
+  // the ghost train: two pale lamps and a cold green haze coming down the tunnel
+  const gG=new T3.Group(); const gl1=new T3.Sprite(new T3.SpriteMaterial({map:glow, color:0xE8FFF4, transparent:true, depthWrite:false, blending:T3.AdditiveBlending, fog:false})), gl2=gl1.clone();
+  gl1.scale.set(2.4,2.4,1); gl2.scale.set(2.4,2.4,1); const haze=new T3.Sprite(new T3.SpriteMaterial({map:glow, color:0x5CFFB0, transparent:true, opacity:.55, depthWrite:false, blending:T3.AdditiveBlending, fog:false})); haze.scale.set(16,12,1);
+  gG.add(gl1); gG.add(gl2); gG.add(haze); gG.visible=false; scene.add(gG);
+  const lurk=[0,1].map(()=>{ const g=new T3.Group(), body=new T3.Sprite(new T3.SpriteMaterial({map:lurkTex(), transparent:true, fog:true})); body.scale.set(2.6,4.4,1); body.position.y=FLOOR+2.2; g.add(body);
+    const red=new T3.Sprite(new T3.SpriteMaterial({map:glow, color:0xFF3020, transparent:true, opacity:.5, depthWrite:false, blending:T3.AdditiveBlending, fog:false})); red.scale.set(7,7,1); red.position.y=FLOOR+2.4; g.add(red); g.visible=false; scene.add(g); return g; });
+  R3={renderer, scene, cam, SIGNS, drawSign, mouths:mouthsAll, plat, ghost:{g:gG, gl1, gl2, haze}, lurk, ph:-1, lampK:'', platK:'', signK:''};
+  if(document.fonts) document.fonts.load('900 44px "Zen Kaku Gothic New"','とうきょうさくら').then(()=>SIGNS.forEach(drawSign)).catch(()=>{});
+  const size=()=>{ const w=innerWidth, h=innerHeight; renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }; size(); addEventListener('resize', size);
+}
+function lookPoint(dist){ const segs=walk(TR, dist), last=segs.filter(g=>g.e!=null).pop(); if(!last) return tpos(TR); return epos(EDGES[last.e], last.to); }
+function draw3(dt, time){ const {renderer, scene, cam}=R3, p=phase();
+  // tunnels that open this phase lose their barriers; a sign's romaji goes once you know the word
+  if(R3.ph!==p){ R3.ph=p; R3.mouths.forEach(m=>{ const o=isOpen(m.j) && !EDGES[m.j].depot; m.sign.visible=o; m.bar.visible=!o && !EDGES[m.j].depot; }); R3.lampK=''; }
+  const sk=STATIONS.map(id=>knowW(id)?1:0).join(''); if(R3.signK!==sk){ R3.signK=sk; R3.SIGNS.forEach(R3.drawSign); }
+  const pp=tpos(TR), la=lookPoint(10);
+  if(!LOCAL.look || LOCAL.snap){ LOCAL.look={...la}; LOCAL.snap=false; } else { const k=Math.min(1,dt*7); LOCAL.look.x+=(la.x-LOCAL.look.x)*k; LOCAL.look.z+=(la.z-LOCAL.look.z)*k; }
+  let sx=0, sy=0; if(FX.shake>0){ FX.shake=Math.max(0,FX.shake-dt*1.6); sx=(Math.random()-.5)*FX.shake*.8; sy=(Math.random()-.5)*FX.shake*.8; }
+  const bob=Math.sin(time/45)*.05*TR.v/VMAX;
+  cam.position.set(pp.x+sx, EYE+bob+sy, pp.z); cam.lookAt(LOCAL.look.x+sx, EYE-.25, LOCAL.look.z);
+  const fov=64+TR.v*.45; if(Math.abs(cam.fov-fov)>.2){ cam.fov+=(fov-cam.fov)*Math.min(1,dt*3); cam.updateProjectionMatrix(); }
+  // signal lamps at the next junction: green over the tunnel the points are set to, red over the others
+  const a=ahead(TR), ex=a.dist<95?exitsAt(a.node,TR.e):[], cur=ex.length?swExit(a.node,TR.e).j:-1, lk=a.node+':'+cur+':'+ex.length+':'+p;
+  if(R3.lampK!==lk){ R3.lampK=lk; R3.mouths.forEach(m=>{ const on=m.node===a.node && ex.some(x=>x.j===m.j); m.lamp.material.color.setHex(!on?0x333333:m.j===cur?0x46FF7A:0xFF3B30); }); }
+  const pk=S.wait.map(w=>w.id+w.at).join(); if(R3.platK!==pk){ R3.platK=pk; for(const id in R3.plat){ const here=S.wait.filter(w=>w.at===id); R3.plat[id].forEach((sp,i)=>{ const w=here[i]; sp.visible=!!w; if(w){ sp.material.map=personTex(w.look); sp.material.needsUpdate=true; } }); } }
+  // the ghost train: its lamps down the tunnel, its bell getting closer
+  const gh=R3.ghost;
+  if(S.gh){ const g=epos(EDGES[S.gh.e],S.gh.s), d=edir(EDGES[S.gh.e],S.gh.s); if(!LOCAL.gp) LOCAL.gp={...g}; else { const k=Math.min(1,dt*8); LOCAL.gp.x+=(g.x-LOCAL.gp.x)*k; LOCAL.gp.z+=(g.z-LOCAL.gp.z)*k; }
+    const fl=.75+Math.sin(time/60)*.2+Math.random()*.08; gh.g.visible=true; gh.g.position.set(LOCAL.gp.x, EYE-.6, LOCAL.gp.z); gh.gl1.position.set(-d.z*1.1,0,d.x*1.1); gh.gl2.position.set(d.z*1.1,0,-d.x*1.1);
+    gh.gl1.material.opacity=gh.gl2.material.opacity=fl; gh.haze.material.opacity=.35+fl*.25;
+    const dd=Math.hypot(LOCAL.gp.x-pp.x, LOCAL.gp.z-pp.z); $('#vig').style.opacity=clamp(1-dd/150,0,.85).toFixed(2);
+    LOCAL.bellT-=dt; if(LOCAL.bellT<=0){ SND.bell(clamp(1-dd/320,.06,1)); LOCAL.bellT=.4+dd/110; } }
+  else if(gh.g.visible){ gh.g.visible=false; LOCAL.gp=null; $('#vig').style.opacity='0'; }
+  // things standing on the tracks
+  R3.lurk.forEach((L,i)=>{ const h=S.hz[i]; L.visible=!!h; if(h){ const q=epos(EDGES[h.e],h.s); L.position.set(q.x, Math.sin(time/300+i)*.08, q.z); } });
+  renderer.render(scene, cam); }
+
+// ---------- the navigator's control room: the live map ----------
+const MX=x=>150+(x-.8)*240, MY=z=>40+z*100;
+const W2M=(X,Z)=>({x:MX(X/G+2), y:MY(Z/G+2)});
+const mapEl=$('#map');
+function svgPt(e){ const p=mapEl.createSVGPoint(); p.x=e.clientX; p.y=e.clientY; return p.matrixTransform(mapEl.getScreenCTM().inverse()); }
+const edgePath=e=>{ const A=NODES[e.a], B=NODES[e.b], c=W2M(e.cx,e.cz); return `M${MX(A.x)} ${MY(A.z)} Q${c.x.toFixed(1)} ${c.y.toFixed(1)} ${MX(B.x)} ${MY(B.z)}`; };
+const edgePts=(e,from,to,step=4)=>{ const out=[], dir=to>=from?1:-1; for(let s=from; dir>0?s<to:s>to; s+=dir*step){ const q=epos(e,s), m=W2M(q.x,q.z); out.push(m.x.toFixed(1)+','+m.y.toFixed(1)); } const q=epos(e,to), m=W2M(q.x,q.z); out.push(m.x.toFixed(1)+','+m.y.toFixed(1)); return out; };
+function buildMap(){ const p=phase(), key='m'+p+LANG; if(mapEl.dataset.k===key) return; mapEl.dataset.k=key;
+  const lines=EDGES.map(e=>isOpen(e.i) ? `<path class="ln" d="${edgePath(e)}"/><path class="ln2" d="${edgePath(e)}"/>` : `<path class="ln closed" d="${edgePath(e)}"/>`).join('');
+  const st=Object.values(NODES).map(n=>{ const open=nodeOpen(n.id), dep=n.id==='depot';
+    return `<g class="st${open?'':' closed'}" data-st="${n.id}" transform="translate(${MX(n.x)},${MY(n.z)})"><circle class="ring" r="${dep?18:27}" stroke="${COL[n.id]}"/><g class="ic" transform="scale(${dep?.7:1.05})">${ICON[n.id]}</g><circle class="tap" r="34"/></g>`; }).join('');
+  mapEl.innerHTML=lines+'<g id="mRoute"></g><g id="mSw"></g><g id="mHz"></g>'+st+'<g id="mWait"></g><g id="mGhost" visibility="hidden"><circle r="20" fill="#5CFFB0" opacity=".28"/><circle r="10" fill="#DFFFEF"/><circle cx="-3.5" cy="-1" r="1.8" fill="#0B1220"/><circle cx="3.5" cy="-1" r="1.8" fill="#0B1220"/></g>'+
+    '<g id="mTrain"><circle r="15" fill="#FF9A4D" opacity=".25"/><circle r="11" fill="#FF9A4D"/><path d="M0 -8 L6.5 5 L0 2 L-6.5 5 Z" fill="#0B0E14"/></g><g id="mLbl"></g>';
+  LOCAL.swK=''; LOCAL.hzK=''; LOCAL.wtK=''; LOCAL.tm=null; LOCAL.gm=null; }
+function navFrame(now, dt){ buildMap();
+  // the points: a bright blade along the tunnel each junction is set to, red stubs on the others; orange while the train is on them
+  const lockN=lockedNode(), swk=JSON.stringify(S.sw)+lockN+phase();
+  if(LOCAL.swK!==swk){ LOCAL.swK=swk; $('#mSw').innerHTML=Object.keys(NODES).filter(id=>nodeOpen(id) && isJunction(id)).map(id=>legs(id).map(j=>{ const e=EDGES[j], fromA=e.a===id, set=S.sw[id]===j, L=set?44:24;
+      return `<polyline class="${set?'blade'+(lockN===id?' lock':''):'stub'}" points="${edgePts(e, fromA?RH*.9:e.len-RH*.9, fromA?RH*.9+L:e.len-RH*.9-L).join(' ')}"/>`; }).join('')).join(''); }
+  // the route the train will take through the points as they are now
+  if(now-LOCAL.routeT>120){ LOCAL.routeT=now; const segs=walk(S.tr, 300); $('#mRoute').innerHTML=segs.filter(g=>g.e!=null).map(g=>`<polyline class="route" points="${edgePts(EDGES[g.e], g.from, g.to).join(' ')}"/>`).join(''); }
+  const hk=S.hz.map(h=>h.id).join(); if(LOCAL.hzK!==hk){ LOCAL.hzK=hk; $('#mHz').innerHTML=S.hz.map(h=>{ const q=epos(EDGES[h.e],h.s), m=W2M(q.x,q.z); return `<g class="hz" transform="translate(${m.x.toFixed(1)},${m.y.toFixed(1)})"><circle r="10"/><text y="1">!</text></g>`; }).join(''); }
+  const wk=S.wait.map(w=>w.id+w.at).join(); if(LOCAL.wtK!==wk){ LOCAL.wtK=wk; const by={}; S.wait.forEach(w=>(by[w.at]=by[w.at]||[]).push(w));
+    $('#mWait').innerHTML=Object.entries(by).map(([id,ws])=>{ const n=NODES[id]; return `<g class="wt" transform="translate(${MX(n.x)+22},${MY(n.z)-40}) scale(1.4)"><rect x="-3" y="-13" width="${ws.length*14+8}" height="26" rx="9"/>${ws.map((w,i)=>`<g transform="translate(${i*14+5},0)"><circle cy="-4" r="3.6" fill="#D9B796"/><path d="M-5 9 Q-5 1 0 1 Q5 1 5 9 Z" style="fill:${COATS[w.look]}"/></g>`).join('')}</g>`; }).join(''); }
+  // the train and the ghost, eased between updates
+  const tp=tpos(S.tr), tm=W2M(tp.x,tp.z), td=edir(EDGES[S.tr.e],S.tr.s), ang=Math.atan2(td.x*S.tr.d, -td.z*S.tr.d)*180/Math.PI;
+  if(!LOCAL.tm) LOCAL.tm={...tm}; else { const k=Math.min(1,dt*12); LOCAL.tm.x+=(tm.x-LOCAL.tm.x)*k; LOCAL.tm.y+=(tm.y-LOCAL.tm.y)*k; }
+  $('#mTrain').setAttribute('transform',`translate(${LOCAL.tm.x.toFixed(1)},${LOCAL.tm.y.toFixed(1)}) rotate(${ang.toFixed(0)})`);
+  const mg=$('#mGhost');
+  if(S.gh){ const g=epos(EDGES[S.gh.e],S.gh.s), m=W2M(g.x,g.z); if(!LOCAL.gm) LOCAL.gm=m; else { const k=Math.min(1,dt*8); LOCAL.gm.x+=(m.x-LOCAL.gm.x)*k; LOCAL.gm.y+=(m.y-LOCAL.gm.y)*k; }
+    mg.setAttribute('visibility','visible'); mg.setAttribute('transform',`translate(${LOCAL.gm.x.toFixed(1)},${LOCAL.gm.y.toFixed(1)}) scale(${(1+Math.sin(now/160)*.1).toFixed(3)})`); }
+  else if(LOCAL.gm){ mg.setAttribute('visibility','hidden'); LOCAL.gm=null; }
+  if(LOCAL.lbl && now>LOCAL.lbl.until){ $('#mLbl').innerHTML=''; LOCAL.lbl=null; }
+  // who is aboard: the destinations are only on the driver's screen until the driver calls them
+  const ak=S.pax.map(p=>p.id+':'+(p.called?1:0)+':'+(p.hint?1:0)).join('|')+(S.gh?'g':'')+LANG;
+  if(LOCAL.abK!==ak){ const prev=LOCAL.abK; LOCAL.abK=ak; const side=$('#side');
+    side.innerHTML=`${S.gh?`<div class="alarm">幽霊電車 · ${T('Ghost train! Get to the shrine','幽灵列车！快去神社')}</div>`:''}<h4>${T('Aboard','车上')} · ${S.pax.length}</h4>`+
+      (S.pax.length ? S.pax.map(p=>{ const w=WD[p.dest], show=p.called;
+        return `<div class="ab${prev && !prev.includes(p.id+':'+(p.called?1:0)) && p.called?' new':''}"><span class="pw" style="background:${COATS[p.look]}"></span>${show?`<b>${w.k}</b><button data-say="${p.dest}" aria-label="${T('Hear it','再听一遍')}">♪</button>`:`<b class="q">${T('Ask the driver','问司机')}</b>`}${show?(p.hint?`<span title="${esc(mean(p.dest))}">${miniIcon(p.dest)}</span>`:`<button data-hint="${p.id}" aria-label="${T('Hint','提示')}">?</button>`):''}<em><i data-pt="${p.id}"></i></em></div>`; }).join('')
+      : `<p class="none">${T('Nobody aboard. The little figures on the map are people waiting: route the train to them.','车上没人。地图上的小人在等车：把列车开过去接他们。')}</p>`); }
+  $('#side').querySelectorAll('[data-pt]').forEach(el=>{ const p=S.pax.find(x=>x.id==el.dataset.pt); if(p) el.style.transform=`scaleX(${clamp((p.until-S.t)/p.life,0,1).toFixed(3)})`; });
+  const nt=`${T('Train','列车')} <b>${KMH(S.tr.v)}</b> km/h · ${T('dawn in','距天亮')} <b>${fmtT(RUN_T-S.t)}</b>`; if($('#navTop').dataset.k!==nt){ $('#navTop').dataset.k=nt; $('#navTop').innerHTML=nt; } }
+const fmtT=s=>{ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); };
+function showLabel(id){ const n=NODES[id], w=WD[id]; if(!w) return; const txt=`${w.k} · ${mean(id)}`, wd=Math.max(90,txt.length*15);
+  $('#mLbl').innerHTML=`<g class="lbl" transform="translate(${MX(n.x)},${MY(n.z)-48})"><rect x="${-wd/2}" y="-15" width="${wd}" height="30" rx="8"/><text>${esc(txt)}</text></g>`; LOCAL.lbl={until:performance.now()+1600}; }
+// a tap on a tunnel sets the points at its nearer junction to send the train down it; a tap on a junction turns them to the next tunnel; any station says its name
+function nearestTunnel(p){ for(const id in NODES) if(Math.hypot(p.x-MX(NODES[id].x), p.y-MY(NODES[id].z))<30) return null;
+  let best=null, bd=26;
+  for(const e of EDGES){ if(!isOpen(e.i) || e.depot) continue; const ja=isJunction(e.a), jb=isJunction(e.b); if(!ja && !jb) continue;
+    for(let s=0; s<=e.len; s+=3){ const q=epos(e,s), m=W2M(q.x,q.z), d=Math.hypot(m.x-p.x, m.y-p.y); if(d>=bd) continue;
+      bd=d; best={node:ja && jb ? (s<e.len/2?e.a:e.b) : ja ? e.a : e.b, j:e.i}; } }
+  return best; }
+mapEl.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); if(!S || S.ph!=='run' || PAUSED || iDrive()) return; const p=svgPt(e);
+  const hit=nearestTunnel(p); if(hit){ if(S.sw[hit.node]!==hit.j){ doAct({k:'sw', node:hit.node, j:hit.j}); SND.sw(); buzz(10); } return; }
+  const g=e.target.closest && e.target.closest('.st'); if(!g) return; const id=g.dataset.st; if(!nodeOpen(id)) return;
+  if(isJunction(id)){ const ok=legs(id), i=ok.indexOf(S.sw[id]); doAct({k:'sw', node:id, j:ok[(i+1)%ok.length]}); SND.sw(); buzz(10); }
+  if(WD[id]){ showLabel(id); if(!isJunction(id)) say(WD[id].k); } });
+
+// ---------- the driver's HUD ----------
+function driverFrame(){ const segs=walk(TR, 300);
+  // the tickets: tap one to send it to the navigator (and to say it out loud yourself)
+  const tk=S.pax.map(p=>p.id+':'+(p.called?1:0)+':'+knowW(p.dest)).join('|')+LANG;
+  if(LOCAL.tixK!==tk){ LOCAL.tixK=tk; $('#tix').innerHTML=S.pax.length ? S.pax.map(p=>{ const w=WD[p.dest]; return `<button class="tk${p.called?' sent':''}" data-call="${p.id}"><i class="pw" style="background:${COATS[p.look]}"></i><span><b>${w.k}</b>${knowW(p.dest)?'':`<small>${w.ro} · ${esc(mean(p.dest))}</small>`}</span><em><i data-pt="${p.id}"></i></em>${p.called?'<u>✓</u>':''}</button>`; }).join('')
+      + (S.pax.some(p=>!p.called)?`<span class="tixhint">${T('Tap a ticket to send it','点车票发给搭档')}</span>`:'') : ''; }
+  $('#tix').querySelectorAll('[data-pt]').forEach(el=>{ const p=S.pax.find(x=>x.id==el.dataset.pt); if(!p) return; const f=clamp((p.until-S.t)/p.life,0,1); el.style.transform=`scaleX(${f.toFixed(3)})`; el.classList.toggle('low',f<.3); });
+  // the next station, which way the points are set, and the speed limit through them
+  const nx=segs.find(g=>g.node!=null), nk=nx?nx.node+':'+Math.round(nx.at/10)+':'+(isJunction(nx.node)?swExit(nx.node,EDGES[segs[0].e].i).j:'')+':'+(TR.v>VJ+.8)+knowW(nx.node):'-';
+  if(LOCAL.nextK!==nk){ LOCAL.nextK=nk; const el=$('#next');
+    if(!nx || !WD[nx.node]) el.innerHTML='';
+    else { const w=WD[nx.node], jn=isJunction(nx.node) && nx.at<95, x=jn?swExit(nx.node, EDGES[segs[0].e].i):null;
+      el.innerHTML=`${jn?`<span class="pts">${ARROW[x.code]} <b>${WD[x.to]?WD[x.to].k:''}</b></span><span class="lim${TR.v>VJ+.8?' over':''}">${KMH(VJ)}</span>`:''}<div class="sign" style="--c:${COL[nx.node]}"><i>${T('NEXT','下一站')} · ${Math.round(nx.at*2)}m</i><b>${w.k}</b>${knowW(nx.node)?'':`<small>${w.ro} · ${esc(mean(nx.node))}</small>`}</div>`; } }
+  // something on the tracks ahead
+  let near=null; for(const h of S.hz){ const d=onRoute(segs,h.e,h.s); if(d!=null && d<110 && (near==null||d<near)) near=d; }
+  const wn=$('#warn'); if(near!=null){ wn.hidden=false; const t=`線路に何か！<small>${T('Something on the tracks · HORN!','轨道上有东西 · 按 HORN！')} ${Math.round(near*2)}m</small>`; if(wn.dataset.k!==t){ wn.dataset.k=t; wn.innerHTML=t; } } else wn.hidden=true;
+  document.querySelector('.ctl [data-k=horn]').classList.toggle('hot', near!=null);
+  const sp=String(KMH(TR.v)), se=$('#speed'); if(se.dataset.k!==sp){ se.dataset.k=sp; se.innerHTML=`${sp}<small>KM/H</small>`; } }
+
+// ---------- HUD, events, cards ----------
+const TQ=[]; let tBusy=0;
+function toast(txt, kind, sub){ TQ.push([txt,kind,sub]); if(TQ.length>3) TQ.shift(); }
+function toastPump(now){ if(!TQ.length || now<tBusy) return; const [txt,kind,sub]=TQ.shift(), t=$('#toast'); t.innerHTML=esc(txt)+(sub?`<small>${esc(sub)}</small>`:''); t.className='toast '+(kind||'');
+  try{ t.animate([{opacity:0,transform:'translate(-50%,-30%) scale(.8)'},{opacity:1,transform:'translate(-50%,-50%) scale(1.04)',offset:.15},{opacity:1,transform:'translate(-50%,-50%)',offset:.8},{opacity:0,transform:'translate(-50%,-70%)'}],{duration:1500}); }catch(e){}
+  tBusy=now+850; }
+function scare(){ const s=$('#scare'); s.textContent='BOO'; s.hidden=false; SND.boo(); FX.shake=1.1; buzz(80);
+  try{ s.animate([{background:'rgba(200,255,230,.85)',transform:'scale(.6)',opacity:1},{background:'rgba(0,0,0,0)',transform:'scale(1.3)',opacity:1,offset:.5},{opacity:0,transform:'scale(1.6)'}],{duration:1000,easing:'ease-out'}); }catch(e){}
+  clearTimeout(scare.t); scare.t=setTimeout(()=>{ s.hidden=true; }, 1000); }
+function newStations(ph){ const ids=PH[ph].open, b=$('#banner'); SND.newst();
+  b.innerHTML=`<span class="k">${T('NEW','新站')}</span>`+ids.map(id=>`<div class="w">${miniIcon(id)}<span><b>${WD[id].k}</b><small>${WD[id].ro} · ${esc(mean(id))}</small></span></div>`).join('');
+  b.hidden=false; clearTimeout(newStations.t); newStations.t=setTimeout(()=>{ b.hidden=true; }, ph?6000:5000);
+  if(ph) ids.forEach((id,i)=>setTimeout(()=>say(WD[id].k), 500+i*1300)); }
+function onEvent(e, drive){ const k=e.k;
+  if(k==='go'){ SND.gong(); toast(T('Depart!','出发！'),'go',T('Pick up the passenger at とうきょう','先去 とうきょう 接乘客')); }
+  else if(k==='new') newStations(e.ph);
+  else if(k==='del'){ SND.del(); SND.chime(); WM[e.w]=(WM[e.w]||0)+e.n; store.set('words',WM); toast(`${WD[e.w].k} +${e.pts}`,'ok',e.perfect?T('ぴったり! right on the mark','ぴったり！停得正好'):T('delivered','送达')); }
+  else if(k==='board'){ SND.board(); SND.door(); toast(drive?T(`${e.n} aboard: read the tickets!`,`上来 ${e.n} 人：读车票！`):T(`${e.n} aboard: ask where to`,`上来 ${e.n} 人：问去哪`),'go'); }
+  else if(k==='stop'){ SND.door(); }
+  else if(k==='left'){ toast(T('Someone got tired of waiting','有人等不及走了'),'bad'); }
+  else if(k==='gaveup'){ SND.bad(); toast(T('A passenger gave up','一位乘客放弃了'),'bad',WD[e.w].k+' −50'); }
+  else if(k==='ghost'){ SND.bell(.9); toast('幽霊電車',`bad`,T('The ghost train! Stop at the shrine じんじゃ','幽灵列车！去神社 じんじゃ 停车')); }
+  else if(k==='ghostgone'){ toast(T('The ghost gave up','幽灵放弃了'),'ok'); }
+  else if(k==='boo'){ scare(); toast(T('The ghost got you','被幽灵抓到了'),'bad','−20'); }
+  else if(k==='purify'){ SND.purify(); toast('お祓い +300','ok',T('the shrine banished the ghost','神社驱散了幽灵')); }
+  else if(k==='derail'){ if(!drive){ SND.derail(); } toast('ガタン！','bad',T(`too fast through the points (${KMH(VJ)} max)`,`过道岔太快了（最高 ${KMH(VJ)}）`)); }
+  else if(k==='hit'){ if(!drive) SND.thud(); toast('ドン！','bad',T('hit something on the tracks','撞到了轨道上的东西')); }
+  else if(k==='shoo'){ SND.shoo(); toast(`シッシッ！ +${20*e.n}`,'ok'); }
+  else if(k==='horn'){ if(!drive) SND.horn(.5); }
+  else if(k==='locked'){ if(!drive){ SND.locked(); toast(T('Too late: the train is on those points','来不及了：列车已经压上道岔'),'bad'); } }
+  else if(k==='hz'){ if(!drive) SND.ping(); }
+  else if(k==='wait'){ if(!drive) SND.ping(); }
+  else if(k==='dawn'){ SND.dawn(); } else if(k==='down'){ SND.bad(); FX.shake=1.2; } }
+const ui=html=>{ $('#panel').innerHTML=html; $('#ui').hidden=false; };
+const hideUI=()=>{ $('#ui').hidden=true; };
+const ROLE_CARDS=p=>`<div class="roles">
+  <button class="role" data-a="${p}driver"><i>${T('The cab','驾驶室')}</i><b>運転士${LANG==='zh'?' 司机':' Driver'}</b><small>${T('GO, BRAKE and the HORN. The passengers\' tickets are only on your screen, in kana: read them out. Stop inside the right station.','GO、BRAKE 和 HORN。乘客的车票只在你的屏幕上，用假名写：把它念出来。在对的站里停车。')}</small></button>
+  <button class="role" data-a="${p}nav"><i>${T('The control room','调度室')}</i><b>指令員${LANG==='zh'?' 调度员':' Navigator'}</b><small>${T('The whole line, live. Set the points at every junction, route around trouble, and find the stations your driver calls out (the map has pictures, not words).','实时看到整条线路。扳每个道岔，绕开麻烦，找到司机喊出的车站（地图上只有图标，没有字）。')}</small></button></div>`;
+const STEPS={driver:[T('Hold GO to drive, BRAKE to stop · stop inside a station to let people on and off','按住 GO 前进，BRAKE 刹车 · 在站台里停车上下客'),T('The tickets are only on your screen · read them out, or tap one to send it','车票只在你的屏幕上 · 大声念出来，或者点车票发过去'),T('Your partner sets the points · the green lamp shows the way','搭档负责扳道岔 · 绿灯就是要走的方向'),T(`Slow to ${KMH(VJ)} through the points, or you derail`,`过道岔要减速到 ${KMH(VJ)}，不然会脱轨`),T('Something on the tracks: HORN! · the ghost train: stop at the shrine じんじゃ','轨道上有东西：按 HORN！· 幽灵列车：在神社 じんじゃ 停车')],
+  nav:[T('You see the whole line and the train, live','你能实时看到整条线路和列车'),T('Tap a tunnel next to a junction to set the points that way','点道岔旁的隧道，把道岔扳过去'),T('The tickets are only on the driver\'s screen · listen for where people are going','车票只在司机的屏幕上 · 听清乘客要去哪'),T('Find that station\'s picture and route the train there','找到那个车站的图标，把列车开过去'),T('Red marks: something on the tracks · the ghost train: route to the shrine ⛩','红点：轨道上有东西 · 幽灵列车：开去神社')]};
+function lobbyUI(msg){ MODE=''; ROLE=''; S=null;
+  ui(`<div class="kicker">${T('2 players · co-op · 3 minutes','双人 · 合作 · 3 分钟')}</div><h1>真夜中の地下鉄</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Midnight Subway</div>
+    <p class="lead">${T('The last train under Tokyo. One of you drives and reads the passengers\' tickets. The other runs the control room and throws the points. Get everyone home before dawn, and keep away from the ghost train.','东京地下的末班车。一人开车、读乘客的车票；另一人在调度室扳道岔。天亮前把每个人送回家，还要躲开幽灵列车。')}</p>
+    ${msg?`<p class="note" style="color:#FF8A7E">${esc(msg)}</p>`:''}
+    <div class="row"><button class="btn red" data-a="together">${T('Play together','一起玩')}</button><button class="btn ghost" data-a="practice">${T('Practice with しばBot','和 しばBot 练习')}</button></div>
+    <p class="note">${T('You play together in 夜ふかし: one room code for all three games.','一起玩请去 夜ふかし：一个房间码玩三款游戏。')}</p>`); }
+function readyUI(){ const n=HUB.names(), drive=iDrive(), p=esc(n.partner), me=S && S.ready[ME];
+  ui(`<div class="kicker">真夜中の地下鉄${LANG==='zh'?' · 午夜地铁':' · Midnight Subway'}</div><h2>${drive?T('You drive','你开车'):T('You run the control room','你在调度室')}</h2>
+    <p class="lead">${drive?T(`${p} has the map and the points. You have the tickets: read them out.`,`${p} 有地图、管道岔。你有车票：把它们念出来。`):T(`${p} drives and has the tickets. You have the map and the points.`,`${p} 开车、拿着车票。你有地图、管道岔。`)}</p>
+    <ol class="steps">${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    <div class="row"><button class="btn red" data-a="hready"${LOCAL.ready?' disabled':''}>${LOCAL.ready?T('Ready ✓','已准备 ✓'):T('Ready','准备好了')}</button><span class="note" id="rdNote"></span></div>`); readyNote(); }
+function readyNote(){ const el=$('#rdNote'); if(!el || !HUB) return; const p=esc(HUB.names().partner), them=S && S.ready[ME==='h'?'g':'h']; const t=them?T(`${p} is ready`,`${p} 已准备`):T(`Waiting for ${p}…`,`等待 ${p}…`); if(el.textContent!==t) el.textContent=t; }
+function results(){ const st=S.stats, sc=S.score, stars=(S.win?1:0)+(sc>=1800?1:0)+(sc>=3200?1:0);
+  let crew, btns;
+  if(HUB){ if(!LOCAL.reported){ LOCAL.reported=true; HUB.result({score:sc, stars, win:S.win}); } const n=HUB.names(), d=esc(iDrive()?n.me:n.partner), v=esc(iDrive()?n.partner:n.me);
+    crew=`<p class="note">${T(`${d} drove: ${st.perfect} ぴったり stops, ${st.derails} derails, ${st.shoo} shooed off. ${v} ran the points: ${st.banished} ghost${st.banished===1?'':'s'} banished.`,`${d} 开车：ぴったり ${st.perfect} 次，脱轨 ${st.derails} 次，赶走 ${st.shoo} 个。${v} 扳道岔：驱散幽灵 ${st.banished} 次。`)}</p>`;
+    btns=`<button class="btn red" data-a="hnext">${T('Next','下一个')}: ${esc(HUB.nextName())} →</button><button class="btn" data-a="hagain">${T('Again','再来一局')}</button><button class="btn ghost" data-a="hswap">⇄ ${T('Swap seats','换位置')}</button><button class="btn ghost" data-a="hmenu">${T('Menu','菜单')}</button>`; }
+  else { const key='best_'+ROLE, best=Math.max(store.get(key,0),sc); store.set(key,best);
+    crew=`<p class="note">${T(`ぴったり ${st.perfect} · derails ${st.derails} · ghosts banished ${st.banished}. Your best as ${iDrive()?'driver':'navigator'} with しばBot: ${best}`,`ぴったり ${st.perfect} · 脱轨 ${st.derails} · 驱散幽灵 ${st.banished}。你和 しばBot 当${iDrive()?'司机':'调度员'}的最好成绩：${best}`)}</p>`;
+    btns=`<button class="btn red" data-a="again">${T('Ride again','再开一趟')}</button><button class="btn ghost" data-a="lobby">${T('Lobby','大厅')}</button>`; }
+  $('#hud').hidden=true; $('#cab').hidden=true; $('#vig').style.opacity='0'; $('#three').style.visibility='hidden';
+  ui(`<div class="kicker">${S.win?`夜明け · ${T('Dawn','黎明')}`:`運転見合わせ · ${T('Service suspended','停运')}`}</div><h2>${S.win?'おつかれさまでした！':'運行停止…'}</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
+    <div class="stats"><span>${T('Team score','团队得分')}<b>${sc}</b></span><span>${T('Delivered','送达')}<b>${st.del}</b></span><span>${T('Gave up','放弃')}<b>${st.missed}</b></span><span>${T('Ghost','幽灵')}<b>${st.banished}/${st.banished+st.caught}</b></span></div>
+    ${crew}<div class="row">${btns}</div>`); }
+function onNewRun(){ LOCAL.seenEv=S.evN; LOCAL.callN=S.call.n; LOCAL.shownPh=''; LOCAL.reported=false; LOCAL.look=null; LOCAL.gp=null; LOCAL.tm=null; LOCAL.gm=null; LOCAL.hit={};
+  ['tixK','nextK','abK','swK','hzK','wtK'].forEach(k=>LOCAL[k]=''); mapEl.dataset.k=''; Object.assign(BD,{wait:0, callT:2.5, honk:{}}); BN.t=0; $('#banner').hidden=true; }
+function newRun(){ S=freshState(); LOCAL.ready=MODE==='bot'; if(MODE==='bot') S.ready.h=true; onNewRun(); }
+function hudFrame(now, dt){ if(!S) return;
+  if(S.ph!==LOCAL.shownPh){ LOCAL.shownPh=S.ph;
+    if(S.ph==='ready'){ if(HUB) readyUI(); }
+    else if(S.ph==='count'){ hideUI(); const c=$('#count'); c.hidden=false; c.innerHTML=`<div><h3>${iDrive()?T('YOU DRIVE','你开车')+' · 運転':T('YOU RUN THE POINTS','你管道岔')+' · 指令'}</h3><ol>${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div><div class="n" id="cdN"></div>`; }
+    else if(S.ph==='run'){ hideUI(); $('#count').hidden=true; $('#hud').hidden=false; }
+    else if(S.ph==='over'){ $('#count').hidden=true; setTimeout(()=>{ if(S && S.ph==='over') results(); }, S.win?1300:900); } }
+  if(S.ph==='ready'){ readyNote(); return; }
+  if(S.ph==='count'){ const n=String(Math.max(1,Math.ceil(S.cd))), el=$('#cdN'); if(el && el.textContent!==n){ el.textContent=n; SND.tick(); } }
+  const drive=iDrive(); $('#drv').hidden=!drive; $('#nav').hidden=drive; $('#cab').hidden=!drive || S.ph!=='run'; $('#three').style.visibility=drive?'visible':'hidden';
+  for(const e of S.evq) if(e.n>LOCAL.seenEv) onEvent(e, drive); LOCAL.seenEv=S.evN;
+  // a ticket called by the driver: the navigator hears it
+  if(S.call.n>LOCAL.callN){ LOCAL.callN=S.call.n; if(!drive){ SND.call(); setTimeout(()=>say(WD[S.call.w].k), 160); } }
+  const hb=$('#hpBar'); $('#hpI').style.transform=`scaleX(${(S.hp/100).toFixed(3)})`; hb.classList.toggle('low', S.hp<35);
+  const tt=`${T('DAWN IN','距天亮')} ${fmtT(RUN_T-S.t)}`; if($('#time').textContent!==tt) $('#time').textContent=tt;
+  const sc=String(S.score), se=$('#score'); if(se.firstChild.nodeValue!==sc) se.firstChild.nodeValue=sc;
+  const sub=`${S.stats.del} ${T('delivered','送达')}`; if($('#sub').textContent!==sub) $('#sub').textContent=sub;
+  if(S.ph!=='run') return;
+  if(drive) driverFrame(); else navFrame(now, dt); }
+
+// ---------- input ----------
+let lastTouchEnd=0;
+document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-lastTouchEnd<350 && !e.target.closest('.ui')) e.preventDefault(); lastTouchEnd=now; }, {passive:false});
+['gesturestart','gesturechange','dblclick'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
+// GO and BRAKE are held; the HORN and the tickets react on touch-down
+document.querySelectorAll('.ctl [data-k]').forEach(b=>{ const k=b.dataset.k;
+  b.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); if(PAUSED) return; if(k==='horn'){ horn(); b.classList.add('held'); setTimeout(()=>b.classList.remove('held'),180); return; } IN.btn[k]=1; b.classList.add('held'); try{ b.setPointerCapture(e.pointerId); }catch(x){} });
+  if(k!=='horn'){ const up=()=>{ IN.btn[k]=0; b.classList.remove('held'); }; ['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t, up)); } });
+$('#tix').addEventListener('pointerdown', e=>{ const b=e.target.closest('[data-call]'); if(!b || !S || S.ph!=='run' || PAUSED) return; e.preventDefault(); audio(); const p=S.pax.find(x=>x.id==b.dataset.call); if(!p) return; callTicket(p.id); say(WD[p.dest].k); });
+addEventListener('blur', ()=>{ IN.btn={}; IN.keys={}; document.querySelectorAll('.held').forEach(b=>b.classList.remove('held')); });
+addEventListener('keydown', e=>{ const k=e.key.toLowerCase(); IN.keys[k]=1; if(k==='h'||k===' '){ e.preventDefault(); horn(); } });
+addEventListener('keyup', e=>{ IN.keys[e.key.toLowerCase()]=0; });
+document.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.say){ say(WD[b.dataset.say].k); return; }
+  if(b.dataset.hint){ doAct({k:'hint', pid:+b.dataset.hint}); return; }
+  const a=b.dataset.a; if(!a) return; audio();
+  if(a==='practice') return ui(`<div class="kicker">${T('Practice with しばBot','和 しばBot 练习')}</div><h2>${T('Pick your seat','选座位')}</h2><p class="lead">${T('しばBot takes the other seat so you can learn yours. As navigator it calls every ticket to you; as driver, tap a ticket to tell it where to go.','しばBot 坐另一个位置，你可以先熟悉自己的。你当调度员时，它会把每张车票喊给你；你当司机时，点车票告诉它去哪。')}</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">${T('Back','返回')}</button></div>`);
+  if(a==='pdriver'||a==='pnav'){ MODE='bot'; ROLE=a==='pdriver'?'driver':'nav'; IS_HOST=true; ME='h'; newRun(); if(iDrive()) initThree(); return; }
+  if(a==='together'){ location.href='../'; return; }
+  if(a==='again'){ newRun(); return; }
+  if(a==='lobby'){ lobbyUI(); return; }
+  if(a==='hready'){ if(LOCAL.ready) return; LOCAL.ready=true; if(IS_HOST && S) S.ready.h=true; readyUI(); return; }
+  if(a==='hnext') return HUB.next(); if(a==='hagain') return HUB.again(); if(a==='hswap') return HUB.swapAgain(); if(a==='hmenu') return HUB.menu(); });
+
+// ---------- main loop ----------
+let last=0;
+function loop(time){ requestAnimationFrame(loop); let dt=last?Math.min(.05,(time-last)/1000):.016; last=time; if(PAUSED) dt=0;
+  toastPump(time);
+  if(!S) return;
+  const run=S.ph==='run'||S.ph==='count';
+  if(S.ph!=='over' && iDrive()) initThree();
+  if(run && (iDrive() || MODE==='bot')) driveTrain(dt);
+  if(IS_HOST){ hostTick(dt); if(MODE==='bot' && S.ph==='run' && iDrive()) botNav(dt); }
+  netTick();
+  if(iDrive() && R3 && S.ph!=='ready') draw3(dt, time);
+  engineTick(dt, iDrive() && run && !PAUSED, TR.v, TR.braking);
+  hudFrame(time, dt); }
+requestAnimationFrame(loop);
+$('#rot').textContent=T('Turn your phone sideways','请把手机横过来')+' · 横にしてね';
+$('#hpL').textContent=T('TRAIN','列车');
+function hubInit(){ MODE='net'; ROLE=HUB.role(); IS_HOST=HUB.host; ME=IS_HOST?'h':'g';
+  NET=HUB.open(onNet, up=>{ PAUSED=!up; if(!up){ IN.btn={}; document.querySelectorAll('.held').forEach(b=>b.classList.remove('held')); } });
+  applySafe(); addEventListener('resize', ()=>setTimeout(applySafe,60));
+  if(IS_HOST){ newRun(); } else { S=null; ui(`<h2>${T('Connecting…','连接中…')}</h2>`); }
+  const wait=setInterval(()=>{ if(S){ clearInterval(wait); LOCAL.shownPh=''; } }, 100); }
+// a frame doesn't get the phone's safe-area insets, so the hub passes its own
+function applySafe(){ const s=HUB.safe(), r=document.documentElement.style; r.setProperty('--sl',s.l+'px'); r.setProperty('--sr',s.r+'px'); r.setProperty('--st',s.t+'px'); r.setProperty('--sb',s.b+'px'); }
+if(HUB) hubInit(); else lobbyUI();
+// the hub calls this before it removes the frame, so the phone gets its WebGL context back
+window.__bye=()=>{ try{ if(R3){ R3.renderer.dispose(); R3.renderer.forceContextLoss(); } }catch(e){} };
+window.__sub={ S:()=>S, TR, N:NODES, E:EDGES, W:WD, IN, act:a=>doAct(a), three:()=>R3, role:()=>ROLE, mode:()=>MODE, walk:m=>walk(TR,m), horn, junction:isJunction, legs,
+  // put the train this far before a station, coming from another one
+  place:(from,to,dist)=>{ const j=EDGES.findIndex(e=>(e.a===from&&e.b===to)||(e.a===to&&e.b===from)), e=EDGES[j], d=e.b===to?1:-1;
+    Object.assign(TR,{e:j, d, s:d>0?e.len-dist:dist, v:0, stopAt:null}); LOCAL.snap=true; if(IS_HOST) S.tr=trSnap(); return j; },
+  // where on screen a station, or a point on a tunnel next to a junction, is on the navigator's map
+  scrSt:id=>{ const p=mapEl.createSVGPoint(); p.x=MX(NODES[id].x); p.y=MY(NODES[id].z); const q=p.matrixTransform(mapEl.getScreenCTM()); return {x:q.x, y:q.y}; },
+  scrTun:(node,j,f)=>{ const e=EDGES[j], s=e.a===node?e.len*f:e.len*(1-f), q=epos(e,s), m=W2M(q.x,q.z), p=mapEl.createSVGPoint(); p.x=m.x; p.y=m.y; const r=p.matrixTransform(mapEl.getScreenCTM()); return {x:r.x, y:r.y}; } };
+})();
+</script>
+</body>
+</html>

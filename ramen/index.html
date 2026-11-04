@@ -10,41 +10,47 @@
 /* 深夜ラーメン Midnight Ramen: a two-player kitchen at a ramen stall under the train tracks.
    The Cook boils, ladles, slices and plates; the Server greets, takes the orders (in Japanese), serves, collects and wipes.
    Each phone runs its own station; only tickets, bowls and results travel between them. */
-:root{ --bg:#07090D; --ink:#F1E9DD; --dim:#A9A29A; --red:#D8342B; --amber:#FF9A4D; }
+:root{ --sl:env(safe-area-inset-left); --sr:env(safe-area-inset-right); --st:env(safe-area-inset-top); --sb:env(safe-area-inset-bottom); --ui:"Zen Kaku Gothic New",system-ui,sans-serif; --bg:#07090D; --ink:#F1E9DD; --dim:#A9A29A; --red:#D8342B; --amber:#FF9A4D; }
+:root[data-lang=zh]{ --ui:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif; }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,sans-serif;overflow:hidden;
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--ui);overflow:hidden;
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 button,input{touch-action:manipulation;font-family:inherit}
 [hidden]{display:none!important}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block}
 #grain{position:fixed;inset:0;pointer-events:none;opacity:.08;mix-blend-mode:overlay;z-index:3}
-.ui{position:fixed;inset:0;z-index:6;display:flex;align-items:center;padding:14px max(18px,env(safe-area-inset-left));background:linear-gradient(90deg,rgba(7,9,13,.92),rgba(7,9,13,.7) 52%,rgba(7,9,13,.15))}
+.ui{position:fixed;inset:0;z-index:6;display:flex;align-items:center;padding:14px max(18px,var(--sl));background:linear-gradient(90deg,rgba(7,9,13,.92),rgba(7,9,13,.7) 52%,rgba(7,9,13,.15))}
 .panel{width:min(540px,100%);max-height:100%;overflow:auto;padding:2px}
-.kicker{font:700 11px "Zen Kaku Gothic New";letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
+.kicker{font:700 11px var(--ui);letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
 h1{margin:6px 0 4px;font:400 48px/1 "Dela Gothic One";letter-spacing:.04em;color:#FFE9D6;text-shadow:0 0 24px rgba(255,77,141,.45)}
 h2{margin:6px 0 8px;font:400 28px/1.1 "Dela Gothic One";color:#FFE9D6}
-.lead{margin:10px 0 14px;font:500 14px/1.65 "Zen Kaku Gothic New";color:#C9C2B8;max-width:46ch}
+.lead{margin:10px 0 14px;font:500 14px/1.65 var(--ui);color:#C9C2B8;max-width:46ch}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
-.btn{font:900 14px "Zen Kaku Gothic New";letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.btn{font:900 14px var(--ui);letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
 .btn.red{background:var(--red);color:#fff}
 .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(241,233,221,.35)}
 .btn:active{transform:translateY(1px)}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .role{all:unset;cursor:pointer;display:block;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(241,233,221,.16)}
 .role:active{background:rgba(255,255,255,.09)}
-.role i{display:block;font:700 10px "Zen Kaku Gothic New";letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
+.role i{display:block;font:700 10px var(--ui);letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
 .role b{display:block;font:400 21px "Dela Gothic One";color:#FFE9D6}
-.role small{display:block;margin-top:6px;font:500 12.5px/1.5 "Zen Kaku Gothic New";color:var(--dim)}
+.role small{display:block;margin-top:6px;font:500 12.5px/1.5 var(--ui);color:var(--dim)}
 .code{font:400 44px "Dela Gothic One";letter-spacing:.24em;color:var(--amber)}
 input.codein{font:400 22px "Dela Gothic One";letter-spacing:.2em;text-transform:uppercase;width:130px;padding:9px 12px;border-radius:8px;border:0;background:var(--ink);color:#0B0E14}
-.note{font:500 12.5px/1.55 "Zen Kaku Gothic New";color:var(--dim);margin-top:10px}
+.note{font:500 12.5px/1.55 var(--ui);color:var(--dim);margin-top:10px}
+:root[data-lang=zh] h2,:root[data-lang=zh] .role b{font-family:var(--ui);font-weight:900;letter-spacing:.02em}
+.steps{margin:6px 0 2px;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:10px;align-items:baseline;font:700 13.5px/1.45 var(--ui);color:#E6DED2;margin:5px 0}
+.steps li::before{content:counter(s);font:400 16px "Dela Gothic One";color:var(--amber);width:14px;flex:none}
+.btn:disabled{opacity:.55}
 .err{color:#FF8A7E;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px "Zen Kaku Gothic New";letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px var(--ui);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
 .stats b{font:400 22px "Dela Gothic One";color:#FFE9D6;letter-spacing:0}
 .stars{font:400 30px "Dela Gothic One";color:var(--amber);letter-spacing:.1em;margin-top:2px}
 .stars .off{color:rgba(241,233,221,.16)}
-.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px "Zen Kaku Gothic New";text-align:center;padding:20px}
+.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px var(--ui);text-align:center;padding:20px}
 @media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
 </style>
 </head>
@@ -52,12 +58,16 @@ input.codein{font:400 22px "Dela Gothic One";letter-spacing:.2em;text-transform:
 <canvas id="cv"></canvas>
 <div id="grain"></div>
 <div class="ui" id="ui"><div class="panel" id="panel"></div></div>
-<div class="rotate">Turn your phone sideways · 横にしてね</div>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<div class="rotate" id="rot">横にしてね</div>
 <script>
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
+// inside 夜ふかし (the hub page) the hub holds the connection, the seats and the language; on its own this page is practice with しばBot
+const HUB=(()=>{ try{ const h=window.parent!==window && window.parent.HUBAPI; return h && h.v ? h : null; }catch(e){ return null; } })();
+const LANG=HUB ? HUB.lang : (()=>{ try{ const v=JSON.parse(localStorage.getItem('yofu_lang')); if(v==='zh'||v==='en') return v; }catch(e){} return /^zh/i.test(navigator.language||'')?'zh':'en'; })();
+const T=(en,zh)=>LANG==='zh'?zh:en;
+document.documentElement.dataset.lang=LANG;
 const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y), inBox=(p,cx,cy,w,h)=>Math.abs(p.x-cx)<=w/2 && Math.abs(p.y-cy)<=h/2;
@@ -527,47 +537,53 @@ function drawCounter(){ const g=ctx; if(!LAYER.cb) LAYER.cb=mkLayer(counterBack)
     else drawPitcher(g,CL.pitcher.x,CL.pitcher.y+30,0);
     if(SH) drawHUD(g,8,66); } }
 
-// ---------- countdown, results, lobby ----------
-const STEPS={cook:['Drag めん (noodles) into a basket in the pot','Pull it out when the dial says ふつう — or かため / やわらかめ if the ticket asks','Drag the broth on the ticket (しょうゆ・みそ・しお) into a bowl','Drag in the toppings · swipe the board when a tray runs out','Slide the bowl into パス'],
-  server:['Tap a guest at the door: いらっしゃいませ！','Tap a guest who says すみません to take their order','Drag a bowl from the hatch to the guest who ordered it','Tap the coins, swipe to wipe the counter','Hold the pitcher over an empty glass']};
+// ---------- countdown, ready, results, lobby ----------
+const STEPS={cook:[T('Drag めん (noodles) into a basket in the pot','把めん（面）拖进锅里的漏勺'),T('Pull it out when the dial says ふつう, or かため / やわらかめ if the ticket asks','表盘指到ふつう就捞出来；单子写かため（硬）/やわらかめ（软）就照单子'),T('Drag the broth on the ticket (しょうゆ・みそ・しお) into a bowl','把单子上的汤底（しょうゆ・みそ・しお）拖进碗里'),T('Drag in the toppings · swipe the board when a tray runs out','拖入配料 · 配料用完了就在砧板上划几刀'),T('Slide the bowl into パス','把碗滑进パス（出餐口）')],
+  server:[T('Tap a guest at the door: いらっしゃいませ！','点门口的客人：いらっしゃいませ！'),T('Tap a guest who says すみません to take their order','客人喊すみません时点他点单'),T('Drag a bowl from the hatch to the guest who ordered it','把出餐口的碗拖给点这碗的客人'),T('Tap the coins, swipe to wipe the counter','点硬币收钱，划动擦桌子'),T('Hold the pitcher over an empty glass','把水壶按在空杯子上倒水')]};
+const CFONT=LANG==='zh'?'"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif':'"Zen Kaku Gothic New"';
 function drawCountdown(g){ if(!SH || SH.ph!=='count') return; g.fillStyle='rgba(5,6,9,.78)'; g.fillRect(0,0,VW,VH); const n=Math.ceil(SH.cd);
   g.textAlign='right'; g.textBaseline='middle'; g.font='400 120px "Dela Gothic One"'; g.fillStyle='#FFE9D6'; g.fillText(n>0?String(n):'開店',VW-60,VH/2);
-  g.textAlign='left'; g.font='900 15px "Zen Kaku Gothic New"'; g.fillStyle='#FF9A4D'; g.fillText(ROLE==='cook'?'YOU ARE THE COOK · 料理人':'YOU ARE THE SERVER · ホール',60,108);
-  STEPS[ROLE].forEach((t,i)=>{ g.fillStyle='rgba(255,154,77,.9)'; g.font='400 22px "Dela Gothic One"'; g.fillText(String(i+1),60,152+i*48); g.fillStyle='#F1E9DD'; g.font='700 17px "Zen Kaku Gothic New"'; g.fillText(t,92,152+i*48); });
+  g.textAlign='left'; g.font=`900 15px ${CFONT}`; g.fillStyle='#FF9A4D'; g.fillText(ROLE==='cook'?T('YOU ARE THE COOK','你是厨师')+' · 料理人':T('YOU ARE THE SERVER','你是服务员')+' · ホール',60,108);
+  STEPS[ROLE].forEach((t,i)=>{ g.fillStyle='rgba(255,154,77,.9)'; g.font='400 22px "Dela Gothic One"'; g.fillText(String(i+1),60,152+i*48); g.fillStyle='#F1E9DD'; g.font=`700 17px ${CFONT}`; g.fillText(t,92,152+i*48); });
   g.textBaseline='alphabetic'; }
 const ui=html=>{ $('#panel').innerHTML=html; $('#ui').hidden=false; };
 const hideUI=()=>{ $('#ui').hidden=true; };
 const ROLE_CARDS=prefix=>`<div class="roles">
-  <button class="role" data-a="${prefix}cook"><i>Kitchen</i><b>料理人 Cook</b><small>Time the noodles, ladle the broth, slice and add toppings, slide bowls through the pass.</small></button>
-  <button class="role" data-a="${prefix}server"><i>Counter</i><b>ホール Server</b><small>Greet guests, take their orders in Japanese, serve the right bowl to the right seat, collect, wipe, pour water.</small></button></div>`;
+  <button class="role" data-a="${prefix}cook"><i>${T('Kitchen','厨房')}</i><b>料理人${LANG==='zh'?' 厨师':' Cook'}</b><small>${T('Time the noodles, ladle the broth, slice and add toppings, slide bowls through the pass.','掌握煮面时间，舀汤，切配料、加配料，把碗从出餐口送出去。')}</small></button>
+  <button class="role" data-a="${prefix}server"><i>${T('Counter','柜台')}</i><b>ホール${LANG==='zh'?' 服务员':' Server'}</b><small>${T('Greet guests, take their orders in Japanese, serve the right bowl to the right seat, collect, wipe, pour water.','招呼客人，用日语点单，把对的碗端到对的座位，收钱、擦桌子、倒水。')}</small></button></div>`;
 function lobbyUI(msg){ MODE=''; ROLE=''; SH=null; C=null;
-  ui(`<div class="kicker">2 players · co-op · 2 minutes</div><h1>深夜ラーメン</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Midnight Ramen</div>
-    <p class="lead">A ramen stall under the train tracks, past midnight. One of you cooks, one of you runs the counter. Orders come in Japanese: read them, shout them, make them, serve them.</p>
+  ui(`<div class="kicker">${T('2 players · co-op · 2 minutes','双人 · 合作 · 2 分钟')}</div><h1>深夜ラーメン</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Midnight Ramen</div>
+    <p class="lead">${T('A ramen stall under the train tracks, past midnight. One of you cooks, one of you runs the counter. Orders come in Japanese: read them, shout them, make them, serve them.','午夜过后，铁路桥下的拉面摊。一人煮面，一人管柜台。客人用日语点单：读出来、喊出来、做出来、端上去。')}</p>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}
-    <div class="row"><button class="btn red" data-a="friend">Play with a friend</button><button class="btn ghost" data-a="practice">Practice with しばBot</button></div>`); }
-function friendUI(msg){ ui(`<div class="kicker">Play with a friend</div><h2>Open the shop together</h2><p class="lead">One of you creates a room and picks a station. The other types the code.</p>${msg?`<p class="err">${esc(msg)}</p>`:''}
-  <div class="row"><button class="btn red" data-a="create">Create a room</button><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn" data-a="join">Join</button></div>
-  <div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`); }
-function roomUI(){ const other=ROLE==='cook'?'Server':'Cook';
-  ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><div class="code">${esc(NET.code)}</div>
-    <p class="lead">${guestHere?`Your friend is here. ${ROLE==='cook'?'You cook, they serve.':'You serve, they cook.'} Ready?`:`Send this code to your friend. You're the <b>${ROLE==='cook'?'Cook':'Server'}</b>; they'll be the ${other}.`}</p>
-    <div class="row">${guestHere?'<button class="btn red" data-a="start">Open the shop</button>':'<span class="note">Waiting for your friend…</span>'}<button class="btn ghost" data-a="lobby">Leave</button></div>`); }
-function guestUI(){ ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><h2>${ROLE?(ROLE==='cook'?'You are the Cook':'You are the Server'):'Connected'}</h2><p class="lead">${ROLE?'The host opens the shop.':'Waiting for the host…'}</p><div class="row"><button class="btn ghost" data-a="lobby">Leave</button></div>`); }
+    <div class="row"><button class="btn red" data-a="together">${T('Play together','一起玩')}</button><button class="btn ghost" data-a="practice">${T('Practice with しばBot','和 しばBot 练习')}</button></div>
+    <p class="note">${T('You play together in 夜ふかし: one room code for all three games.','一起玩请去 夜ふかし：一个房间码玩三款游戏。')}</p>`); }
+// in the hub: your station, your partner's, and a Ready button (the tap also wakes up the sound on this phone)
+const HR={me:false, them:false};
+function readyUI(){ const n=HUB.names(), cook=ROLE==='cook', p=esc(n.partner);
+  ui(`<div class="kicker">深夜ラーメン · ${T('Midnight Ramen','深夜拉面')}</div><h2>${cook?T('You cook','你煮面'):T('You run the counter','你管柜台')}</h2>
+    <p class="lead">${cook?T(`${p} greets the guests and takes their orders. The tickets come to you in Japanese.`,`${p} 招呼客人、点单。订单会用日语传到你这里。`):T(`${p} cooks. Take the orders, then give each bowl to the guest who ordered it.`,`${p} 负责煮面。你来点单，再把每碗面端给点它的客人。`)}</p>
+    <ol class="steps">${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    <div class="row"><button class="btn red" data-a="hready"${HR.me?' disabled':''}>${HR.me?T('Ready ✓','已准备 ✓'):T('Ready','准备好了')}</button><span class="note">${HR.them?T(`${p} is ready`,`${p} 已准备`):T(`Waiting for ${p}…`,`等待 ${p}…`)}</span></div>`); }
+function hubGo(){ if(SH && SH.ph!=='end') return; netSend({t:'start'}); newShift(); }
 function results(){ if(!SH || SH.shown) return; SH.shown=true; const st=SH.stats, yen=SH.yen, stars=yen>=13000?3:yen>=9000?2:yen>=5000?1:0;
   const key='best_'+MODE+'_'+ROLE, best=Math.max(store.get(key,0),yen); store.set(key,best);
-  const again=MODE==='bot'||IS_HOST ? '<button class="btn red" data-a="again">One more night</button>' : '<span class="note">The host can open the shop again.</span>';
-  ui(`<div class="kicker">閉店 · Closing time</div><h2>おつかれさま！</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
-    <div class="stats"><span>Takings<b>¥${yen.toLocaleString('ja-JP')}</b></span><span>Bowls<b>${st.served}</b></span><span>かんぺき<b>${st.perfect}</b></span><span>ちがう<b>${st.wrong}</b></span></div>
-    <p class="note">${st.walk?`${st.walk} customer${st.walk>1?'s':''} walked out. `:''}Your best as ${ROLE==='cook'?'cook':'server'}${MODE==='bot'?' with しばBot':''}: ¥${best.toLocaleString('ja-JP')}</p>
-    <div class="row">${again}<button class="btn ghost" data-a="lobby">Lobby</button></div>`); }
-function newShift(){ const first=!store.get('seen_'+ROLE,false); store.set('seen_'+ROLE,true); SH={ph:'count', cd:first?7.5:4.2, t:0, yen:0, stats:{served:0, perfect:0, wrong:0, walk:0}, final:null, shown:false}; kReset(); cReset(); BC.q=[]; BC.busy=[]; BC.tix={}; PT.length=0; PTRS.clear(); TRN.next=28; TRN.on=false; hideUI(); SFX.tick(); }
+  let crew, btns;
+  if(HUB){ HUB.result({score:yen, stars, win:stars>0}); const n=HUB.names(), ck=esc(ROLE==='cook'?n.me:n.partner), sv=esc(ROLE==='server'?n.me:n.partner);
+    crew=`<p class="note">${T(`${ck} cooked, ${sv} ran the counter.${st.walk?` ${st.walk} guest${st.walk>1?'s':''} walked out.`:''}`,`${ck} 煮面，${sv} 管柜台。${st.walk?`有 ${st.walk} 位客人走掉了。`:''}`)}</p>`;
+    btns=`<button class="btn red" data-a="hnext">${T('Next','下一个')}: ${esc(HUB.nextName())} →</button><button class="btn" data-a="hagain">${T('Again','再来一局')}</button><button class="btn ghost" data-a="hswap">⇄ ${T('Swap stations','换岗位')}</button><button class="btn ghost" data-a="hmenu">${T('Menu','菜单')}</button>`; }
+  else { crew=`<p class="note">${st.walk?T(`${st.walk} customer${st.walk>1?'s':''} walked out. `,`有 ${st.walk} 位客人走掉了。`):''}${T(`Your best as ${ROLE==='cook'?'cook':'server'} with しばBot: ¥${best.toLocaleString('ja-JP')}`,`你和 しばBot 当${ROLE==='cook'?'厨师':'服务员'}的最好成绩：¥${best.toLocaleString('ja-JP')}`)}</p>`;
+    btns=`<button class="btn red" data-a="again">${T('One more night','再开一晚')}</button><button class="btn ghost" data-a="lobby">${T('Lobby','大厅')}</button>`; }
+  ui(`<div class="kicker">閉店 · ${T('Closing time','打烊')}</div><h2>おつかれさま！</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
+    <div class="stats"><span>${T('Takings','营业额')}<b>¥${yen.toLocaleString('ja-JP')}</b></span><span>${T('Bowls','碗数')}<b>${st.served}</b></span><span>かんぺき<b>${st.perfect}</b></span><span>ちがう<b>${st.wrong}</b></span></div>
+    ${crew}<div class="row">${btns}</div>`); }
+function newShift(){ const first=!store.get('seen_'+ROLE,false); store.set('seen_'+ROLE,true); SH={ph:'count', cd:HUB?3.2:first?7.5:4.2, t:0, yen:0, stats:{served:0, perfect:0, wrong:0, walk:0}, final:null, shown:false}; kReset(); cReset(); BC.q=[]; BC.busy=[]; BC.tix={}; PT.length=0; PTRS.clear(); TRN.next=28; TRN.on=false; hideUI(); SFX.tick(); }
 function endShift(){ SH.ph='end'; PTRS.clear();
   if(counterHere()){ if(MODE==='net') toCook({t:'final', yen:SH.yen, stats:SH.stats}); results(); }
   else if(SH.final) results(); else setTimeout(results,1500); }
 
 // ---------- input: tap, drag, swipe ----------
 const PTRS=new Map();
-cv.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); if(!SH || SH.ph!=='run') return; const p=toV(e), now=performance.now();
+cv.addEventListener('pointerdown', e=>{ e.preventDefault(); audio(); if(!SH || SH.ph!=='run' || PAUSED) return; const p=toV(e), now=performance.now();
   const it=(ROLE==='cook'?kDown:cDown)(p); if(!it) return; it.x=p.x; it.y=p.y; it.path=[{x:p.x,y:p.y,t:now}];
   if(it.kind==='tap'){ it.fn(); buzz(5); return; }
   PTRS.set(e.pointerId,it); try{ cv.setPointerCapture(e.pointerId); }catch(x){} if(it.kind!=='swipe' && it.kind!=='wipe') SFX.grab(); });
@@ -579,52 +595,32 @@ cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 let lastTouchEnd=0;
 document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-lastTouchEnd<350 && e.target===cv) e.preventDefault(); lastTouchEnd=now; }, {passive:false});
 ['gesturestart','gesturechange','dblclick'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
-document.addEventListener('click', async e=>{ const b=e.target.closest('button'); if(!b || !b.dataset.a) return; audio(); const a=b.dataset.a;
-  if(a==='practice') return ui(`<div class="kicker">Practice with しばBot</div><h2>Pick your station</h2><p class="lead">しばBot runs the other one, so you can learn yours. The real fun is with a friend.</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`);
+document.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b || !b.dataset.a) return; audio(); const a=b.dataset.a;
+  if(a==='practice') return ui(`<div class="kicker">${T('Practice with しばBot','和 しばBot 练习')}</div><h2>${T('Pick your station','选岗位')}</h2><p class="lead">${T('しばBot runs the other one, so you can learn yours. The real fun is with your partner.','しばBot 负责另一个岗位，你可以先熟悉自己的。真正的乐趣在和搭档一起玩。')}</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">${T('Back','返回')}</button></div>`);
   if(a==='pcook'||a==='pserver'){ MODE='bot'; ROLE=a==='pcook'?'cook':'server'; newShift(); return; }
-  if(a==='friend') return friendUI();
-  if(a==='create') return ui(`<div class="kicker">Create a room</div><h2>Your station?</h2>${ROLE_CARDS('h')}<div class="row"><button class="btn ghost" data-a="friend">Back</button></div>`);
-  if(a==='hcook'||a==='hserver'){ ROLE=a==='hcook'?'cook':'server'; ui('<h2>Opening a room…</h2>'); let r, code;
-    for(let i=0;i<4;i++){ code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
-    if(r!==true) return friendUI(r||'Online play is not available here.'); MODE='net'; IS_HOST=true; roomUI(); return; }
-  if(a==='join'){ const code=($('#codeIn').value||'').trim().toUpperCase(); if(!/^[A-Z0-9]{4}$/.test(code)) return friendUI('Type the 4-character code.');
-    ROLE=''; IS_HOST=false; ui('<h2>Joining…</h2>'); const r=await netJoin(code); if(r!==true) return friendUI(r); MODE='net'; if(!SH) guestUI(); return; }
-  if(a==='start'||a==='again'){ if(MODE==='net'){ if(!IS_HOST) return; netSend({t:'start'}); } newShift(); return; }
-  if(a==='lobby'){ try{ NET && NET.peer && NET.peer.destroy(); NET && NET.room && NET.room.leave(); }catch(x){} location.reload(); } });
+  if(a==='together'){ location.href='../'; return; }
+  if(a==='again'){ newShift(); return; }
+  if(a==='lobby'){ lobbyUI(); return; }
+  if(a==='hready'){ if(HR.me) return; HR.me=true; netSend({t:'ready'}); if(IS_HOST && HR.them) hubGo(); else readyUI(); return; }
+  if(a==='hnext') return HUB.next(); if(a==='hagain') return HUB.again(); if(a==='hswap') return HUB.swapAgain(); if(a==='hmenu') return HUB.menu(); });
 
-// ---------- online: claude.ai room inside claude.ai, PeerJS anywhere else ----------
-let NET=null, guestHere=false;
-async function roomApi(){ try{ return window.claude && claude.use ? await claude.use('room') : null; }catch(e){ return null; } }
-function onGuest(){ guestHere=true; netSend({t:'hello', role:ROLE}); if(!SH || SH.ph==='end') roomUI(); }
+// ---------- online (inside the hub): only tickets, bowls and results travel; the hub numbers them so none get lost ----------
+let NET=null, PAUSED=false;
 function onNet(m){ if(!m) return;
-  if(m.t==='hello'){ ROLE=m.role==='cook'?'server':'cook'; if(!SH) guestUI(); return; }
-  if(m.t==='start'){ if(ROLE) newShift(); return; }
+  if(m.t==='ready'){ HR.them=true; if(!SH) readyUI(); if(IS_HOST && HR.me) hubGo(); return; }
+  if(m.t==='start'){ if(ROLE && (!SH || SH.ph==='end')) newShift(); return; }
   if(!SH) return; if(ROLE==='cook') kRecv(m); else cRecv(m); }
-async function netHost(code){ const R=await roomApi();
-  if(R){ const room=await R.join('ramen-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; NET.raw=out=>room.presence({role:'host', out}).catch(()=>{}); NET.raw([]);
-    room.onPeers(ch=>{ const gp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='guest'); if(gp && !guestHere) onGuest(); if(gp) netIn(gp.presence.out); }); return true; }
-  if(!window.Peer) return 'PeerJS did not load';
-  return new Promise(res=>{ const peer=new Peer('kotoba-ramen-'+code.toLowerCase(), {debug:0}); NET={kind:'online', code, peer};
-    peer.on('open', ()=>res(true)); peer.on('error', e=>res(e.type==='unavailable-id' ? 'taken' : 'Could not open a room: '+e.type));
-    peer.on('connection', c=>{ NET.conn=c; c.on('open', onGuest); c.on('data', onNet); c.on('close', ()=>{ guestHere=false; }); }); }); }
-async function netJoin(code){ const R=await roomApi();
-  if(R){ const room=await R.join('ramen-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; NET.raw=out=>room.presence({role:'guest', out}).catch(()=>{}); NET.raw([]);
-    room.onPeers(ch=>{ const hp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='host'); if(hp) netIn(hp.presence.out); }); return true; }
-  if(!window.Peer) return 'PeerJS did not load';
-  return new Promise(res=>{ const peer=new Peer({debug:0}); NET={kind:'online', code, peer}; let done=false;
-    const t=setTimeout(()=>{ if(!done){ done=true; res('No room with that code (or the connection is blocked).'); } }, 12000);
-    peer.on('error', e=>{ if(!done){ done=true; clearTimeout(t); res(e.type==='peer-unavailable' ? 'No room with that code.' : 'Connection problem: '+e.type); } });
-    peer.on('open', ()=>{ const c=peer.connect('kotoba-ramen-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
-      c.on('open', ()=>{ if(!done){ done=true; clearTimeout(t); res(true); } }); c.on('data', onNet); }); }); }
-let flushAt=0, flushQ=false;
-function netSend(m){ if(!NET) return; if(NET.peer){ if(NET.conn && NET.conn.open) NET.conn.send(m); return; }
-  NET.outN++; NET.out.push({n:NET.outN, m}); if(NET.out.length>40) NET.out.shift();
-  const now=performance.now(); if(now-flushAt>120){ flushAt=now; NET.raw(NET.out.slice()); } else if(!flushQ){ flushQ=true; setTimeout(()=>{ flushQ=false; flushAt=performance.now(); NET.raw(NET.out.slice()); },130); } }
-function netIn(out){ if(!out) return; for(const e of out) if(e.n>NET.inN){ NET.inN=e.n; onNet(e.m); } }
+// patience updates are sent twice a second and only the latest matters; everything else must arrive
+function netSend(m){ if(NET) NET.send(m, m.t!=='pat'); }
+function hubInit(){ MODE='net'; ROLE=HUB.role(); IS_HOST=HUB.host;
+  NET=HUB.open(onNet, up=>{ PAUSED=!up; if(!up) PTRS.clear(); });
+  applySafe(); addEventListener('resize', ()=>setTimeout(applySafe,60)); readyUI(); }
+// a frame doesn't get the phone's safe-area insets, so the hub passes its own
+function applySafe(){ const s=HUB.safe(), r=document.documentElement.style; r.setProperty('--sl',s.l+'px'); r.setProperty('--sr',s.r+'px'); r.setProperty('--st',s.t+'px'); r.setProperty('--sb',s.b+'px'); }
 
 // ---------- main loop ----------
 let last=0, clock=0;
-function frame(now){ requestAnimationFrame(frame); const dt=last?Math.min(.05,(now-last)/1000):.016; last=now; clock+=dt;
+function frame(now){ requestAnimationFrame(frame); let dt=last?Math.min(.05,(now-last)/1000):.016; last=now; if(PAUSED) dt=0; clock+=dt;
   if(SH){ if(SH.ph==='count'){ const before=Math.ceil(SH.cd); SH.cd-=dt; if(Math.ceil(SH.cd)!==before && SH.cd>0) SFX.tick(); if(SH.cd<=0){ SH.ph='run'; SFX.gong(); } }
     else if(SH.ph==='run'){ SH.t+=dt; if(SH.t>=SHIFT_T) endShift(); } }
   if(SH && SH.ph==='run'){ if(ROLE==='cook'){ kUpdate(dt); if(MODE==='bot'){ cUpdate(dt); botServer(dt); } } else if(ROLE==='server'){ cUpdate(dt); if(MODE==='bot') botCook(dt); } }
@@ -635,7 +631,8 @@ function frame(now){ requestAnimationFrame(frame); const dt=last?Math.min(.05,(n
   if(SH && ROLE==='cook') drawKitchen(); else drawCounter();
   drawParticles(ctx); drawCountdown(ctx); ctx.restore(); }
 requestAnimationFrame(frame);
-lobbyUI();
+$('#rot').textContent=T('Turn your phone sideways','请把手机横过来')+' · 横にしてね';
+if(HUB) hubInit(); else lobbyUI();
 window.__ramen={ S:()=>SH, K:()=>K, C:()=>C, KL, CL, role:()=>ROLE, mode:()=>MODE, judge, scr:(x,y)=>({x:x*S+OX, y:y*S+OY}), act:{greet, takeOrder, serve, collect}, toServer, toCook, spawn:()=>spawn() };
 })();
 </script>

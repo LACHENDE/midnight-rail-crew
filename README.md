@@ -1,3 +1,16 @@
+# 夜ふかし Up All Night
+
+**Play:** https://lachende.github.io/midnight-rail-crew/ (landscape phone). One link, one room code, three co-op games for two: start a night, send your partner the invite link, then play them back to back. Each phone picks its own language (EN / 中文). The link survives drops (pause, auto-redial, resume) and reloads (rejoin).
+
+- **百鬼夜行 Night Parade** (`night/`): one drives the truck through traffic, one shoots the yokai carrying the called kana.
+- **深夜ラーメン Midnight Ramen** (`ramen/`): one cooks, one takes orders in Japanese and serves.
+- **真夜中の地下鉄 Midnight Subway** (`tunnels/`): one drives and reads the kana tickets; one runs the control room and throws the points.
+- Each game also opens on its own for practice with しばBot.
+
+Tests (Kotoba Shiba project): `tests/test37_hub.js` (two phones, all three games, drops, reloads), `test36_night.js`, `test35_ramen.js`, `test38_subway.js`. Menu art: `tests/hub_thumbs.js`.
+
+---
+
 # 真夜中の地下鉄 Midnight Rail Crew
 
 > **New: [百鬼夜行 Night Parade](https://lachende.github.io/midnight-rail-crew/night/)** (`night/`). A two-player car chase on the Shuto Expressway at 2 a.m. One drives the truck through traffic in 3D; the other rides backwards in the bed and fires お札 at the yokai carrying the called kana. Practise either seat with しばBot, then play it with a friend.

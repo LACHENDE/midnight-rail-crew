@@ -10,9 +10,10 @@
 /* 百鬼夜行 Night Parade: a two-player car chase on the Shuto Expressway at 2 a.m.
    The Driver weaves through traffic in 3D; the Gunner rides backwards in the truck bed and fires お札 at the yokai
    carrying the kana that gets called. Each phone runs its own half; snapshots and events travel between them. */
-:root{ --bg:#05070D; --ink:#F1E9DD; --dim:#A9A29A; --red:#E0352B; --amber:#FF9A4D; --cyan:#5BE0FF; }
+:root{ --sl:env(safe-area-inset-left); --sr:env(safe-area-inset-right); --st:env(safe-area-inset-top); --sb:env(safe-area-inset-bottom); --ui:"Zen Kaku Gothic New",system-ui,sans-serif; --bg:#05070D; --ink:#F1E9DD; --dim:#A9A29A; --red:#E0352B; --amber:#FF9A4D; --cyan:#5BE0FF; }
+:root[data-lang=zh]{ --ui:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif; }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,sans-serif;overflow:hidden;
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--ui);overflow:hidden;
   touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
 button,input{touch-action:manipulation;font-family:inherit}
 [hidden]{display:none!important}
@@ -20,68 +21,73 @@ button,input{touch-action:manipulation;font-family:inherit}
 #three canvas{display:block;width:100%;height:100%}
 #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .hud{position:fixed;inset:0;z-index:3;pointer-events:none}
-.bars{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(env(safe-area-inset-top) + 12px);display:flex;flex-direction:column;gap:7px;width:min(200px,23vw)}
-.bar{display:flex;align-items:center;gap:8px;font:900 10px "Zen Kaku Gothic New";letter-spacing:.2em;color:var(--dim)}
+.bars{position:absolute;left:max(14px,var(--sl));top:calc(var(--st) + 12px);display:flex;flex-direction:column;gap:7px;width:min(200px,23vw)}
+.bar{display:flex;align-items:center;gap:8px;font:900 10px var(--ui);letter-spacing:.2em;color:var(--dim)}
 .bar span{width:46px;flex:none}
 .bar div{flex:1;height:7px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden}
 .bar i{display:block;height:100%;transform-origin:0 50%;background:#7EE08A;transition:transform .15s}
 .bar.low i{background:var(--red)}
 .bar.boost i{background:linear-gradient(90deg,#5BE0FF,#B98CFF)}
-.score{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(env(safe-area-inset-top) + 8px);text-align:right;font:400 28px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 10px rgba(0,0,0,.6)}
-.score small{display:block;font:900 11px "Zen Kaku Gothic New";letter-spacing:.16em;color:var(--dim);margin-top:2px}
+.score{position:absolute;right:max(14px,var(--sr));top:calc(var(--st) + 8px);text-align:right;font:400 28px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.score small{display:block;font:900 11px var(--ui);letter-spacing:.16em;color:var(--dim);margin-top:2px}
 .mirror{position:absolute;border:3px solid #0B0D12;border-radius:10px;box-shadow:0 0 0 1px rgba(255,255,255,.14),0 6px 18px rgba(0,0,0,.55)}
-.mirror span{position:absolute;left:8px;top:4px;font:900 9px "Zen Kaku Gothic New";letter-spacing:.2em;color:rgba(241,233,221,.75);text-shadow:0 1px 3px #000}
-.callD{position:absolute;left:50%;transform:translateX(-50%);font:900 12px "Zen Kaku Gothic New";letter-spacing:.06em;color:#FFE9D6;background:rgba(8,10,16,.78);border-radius:999px;padding:3px 12px;white-space:nowrap}
+.mirror span{position:absolute;left:8px;top:4px;font:900 9px var(--ui);letter-spacing:.2em;color:rgba(241,233,221,.75);text-shadow:0 1px 3px #000}
+.callD{position:absolute;left:50%;transform:translateX(-50%);font:900 12px var(--ui);letter-spacing:.06em;color:#FFE9D6;background:rgba(8,10,16,.78);border-radius:999px;padding:3px 12px;white-space:nowrap}
 .callD b{font:400 18px "Dela Gothic One";color:var(--amber);margin:0 5px}
-.callG{position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 10px);transform:translateX(-50%);text-align:center;white-space:nowrap}
-.callG .lbl{font:900 10px "Zen Kaku Gothic New";letter-spacing:.32em;color:var(--amber)}
+.callG{position:absolute;left:50%;top:calc(var(--st) + 10px);transform:translateX(-50%);text-align:center;white-space:nowrap}
+.callG .lbl{font:900 10px var(--ui);letter-spacing:.32em;color:var(--amber)}
 .callG .k{font:400 50px/1.05 "Dela Gothic One";color:#FFE9D6;text-shadow:0 0 18px rgba(255,154,77,.55),0 2px 0 #000;letter-spacing:.04em}
 .callG .h{font:400 30px "Yuji Syuku";color:rgba(255,233,214,.8);margin-left:10px;vertical-align:6px}
 .callG .t{margin:5px auto 0;width:170px;height:5px;border-radius:4px;background:rgba(255,255,255,.16);overflow:hidden}
 .callG .t i{display:block;height:100%;background:var(--amber);transform-origin:0 50%}
 .callG.hot .k{color:#FF7A6E;text-shadow:0 0 24px rgba(224,53,43,.85),0 2px 0 #000}
 .callG.hot .t i{background:var(--red)}
-.speed{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 10px);transform:translateX(-50%);font:400 34px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 12px rgba(0,0,0,.7)}
-.speed small{font:900 11px "Zen Kaku Gothic New";letter-spacing:.2em;color:var(--dim);margin-left:4px}
+.speed{position:absolute;left:50%;bottom:calc(var(--sb) + 10px);transform:translateX(-50%);font:400 34px "Dela Gothic One";color:#FFE9D6;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.speed small{font:900 11px var(--ui);letter-spacing:.2em;color:var(--dim);margin-left:4px}
 .ctl button{position:absolute;pointer-events:auto;border:0;color:#F1E9DD;background:rgba(241,233,221,.10);box-shadow:inset 0 0 0 2px rgba(241,233,221,.38);font:400 30px "Dela Gothic One";touch-action:none;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.ctl [data-k=l]{left:max(14px,env(safe-area-inset-left));bottom:calc(env(safe-area-inset-bottom) + 14px);width:92px;height:92px;border-radius:22px}
-.ctl [data-k=r]{left:calc(max(14px,env(safe-area-inset-left)) + 104px);bottom:calc(env(safe-area-inset-bottom) + 14px);width:92px;height:92px;border-radius:22px}
-.ctl [data-k=boost]{right:max(14px,env(safe-area-inset-right));bottom:calc(env(safe-area-inset-bottom) + 14px);width:118px;height:118px;border-radius:50%;font-size:16px;letter-spacing:.12em;background:rgba(91,224,255,.16);box-shadow:inset 0 0 0 2px rgba(91,224,255,.7)}
+.ctl [data-k=l]{left:max(14px,var(--sl));bottom:calc(var(--sb) + 14px);width:92px;height:92px;border-radius:22px}
+.ctl [data-k=r]{left:calc(max(14px,var(--sl)) + 104px);bottom:calc(var(--sb) + 14px);width:92px;height:92px;border-radius:22px}
+.ctl [data-k=boost]{right:max(14px,var(--sr));bottom:calc(var(--sb) + 14px);width:118px;height:118px;border-radius:50%;font-size:16px;letter-spacing:.12em;background:rgba(91,224,255,.16);box-shadow:inset 0 0 0 2px rgba(91,224,255,.7)}
 .ctl button.held{background:rgba(241,233,221,.3)}
 .ctl [data-k=boost].held{background:rgba(91,224,255,.48)}
-.count{position:fixed;inset:0;z-index:5;display:flex;align-items:center;gap:30px;padding:0 max(44px,env(safe-area-inset-right)) 0 max(44px,env(safe-area-inset-left));background:rgba(5,7,13,.74);pointer-events:none}
+.count{position:fixed;inset:0;z-index:5;display:flex;align-items:center;gap:30px;padding:0 max(44px,var(--sr)) 0 max(44px,var(--sl));background:rgba(5,7,13,.74);pointer-events:none}
 .count ol{flex:1;margin:0;padding:0;list-style:none;counter-reset:s}
-.count h3{margin:0 0 10px;font:900 13px "Zen Kaku Gothic New";letter-spacing:.3em;color:var(--amber)}
-.count li{counter-increment:s;display:flex;gap:14px;align-items:baseline;font:700 16px/1.45 "Zen Kaku Gothic New";color:#F1E9DD;margin:7px 0}
+.count h3{margin:0 0 10px;font:900 13px var(--ui);letter-spacing:.3em;color:var(--amber)}
+.count li{counter-increment:s;display:flex;gap:14px;align-items:baseline;font:700 16px/1.45 var(--ui);color:#F1E9DD;margin:7px 0}
 .count li::before{content:counter(s);font:400 20px "Dela Gothic One";color:var(--amber);width:18px;flex:none}
 .count .n{font:400 120px "Dela Gothic One";color:#FFE9D6;min-width:150px;text-align:right}
-.ui{position:fixed;inset:0;z-index:6;display:flex;align-items:center;padding:14px max(18px,env(safe-area-inset-left));background:linear-gradient(90deg,rgba(5,7,13,.94),rgba(5,7,13,.72) 52%,rgba(5,7,13,.1))}
+.ui{position:fixed;inset:0;z-index:6;display:flex;align-items:center;padding:14px max(18px,var(--sl));background:linear-gradient(90deg,rgba(5,7,13,.94),rgba(5,7,13,.72) 52%,rgba(5,7,13,.1))}
 .panel{width:min(540px,100%);max-height:100%;overflow:auto;padding:2px}
-.kicker{font:700 11px "Zen Kaku Gothic New";letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
+.kicker{font:700 11px var(--ui);letter-spacing:.34em;color:var(--amber);text-transform:uppercase}
 h1{margin:6px 0 4px;font:400 54px/1 "Dela Gothic One";letter-spacing:.04em;color:#FFE9D6;text-shadow:0 0 26px rgba(224,53,43,.5)}
 h2{margin:6px 0 8px;font:400 28px/1.1 "Dela Gothic One";color:#FFE9D6}
-.lead{margin:10px 0 14px;font:500 14px/1.65 "Zen Kaku Gothic New";color:#C9C2B8;max-width:48ch}
+.lead{margin:10px 0 14px;font:500 14px/1.65 var(--ui);color:#C9C2B8;max-width:48ch}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
-.btn{font:900 14px "Zen Kaku Gothic New";letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.btn{font:900 14px var(--ui);letter-spacing:.08em;color:#0B0E14;background:var(--ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
 .btn.red{background:var(--red);color:#fff}
 .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(241,233,221,.35)}
 .btn:active{transform:translateY(1px)}
 .roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .role{all:unset;cursor:pointer;display:block;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(241,233,221,.16)}
 .role:active{background:rgba(255,255,255,.09)}
-.role i{display:block;font:700 10px "Zen Kaku Gothic New";letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
+.role i{display:block;font:700 10px var(--ui);letter-spacing:.28em;color:var(--amber);font-style:normal;text-transform:uppercase;margin-bottom:4px}
 .role b{display:block;font:400 21px "Dela Gothic One";color:#FFE9D6}
-.role small{display:block;margin-top:6px;font:500 12.5px/1.5 "Zen Kaku Gothic New";color:var(--dim)}
+.role small{display:block;margin-top:6px;font:500 12.5px/1.5 var(--ui);color:var(--dim)}
 .code{font:400 44px "Dela Gothic One";letter-spacing:.24em;color:var(--amber)}
 input.codein{font:400 22px "Dela Gothic One";letter-spacing:.2em;text-transform:uppercase;width:130px;padding:9px 12px;border-radius:8px;border:0;background:var(--ink);color:#0B0E14}
-.note{font:500 12.5px/1.55 "Zen Kaku Gothic New";color:var(--dim);margin-top:10px}
+.note{font:500 12.5px/1.55 var(--ui);color:var(--dim);margin-top:10px}
+:root[data-lang=zh] h2,:root[data-lang=zh] .role b{font-family:var(--ui);font-weight:900;letter-spacing:.02em}
+.steps{margin:6px 0 2px;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;display:flex;gap:10px;align-items:baseline;font:700 13.5px/1.45 var(--ui);color:#E6DED2;margin:5px 0}
+.steps li::before{content:counter(s);font:400 16px "Dela Gothic One";color:var(--amber);width:14px;flex:none}
+.btn:disabled{opacity:.55}
 .err{color:#FF8A7E;font-weight:700}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px "Zen Kaku Gothic New";letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+.stats span{display:flex;flex-direction:column;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.05);font:700 10px var(--ui);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
 .stats b{font:400 22px "Dela Gothic One";color:#FFE9D6;letter-spacing:0}
 .stars{font:400 30px "Dela Gothic One";color:var(--amber);letter-spacing:.1em;margin-top:2px}
 .stars .off{color:rgba(241,233,221,.16)}
-.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px "Zen Kaku Gothic New";text-align:center;padding:20px}
+.rotate{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:var(--bg);font:700 16px var(--ui);text-align:center;padding:20px}
 @media (orientation:portrait) and (max-width:820px){ .rotate{display:flex} }
 </style>
 </head>
@@ -99,15 +105,19 @@ input.codein{font:400 22px "Dela Gothic One";letter-spacing:.2em;text-transform:
 </div>
 <div class="count" id="count" hidden></div>
 <div class="ui" id="ui"><div class="panel" id="panel"></div></div>
-<div class="rotate">Turn your phone sideways · 横にしてね</div>
+<div class="rotate" id="rot">横にしてね</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (()=>{
 'use strict';
 const $=s=>document.querySelector(s);
 const TAU=Math.PI*2, rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)], clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// inside 夜ふかし (the hub page) the hub holds the connection, the seats and the language; on its own this page is practice with しばBot
+const HUB=(()=>{ try{ const h=window.parent!==window && window.parent.HUBAPI; return h && h.v ? h : null; }catch(e){ return null; } })();
+const LANG=HUB ? HUB.lang : (()=>{ try{ const v=JSON.parse(localStorage.getItem('yofu_lang')); if(v==='zh'||v==='en') return v; }catch(e){} return /^zh/i.test(navigator.language||'')?'zh':'en'; })();
+const T=(en,zh)=>LANG==='zh'?zh:en;
+document.documentElement.dataset.lang=LANG;
 
 // ---------- the run: lanes, speeds, and the kana the parade carries ----------
 const LANES=[-5.25,-1.75,1.75,5.25], XMAX=5.8, V0=30, V1=42, VBOOST=14, RUN_T=150;
@@ -157,9 +167,11 @@ let MODE='', ROLE='', RUN=null, IS_HOST=false, ID=0, clock=0;
 const CAR={x:0, vx:0, v:24, boost:1, boosting:false, hp:100, dist:0, crashT:0, xT:0};
 let TRAFFIC=[], CHARMS=[], YOKAI=[], BOARD=[], CALL=null, DYING=[];
 const carHere=()=>!RUN || ROLE==='driver' || MODE==='bot', yokaiHere=()=>RUN && (ROLE==='gunner' || MODE==='bot');
-const FX={shake:0, pops:[], shots:[], recoil:0};
+const FX={shake:0, pops:[], shots:[], recoil:0, flashes:[], stop:0};
+// a banish lands hard on the gunner's screen: a white burst at the hit and a few frames of slow motion
+function hitFlash(x,y,z){ if(ROLE!=='gunner' || !R3) return; const s=scrOf(x,y,z); if(s.ok) FX.flashes.push({x:s.x, y:s.y, t:0}); FX.stop=.07; }
 let tSpawn=0, cSpawn=6, ySpawn=1, callT=5;
-function resetWorld(){ Object.assign(CAR,{x:0,vx:0,v:V0,boost:1,boosting:false,hp:100,dist:0,crashT:0,xT:0}); TRAFFIC=[]; CHARMS=[]; YOKAI=[]; BOARD=[]; CALL=null; DYING=[]; tSpawn=0; cSpawn=6; ySpawn=.8; callT=4.5; FX.pops=[]; FX.shots=[]; }
+function resetWorld(){ Object.assign(CAR,{x:0,vx:0,v:V0,boost:1,boosting:false,hp:100,dist:0,crashT:0,xT:0}); TRAFFIC=[]; CHARMS=[]; YOKAI=[]; BOARD=[]; CALL=null; DYING=[]; tSpawn=0; cSpawn=6; ySpawn=.8; callT=4.5; FX.pops=[]; FX.shots=[]; FX.flashes=[]; FX.stop=0; }
 function hurt(n){ if(!RUN || RUN.ph!=='run') return; FX.shake=Math.max(FX.shake, n>10?.9:.45);
   if(carHere()){ CAR.hp=Math.max(0,CAR.hp-n); if(CAR.hp<=0) endRun(false); } else sendEvt({t:'dmg', n}); }
 const score=()=>{ const s=RUN?RUN.s:null; return s ? s.kscore+s.near*20+s.charms*30+Math.floor(CAR.dist/20) : 0; };
@@ -219,10 +231,12 @@ function board(y){ YOKAI=YOKAI.filter(q=>q!==y); if(CALL && CALL.id===y.id){ CAL
 function shootTarget(t){ if(!t) return;
   if(t.board){ t.hp--; SFX.knock(); burstAt(CAR.x+t.side*.6,1.6,3.5,0x7FD8FF,10); if(t.hp<=0){ BOARD=BOARD.filter(b=>b!==t); RUN.s.kills++; RUN.s.kscore+=40; popAt(CAR.x+t.side*.6,2.4,3.5,'ふりおとした！','#BFE8FF'); } return; }
   if(!YOKAI.includes(t)) return; const called=CALL && CALL.id===t.id;
-  if(called || t.st==='charge'){ YOKAI=YOKAI.filter(y=>y!==t); DYING.push({...t, dt:0}); SFX.boom(); RUN.s.kills++; burstAt(t.x,2.2,t.z,0x7FD8FF,22); burstAt(t.x,3,t.z,0xFF9A4D,10);
-    if(called){ RUN.s.combo++; RUN.s.best=Math.max(RUN.s.best,RUN.s.combo); const pts=100*Math.min(5,RUN.s.combo); RUN.s.kscore+=pts; learn(t.k); popAt(t.x,3.6,t.z,`たいじ！ +${pts}`,'#FFE9D6'); CALL=null; callT=Math.min(callT,1.3); }
+  if(called || t.st==='charge'){ YOKAI=YOKAI.filter(y=>y!==t); DYING.push({...t, dt:0}); SFX.boom(); RUN.s.kills++; burstAt(t.x,2.2,t.z,0x7FD8FF,22); burstAt(t.x,3,t.z,0xFF9A4D,10); hitFlash(t.x,2.4,t.z);
+    let pts=50;
+    if(called){ RUN.s.combo++; RUN.s.best=Math.max(RUN.s.best,RUN.s.combo); pts=100*Math.min(5,RUN.s.combo); RUN.s.kscore+=pts; learn(t.k); popAt(t.x,3.6,t.z,`たいじ！ +${pts}${RUN.s.combo>1?'  ×'+RUN.s.combo:''}`,'#FFE9D6'); CALL=null; callT=Math.min(callT,1.3); }
     else { RUN.s.kscore+=50; popAt(t.x,3.6,t.z,'+50','#FFE9D6'); }
-    if(MODE==='net') sendEvt({t:'kill', x:+t.x.toFixed(2), z:+t.z.toFixed(1), k:t.k, look:t.look}); }
+    if(ROLE==='driver') pop(`たいじ！ +${pts}`,'#FFE9D6');
+    if(MODE==='net') sendEvt({t:'kill', x:+t.x.toFixed(2), z:+t.z.toFixed(1), k:t.k, look:t.look, p:pts}); }
   else { t.st='charge'; t.angry=true; RUN.s.wrong++; RUN.s.combo=0; SFX.roar(); popAt(t.x,3.6,t.z,'ちがう！','#FF7A6E'); } }
 
 // ---------- しばBot: drives or shoots when you practise ----------
@@ -394,6 +408,10 @@ function drawFX(dt){ fg.clearRect(0,0,FW,FH); const sp=CAR.v/V1;
       if(s.t<.2){ fg.strokeStyle='rgba(255,255,255,.8)'; fg.lineWidth=2; fg.beginPath(); fg.arc(s.x,s.y,10+s.t*120,0,TAU); fg.stroke(); } }
     FX.shots=FX.shots.filter(s=>s.t<.25);
     fg.save(); fg.translate(bx,by); fg.rotate(-.55); fg.fillStyle='rgba(18,20,26,.92)'; rr(fg,-16,-118,32,128,8); fg.fill(); fg.strokeStyle='rgba(201,161,74,.8)'; fg.lineWidth=2; fg.strokeRect(-16,-118,32,14); fg.fillStyle='#F4EEDF'; fg.fillRect(-8,-138,16,26); fg.fillStyle='#B5281E'; fg.fillRect(-8,-138,16,4); fg.fillRect(-8,-116,16,4); fg.restore(); }
+  for(const f of FX.flashes){ f.t+=dt; const k=f.t/.22; if(k>=1) continue; const r=30+k*140, gr=fg.createRadialGradient(f.x,f.y,0,f.x,f.y,r);
+    gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.35,'rgba(190,240,255,.55)'); gr.addColorStop(1,'rgba(160,230,255,0)'); fg.globalAlpha=(1-k)*.9; fg.fillStyle=gr; fg.beginPath(); fg.arc(f.x,f.y,r,0,TAU); fg.fill();
+    fg.strokeStyle='rgba(255,255,255,.9)'; fg.lineWidth=3*(1-k); fg.beginPath(); fg.arc(f.x,f.y,r*.8,0,TAU); fg.stroke(); }
+  fg.globalAlpha=1; FX.flashes=FX.flashes.filter(f=>f.t<.22);
   for(const p of FX.pops){ p.t+=dt; let x=FW*(.5+(p.dx||0)), y=FH*.45-p.t*22; if(p.w){ const s=scrOf(p.w.x,p.w.y,p.w.z); if(!s.ok) continue; x=s.x; y=s.y-p.t*40; }
     const a=Math.min(1,(1.1-p.t)*2.5); if(a<=0) continue; fg.globalAlpha=a; fg.font=`400 ${p.scr?26:22}px "Dela Gothic One"`; fg.textAlign='center'; fg.lineWidth=5; fg.strokeStyle='rgba(0,0,0,.7)'; fg.strokeText(p.txt,x,y); fg.fillStyle=p.col; fg.fillText(p.txt,x,y); }
   fg.globalAlpha=1; FX.pops=FX.pops.filter(p=>p.t<1.1); }
@@ -402,13 +420,13 @@ function drawFX(dt){ fg.clearRect(0,0,FW,FH); const sp=CAR.v/V1;
 function hudTick(){ if(!RUN) return; const drive=ROLE==='driver';
   $('#hpI').style.transform=`scaleX(${(CAR.hp/100).toFixed(3)})`; $('#hpBar').classList.toggle('low',CAR.hp<35); $('#boI').style.transform=`scaleX(${CAR.boost.toFixed(3)})`; $('#boBar').hidden=!drive;
   const sc=String(score()), se=$('#score'); if(se.firstChild.nodeValue!==sc) se.firstChild.nodeValue=sc;
-  const sub=`${(CAR.dist/1000).toFixed(1)} km${RUN.s.combo>1?' · combo ×'+RUN.s.combo:''}`; if($('#sub').textContent!==sub) $('#sub').textContent=sub;
+  const sub=`${(CAR.dist/1000).toFixed(1)} km${RUN.s.combo>1?` · ${T('combo','连击')} ×${RUN.s.combo}`:''}`; if($('#sub').textContent!==sub) $('#sub').textContent=sub;
   $('#speed').hidden=!drive; if(drive){ const kmh=String(Math.round(CAR.v*3.6)); const sp=$('#speed'); if(sp.dataset.k!==kmh){ sp.dataset.k=kmh; sp.innerHTML=`${kmh}<small>KM/H</small>`; } }
   $('#ctl').hidden=!drive; $('#mirror').hidden=!drive;
   const cd=$('#callD'), cg=$('#callG');
   if(CALL){ const hot=CALL.t>CALL.warn, ck=CALL.id+':'+hot;
-    if(drive){ cd.hidden=false; if(cd.dataset.k!==ck){ cd.dataset.k=ck; cd.innerHTML=`${hot?'⚠ ':''}GUNNER, SHOOT<b>${CALL.k}</b>${roma(CALL.k)}`; } cg.hidden=true; }
-    else { cg.hidden=false; if(cg.dataset.k!==ck){ cg.dataset.k=ck; cg.classList.toggle('hot',hot); cg.innerHTML=`<div class="lbl">${hot?'IT\'S COMING · うて！':'SHOOT THE YOKAI CARRYING'}</div><div><span class="k">${roma(CALL.k)}</span>${known(CALL.k)?'':`<span class="h">${CALL.k}</span>`}</div><div class="t"><i></i></div>`; }
+    if(drive){ cd.hidden=false; if(cd.dataset.k!==ck){ cd.dataset.k=ck; cd.innerHTML=`${hot?'⚠ ':''}${esc(gunnerName())}${T(', SHOOT','，打')}<b>${CALL.k}</b>${roma(CALL.k)}`; } cg.hidden=true; }
+    else { cg.hidden=false; if(cg.dataset.k!==ck){ cg.dataset.k=ck; cg.classList.toggle('hot',hot); cg.innerHTML=`<div class="lbl">${hot?T('IT\'S COMING · うて！','它冲过来了 · うて！'):T('SHOOT THE YOKAI CARRYING','射击提着这个假名的妖怪')}</div><div><span class="k">${roma(CALL.k)}</span>${known(CALL.k)?'':`<span class="h">${CALL.k}</span>`}</div><div class="t"><i></i></div>`; }
       const ti=cg.querySelector('.t i'); if(ti) ti.style.transform=`scaleX(${clamp(1-CALL.t/CALL.warn,0,1).toFixed(3)})`; cd.hidden=true; } }
   else { cd.hidden=true; cg.hidden=true; cd.dataset.k=''; cg.dataset.k=''; } }
 
@@ -431,70 +449,68 @@ let lastTouchEnd=0;
 document.addEventListener('touchend', e=>{ const now=Date.now(); if(now-lastTouchEnd<350 && !e.target.closest('.ui')) e.preventDefault(); lastTouchEnd=now; }, {passive:false});
 ['gesturestart','gesturechange','dblclick'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
 
-// ---------- flow: lobby, countdown, results ----------
+// ---------- flow: lobby, ready, countdown, results ----------
 const ui=html=>{ $('#panel').innerHTML=html; $('#ui').hidden=false; };
 const hideUI=()=>{ $('#ui').hidden=true; };
 const ROLE_CARDS=p=>`<div class="roles">
-  <button class="role" data-a="${p}driver"><i>Front seat</i><b>運転 Driver</b><small>Hold ◀ ▶ to weave through traffic, hold BOOST to outrun the parade, drive over お守り to repair. Near misses charge your boost.</small></button>
-  <button class="role" data-a="${p}gunner"><i>Truck bed</i><b>射手 Gunner</b><small>Face backwards. Hear the kana, find the yokai carrying it, tap to fire. Hit the wrong one and it charges. Knock off anything that climbs aboard.</small></button></div>`;
-const STEPS={driver:['Hold ◀ ▶ to change lanes · dodge the traffic','Hold BOOST to outrun the parade · near misses refill it','Drive over the glowing お守り to repair the truck','When a yokai climbs on, it drags your steering · yell at your gunner!','Survive until dawn'],
-  gunner:['You ride backwards in the truck bed','A kana is called · you hear it, and see it in letters','Tap the yokai whose lantern shows that kana','Don\'t shoot the others · they get angry and charge','Tap anything that climbs aboard to knock it off']};
+  <button class="role" data-a="${p}driver"><i>${T('Front seat','前座')}</i><b>運転 ${T('Driver','司机')}</b><small>${T('Hold ◀ ▶ to weave through traffic, hold BOOST to outrun the parade, drive over お守り to repair. Near misses charge your boost.','按住 ◀ ▶ 在车流中穿梭，按住 BOOST 甩开妖怪，碾过お守り（护身符）修车。擦身而过能给加速充能。')}</small></button>
+  <button class="role" data-a="${p}gunner"><i>${T('Truck bed','车斗')}</i><b>射手${LANG==='zh'?'':' Gunner'}</b><small>${T('Face backwards. Hear the kana, find the yokai carrying it, tap to fire. Hit the wrong one and it charges. Knock off anything that climbs aboard.','面朝后方。听到假名，找到提着它的妖怪，点它开火。打错了它会冲过来。爬上车的妖怪要把它打下去。')}</small></button></div>`;
+const STEPS={driver:[T('Hold ◀ ▶ to change lanes · dodge the traffic','按住 ◀ ▶ 换车道 · 躲开车流'),T('Hold BOOST to outrun the parade · near misses refill it','按住 BOOST 甩开妖怪 · 擦身而过能充能'),T('Drive over the glowing お守り to repair the truck','碾过发光的お守り修理卡车'),T('A yokai on board drags your steering · yell at your gunner!','妖怪爬上车会拽方向盘 · 快喊你的射手！'),T('Survive until dawn','撑到天亮')],
+  gunner:[T('You ride backwards in the truck bed','你坐在车斗里，面朝后方'),T('A kana is called · you hear it and see it in letters','会点名一个假名 · 你能听到，也能看到罗马音'),T('Tap the yokai whose lantern shows that kana','点灯笼上写着那个假名的妖怪'),T('Don\'t shoot the others · they get angry and charge','别打其他妖怪 · 它们会发怒冲过来'),T('Tap anything that climbs aboard to knock it off','爬上车的妖怪，点它把它打下去')]};
+const gunnerName=()=>MODE==='bot' ? 'しばBot' : HUB && ROLE==='driver' ? HUB.names().partner : T('GUNNER','射手');
 function lobbyUI(msg){ MODE=''; ROLE=''; RUN=null;
-  ui(`<div class="kicker">2 players · co-op · action</div><h1>百鬼夜行</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Night Parade</div>
-    <p class="lead">2 a.m. on the Shuto Expressway. A parade of yokai is chasing your truck. One of you drives. The other rides in the back and fires お札 at the yokai, but only at the one whose kana gets called.</p>
+  ui(`<div class="kicker">${T('2 players · co-op · action','双人 · 合作 · 动作')}</div><h1>百鬼夜行</h1><div class="kicker" style="color:#C9C2B8;letter-spacing:.44em">Night Parade</div>
+    <p class="lead">${T('2 a.m. on the Shuto Expressway. A parade of yokai is chasing your truck. One of you drives. The other rides in the back and fires お札 at the yokai, but only at the one whose kana gets called.','凌晨两点的首都高速。一队妖怪在追你的卡车。一人开车，另一人坐在车斗里朝妖怪发射お札（符咒），但只打提着被点名假名的那一只。')}</p>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}
-    <div class="row"><button class="btn red" data-a="friend">Play with a friend</button><button class="btn ghost" data-a="practice">Practice with しばBot</button></div>`); }
-function friendUI(msg){ ui(`<div class="kicker">Play with a friend</div><h2>Ride together</h2><p class="lead">One of you creates a room and picks a seat. The other types the code.</p>${msg?`<p class="err">${esc(msg)}</p>`:''}
-  <div class="row"><button class="btn red" data-a="create">Create a room</button><input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"><button class="btn" data-a="join">Join</button></div>
-  <div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`); }
-function roomUI(){ ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><div class="code">${esc(NET.code)}</div>
-  <p class="lead">${guestHere?`Your friend is here. You ${ROLE==='driver'?'drive, they shoot':'shoot, they drive'}. Ready?`:`Send this code to your friend. You're the <b>${ROLE==='driver'?'Driver':'Gunner'}</b>; they'll be the ${ROLE==='driver'?'Gunner':'Driver'}.`}</p>
-  <div class="row">${guestHere?'<button class="btn red" data-a="start">Hit the road</button>':'<span class="note">Waiting for your friend…</span>'}<button class="btn ghost" data-a="lobby">Leave</button></div>`); }
-function guestUI(){ ui(`<div class="kicker">Room · ${esc(NET.kind)}</div><h2>${ROLE?(ROLE==='driver'?'You drive':'You shoot'):'Connected'}</h2><p class="lead">${ROLE?'The host starts the run.':'Waiting for the host…'}</p><div class="row"><button class="btn ghost" data-a="lobby">Leave</button></div>`); }
+    <div class="row"><button class="btn red" data-a="together">${T('Play together','一起玩')}</button><button class="btn ghost" data-a="practice">${T('Practice with しばBot','和 しばBot 练习')}</button></div>
+    <p class="note">${T('You play together in 夜ふかし: one room code for all three games.','一起玩请去 夜ふかし：一个房间码玩三款游戏。')}</p>`); }
+// in the hub: your seat, your partner's, and a Ready button (the tap also wakes up the sound on this phone)
+const HR={me:false, them:false};
+function readyUI(){ const n=HUB.names(), drive=ROLE==='driver', p=esc(n.partner);
+  ui(`<div class="kicker">百鬼夜行${LANG==='zh'?'':' · Night Parade'}</div><h2>${drive?T('You drive','你开车'):T('You shoot','你射击')}</h2>
+    <p class="lead">${drive?T(`${p} rides in the back and shoots. Keep the truck alive until dawn.`,`${p} 坐在车斗里射击。把卡车开到天亮！`):T(`${p} drives. Banish the yokai carrying the called kana.`,`${p} 开车。消灭提着被点名假名的妖怪。`)}</p>
+    <ol class="steps">${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    <div class="row"><button class="btn red" data-a="hready"${HR.me?' disabled':''}>${HR.me?T('Ready ✓','已准备 ✓'):T('Ready','准备好了')}</button><span class="note">${HR.them?T(`${p} is ready`,`${p} 已准备`):T(`Waiting for ${p}…`,`等待 ${p}…`)}</span></div>`); }
+function hubGo(){ if(RUN && RUN.ph!=='over') return; sendEvt({t:'start'}); newRun(); }
 function newRun(){ const first=!store.get('seen_'+ROLE,false); store.set('seen_'+ROLE,true); initThree();
-  RUN={ph:'count', cd:first?7:4, t:0, s:{kills:0,wrong:0,combo:0,best:0,kscore:0,near:0,charms:0,crashes:0}, win:false, shown:false};
+  RUN={ph:'count', cd:HUB?3:first?7:4, t:0, s:{kills:0,wrong:0,combo:0,best:0,kscore:0,near:0,charms:0,crashes:0}, win:false, shown:false};
   resetWorld(); hideUI(); $('#hud').hidden=false; IN.btn={};
-  const c=$('#count'); c.hidden=false; c.innerHTML=`<div><h3>${ROLE==='driver'?'YOU DRIVE · 運転':'YOU SHOOT · 射手'}</h3><ol>${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div><div class="n" id="cdN"></div>`; }
+  const c=$('#count'); c.hidden=false; c.innerHTML=`<div><h3>${ROLE==='driver'?T('YOU DRIVE','你开车')+' · 運転':T('YOU SHOOT','你射击')+' · 射手'}</h3><ol>${STEPS[ROLE].map(s=>`<li>${esc(s)}</li>`).join('')}</ol></div><div class="n" id="cdN"></div>`; }
 function endRun(win){ if(!RUN || RUN.ph!=='run') return; RUN.ph='over'; RUN.win=win; CALL=null;
   if(MODE==='net' && ROLE==='driver') sendEvt({t:'over', win, s:RUN.s, d:Math.round(CAR.dist)});
   if(win) SFX.dawn(); else { SFX.crash(); FX.shake=1.2; } setTimeout(results, win?1500:1000); }
 function results(){ if(!RUN || RUN.shown) return; RUN.shown=true; const s=RUN.s, sc=score(), key='best_'+MODE+'_'+ROLE, best=Math.max(store.get(key,0),sc); store.set(key,best);
-  const stars=(RUN.win?1:0)+(sc>=4000?1:0)+(sc>=7000?1:0), again=MODE==='bot'||IS_HOST?'<button class="btn red" data-a="again">Run it again</button>':'<span class="note">The host can start the next run.</span>';
+  const stars=(RUN.win?1:0)+(sc>=4000?1:0)+(sc>=7000?1:0);
   $('#hud').hidden=true;
-  ui(`<div class="kicker">${RUN.win?'夜明け · Dawn':'大破 · Wrecked'}</div><h2>${RUN.win?'逃げ切った！':'やられた…'}</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
-    <div class="stats"><span>Score<b>${sc}</b></span><span>退治<b>${s.kills}</b></span><span>ちがう<b>${s.wrong}</b></span><span>Distance<b>${(CAR.dist/1000).toFixed(1)}km</b></span></div>
-    <p class="note">ニアミス ${s.near} · お守り ${s.charms} · best combo ×${s.best}. Your best as ${ROLE==='driver'?'driver':'gunner'}${MODE==='bot'?' with しばBot':''}: ${best}</p>
-    <div class="row">${again}<button class="btn ghost" data-a="lobby">Lobby</button></div>`); }
-document.addEventListener('click', async e=>{ const b=e.target.closest('button'); if(!b || !b.dataset.a) return; audio(); const a=b.dataset.a;
-  if(a==='practice') return ui(`<div class="kicker">Practice with しばBot</div><h2>Pick your seat</h2><p class="lead">しばBot takes the other seat so you can learn yours. The real fun is with a friend.</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">Back</button></div>`);
+  let crew, btns;
+  if(HUB){ HUB.result({score:sc, stars, win:RUN.win}); const n=HUB.names(), d=esc(ROLE==='driver'?n.me:n.partner), g=esc(ROLE==='gunner'?n.me:n.partner);
+    crew=`<p class="note">${T(`${d} drove: ${s.near} near misses, ${s.charms} お守り, ${s.crashes} crashes. ${g} shot: ${s.kills} banished, ${s.wrong} wrong, best combo ×${s.best}.`,`${d} 开车：擦身而过 ${s.near} 次，お守り ${s.charms} 个，撞车 ${s.crashes} 次。${g} 射击：消灭 ${s.kills} 只，打错 ${s.wrong} 次，最高连击 ×${s.best}。`)}</p>`;
+    btns=`<button class="btn red" data-a="hnext">${T('Next','下一个')}: ${esc(HUB.nextName())} →</button><button class="btn" data-a="hagain">${T('Again','再来一局')}</button><button class="btn ghost" data-a="hswap">⇄ ${T('Swap seats','换位置')}</button><button class="btn ghost" data-a="hmenu">${T('Menu','菜单')}</button>`; }
+  else { crew=`<p class="note">${T(`ニアミス ${s.near} · お守り ${s.charms} · best combo ×${s.best}. Your best as ${ROLE==='driver'?'driver':'gunner'} with しばBot: ${best}`,`ニアミス ${s.near} · お守り ${s.charms} · 最高连击 ×${s.best}。你和 しばBot 当${ROLE==='driver'?'司机':'射手'}的最好成绩：${best}`)}</p>`;
+    btns=`<button class="btn red" data-a="again">${T('Run it again','再跑一次')}</button><button class="btn ghost" data-a="lobby">${T('Lobby','大厅')}</button>`; }
+  ui(`<div class="kicker">${RUN.win?`夜明け · ${T('Dawn','黎明')}`:`大破 · ${T('Wrecked','车毁了')}`}</div><h2>${RUN.win?'逃げ切った！':'やられた…'}</h2><div class="stars">${'★'.repeat(stars)}<span class="off">${'★'.repeat(3-stars)}</span></div>
+    <div class="stats"><span>${T('Team score','团队得分')}<b>${sc}</b></span><span>退治<b>${s.kills}</b></span><span>ちがう<b>${s.wrong}</b></span><span>${T('Distance','距离')}<b>${(CAR.dist/1000).toFixed(1)}km</b></span></div>
+    ${crew}<div class="row">${btns}</div>`); }
+document.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b || !b.dataset.a) return; audio(); const a=b.dataset.a;
+  if(a==='practice') return ui(`<div class="kicker">${T('Practice with しばBot','和 しばBot 练习')}</div><h2>${T('Pick your seat','选座位')}</h2><p class="lead">${T('しばBot takes the other seat so you can learn yours. The real fun is with your partner.','しばBot 坐另一个位置，你可以先熟悉自己的。真正的乐趣在和搭档一起玩。')}</p>${ROLE_CARDS('p')}<div class="row"><button class="btn ghost" data-a="lobby">${T('Back','返回')}</button></div>`);
   if(a==='pdriver'||a==='pgunner'){ MODE='bot'; ROLE=a==='pdriver'?'driver':'gunner'; newRun(); return; }
-  if(a==='friend') return friendUI();
-  if(a==='create') return ui(`<div class="kicker">Create a room</div><h2>Your seat?</h2>${ROLE_CARDS('h')}<div class="row"><button class="btn ghost" data-a="friend">Back</button></div>`);
-  if(a==='hdriver'||a==='hgunner'){ ROLE=a==='hdriver'?'driver':'gunner'; ui('<h2>Opening a room…</h2>'); let r, code;
-    for(let i=0;i<4;i++){ code=Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join(''); r=await netHost(code); if(r!=='taken') break; }
-    if(r!==true) return friendUI(r||'Online play is not available here.'); MODE='net'; IS_HOST=true; roomUI(); return; }
-  if(a==='join'){ const code=($('#codeIn').value||'').trim().toUpperCase(); if(!/^[A-Z0-9]{4}$/.test(code)) return friendUI('Type the 4-character code.');
-    ROLE=''; IS_HOST=false; ui('<h2>Joining…</h2>'); const r=await netJoin(code); if(r!==true) return friendUI(r); MODE='net'; if(!RUN) guestUI(); return; }
-  if(a==='start'||a==='again'){ if(MODE==='net'){ if(!IS_HOST) return; sendEvt({t:'start'}); } newRun(); return; }
-  if(a==='lobby'){ try{ NET && NET.peer && NET.peer.destroy(); NET && NET.room && NET.room.leave(); }catch(x){} location.reload(); } });
+  if(a==='together'){ location.href='../'; return; }
+  if(a==='again'){ newRun(); return; }
+  if(a==='lobby'){ lobbyUI(); return; }
+  if(a==='hready'){ if(HR.me) return; HR.me=true; sendEvt({t:'ready'}); if(IS_HOST && HR.them) hubGo(); else readyUI(); return; }
+  if(a==='hnext') return HUB.next(); if(a==='hagain') return HUB.again(); if(a==='hswap') return HUB.swapAgain(); if(a==='hmenu') return HUB.menu(); });
 
-// ---------- online: claude.ai room inside claude.ai, PeerJS anywhere else ----------
-// each phone streams a snapshot of what it owns ~10× a second; one-off events (damage, kills, start, over) are numbered so none get lost
-let NET=null, guestHere=false, snapT=0, flushAt=0, flushQ=false;
-async function roomApi(){ try{ return window.claude && claude.use ? await claude.use('room') : null; }catch(e){ return null; } }
-function onGuest(){ guestHere=true; sendEvt({t:'hello', role:ROLE}); if(!RUN || RUN.ph==='over') roomUI(); }
-function flush(){ if(!NET || !NET.room) return; const now=performance.now(); const go=()=>{ flushAt=performance.now(); NET.room.presence({role:IS_HOST?'host':'guest', snap:NET.snap||null, out:NET.out}).catch(()=>{}); };
-  if(now-flushAt>140) go(); else if(!flushQ){ flushQ=true; setTimeout(()=>{ flushQ=false; go(); },150); } }
-function sendSnap(s){ if(!NET) return; if(NET.peer){ if(NET.conn && NET.conn.open) NET.conn.send({s}); } else { NET.snap=s; flush(); } }
-function sendEvt(m){ if(!NET) return; if(NET.peer){ if(NET.conn && NET.conn.open) NET.conn.send({e:m}); } else { NET.outN++; NET.out.push({n:NET.outN, m}); if(NET.out.length>40) NET.out.shift(); flush(); } }
+// ---------- online (inside the hub): each phone streams what it owns ~10× a second; one-off events go through the hub's numbered queue so none get lost ----------
+let NET=null, snapT=0, PAUSED=false;
+function sendSnap(s){ if(NET) NET.send({s}, false); }
+function sendEvt(m){ if(NET) NET.send({e:m}, true); }
 function onData(d){ if(!d) return; if(d.e) onEvt(d.e); if(d.s) onSnap(d.s); }
-function onPresence(p){ if(!p) return; if(p.out) for(const x of p.out) if(x.n>NET.inN){ NET.inN=x.n; onEvt(x.m); } if(p.snap) onSnap(p.snap); }
 function onEvt(m){
-  if(m.t==='hello'){ ROLE=m.role==='driver'?'gunner':'driver'; if(!RUN) guestUI(); return; }
-  if(m.t==='start'){ if(ROLE) newRun(); return; }
+  if(m.t==='ready'){ HR.them=true; if(!RUN) readyUI(); if(IS_HOST && HR.me) hubGo(); return; }
+  if(m.t==='start'){ if(ROLE && (!RUN || RUN.ph==='over')) newRun(); return; }
   if(!RUN) return;
   if(m.t==='dmg' && ROLE==='driver'){ CAR.hp=Math.max(0,CAR.hp-m.n); FX.shake=Math.max(FX.shake,.6); if(CAR.hp<=0) endRun(false); return; }
-  if(m.t==='kill' && ROLE==='driver'){ DYING.push({id:-(++ID), x:m.x, z:m.z, k:m.k, look:m.look, dt:0}); burstAt(m.x,2.2,m.z,0x7FD8FF,18); SFX.boom(); return; }
+  if(m.t==='kill' && ROLE==='driver'){ DYING.push({id:-(++ID), x:m.x, z:m.z, k:m.k, look:m.look, dt:0}); burstAt(m.x,2.2,m.z,0x7FD8FF,18); SFX.boom(); if(m.p) pop(`たいじ！ +${m.p}`,'#FFE9D6'); return; }
   if(m.t==='over' && ROLE==='gunner'){ Object.assign(RUN.s,{near:m.s.near,charms:m.s.charms,crashes:m.s.crashes}); CAR.dist=m.d; RUN.ph='run'; endRun(m.win); } }
 // the other phone's objects keep moving between snapshots, then ease toward the true positions
 function onSnap(s){ if(!RUN) return;
@@ -506,31 +522,20 @@ function onSnap(s){ if(!RUN) return;
     BOARD=s.bd.map(a=>({id:a[0],k:a[1],side:a[2],hp:a[3],look:a[4],board:true}));
     const nc=s.call?{id:s.call[0],k:s.call[1],t:s.call[2],warn:s.call[3]}:null; if(nc && (!CALL || CALL.id!==nc.id)){ SFX.call(); setTimeout(()=>say(nc.k),130); } CALL=nc;
     Object.assign(RUN.s,{kills:s.s.kills,wrong:s.s.wrong,combo:s.s.combo,best:s.s.best,kscore:s.s.kscore}); } }
-function netTick(dt){ if(MODE!=='net' || !NET || !RUN) return; snapT-=dt; if(snapT>0) return; snapT=NET.room?.15:.1;
+function netTick(dt){ if(MODE!=='net' || !NET || !RUN) return; snapT-=dt; if(snapT>0) return; snapT=.1;
   if(ROLE==='driver') sendSnap({t:'car', x:+CAR.x.toFixed(2), vx:+CAR.vx.toFixed(2), v:+CAR.v.toFixed(2), b:+CAR.boost.toFixed(2), bo:CAR.boosting?1:0, hp:Math.round(CAR.hp), d:Math.round(CAR.dist), cr:+CAR.crashT.toFixed(2),
     tr:TRAFFIC.map(c=>[c.id,+c.x.toFixed(2),+c.z.toFixed(1),+c.v.toFixed(1),c.type==='truck'?1:0,c.ci,c.hit?1:0]), ch:CHARMS.map(c=>[c.id,+c.x.toFixed(2),+c.z.toFixed(1)]), s:{near:RUN.s.near,charms:RUN.s.charms,crashes:RUN.s.crashes}});
   else sendSnap({t:'yk', y:YOKAI.map(q=>[q.id,q.k,+q.x.toFixed(2),+q.z.toFixed(1),q.st==='charge'?1:0,q.look,+q.vrel.toFixed(1)]), bd:BOARD.map(b=>[b.id,b.k,b.side,b.hp,b.look]),
     call:CALL?[CALL.id,CALL.k,+CALL.t.toFixed(2),CALL.warn]:null, s:{kills:RUN.s.kills,wrong:RUN.s.wrong,combo:RUN.s.combo,best:RUN.s.best,kscore:RUN.s.kscore}}); }
-async function netHost(code){ const R=await roomApi();
-  if(R){ const room=await R.join('night-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; flush();
-    room.onPeers(ch=>{ const gp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='guest'); if(gp && !guestHere) onGuest(); if(gp) onPresence(gp.presence); }); return true; }
-  if(!window.Peer) return 'PeerJS did not load';
-  return new Promise(res=>{ const peer=new Peer('kotoba-night-'+code.toLowerCase(), {debug:0}); NET={kind:'online', code, peer};
-    peer.on('open', ()=>res(true)); peer.on('error', e=>res(e.type==='unavailable-id' ? 'taken' : 'Could not open a room: '+e.type));
-    peer.on('connection', c=>{ NET.conn=c; c.on('open', onGuest); c.on('data', onData); c.on('close', ()=>{ guestHere=false; }); }); }); }
-async function netJoin(code){ const R=await roomApi();
-  if(R){ const room=await R.join('night-'+code.toLowerCase()); NET={kind:'claude.ai room', code, room, out:[], outN:0, inN:0}; flush();
-    room.onPeers(ch=>{ const hp=ch.peers.find(p=>!p.isMe && p.presence && p.presence.role==='host'); if(hp) onPresence(hp.presence); }); return true; }
-  if(!window.Peer) return 'PeerJS did not load';
-  return new Promise(res=>{ const peer=new Peer({debug:0}); NET={kind:'online', code, peer}; let done=false;
-    const t=setTimeout(()=>{ if(!done){ done=true; res('No room with that code (or the connection is blocked).'); } }, 12000);
-    peer.on('error', e=>{ if(!done){ done=true; clearTimeout(t); res(e.type==='peer-unavailable' ? 'No room with that code.' : 'Connection problem: '+e.type); } });
-    peer.on('open', ()=>{ const c=peer.connect('kotoba-night-'+code.toLowerCase(), {reliable:true}); NET.conn=c;
-      c.on('open', ()=>{ if(!done){ done=true; clearTimeout(t); res(true); } }); c.on('data', onData); }); }); }
+function hubInit(){ MODE='net'; ROLE=HUB.role(); IS_HOST=HUB.host;
+  NET=HUB.open(onData, up=>{ PAUSED=!up; if(!up){ IN.btn={}; document.querySelectorAll('.held').forEach(b=>b.classList.remove('held')); } });
+  applySafe(); addEventListener('resize', ()=>setTimeout(applySafe,60)); readyUI(); }
+// a frame doesn't get the phone's safe-area insets, so the hub passes its own
+function applySafe(){ const s=HUB.safe(), r=document.documentElement.style; r.setProperty('--sl',s.l+'px'); r.setProperty('--sr',s.r+'px'); r.setProperty('--st',s.t+'px'); r.setProperty('--sb',s.b+'px'); }
 
 // ---------- main loop ----------
 let last=0;
-function frame(now){ requestAnimationFrame(frame); const dt=last?Math.min(.05,(now-last)/1000):.016; last=now; clock+=dt;
+function frame(now){ requestAnimationFrame(frame); let dt=last?Math.min(.05,(now-last)/1000):.016; last=now; if(PAUSED) dt=0; if(FX.stop>0){ FX.stop-=dt; dt*=.3; } clock+=dt;
   if(RUN && RUN.ph==='count'){ const before=Math.ceil(RUN.cd); RUN.cd-=dt; const n=Math.ceil(RUN.cd); if(n!==before && RUN.cd>0) SFX.tick(); const el=$('#cdN'); if(el && el.textContent!==String(Math.max(1,n))) el.textContent=String(Math.max(1,n));
     if(RUN.cd<=0){ RUN.ph='run'; $('#count').hidden=true; SFX.gong(); } }
   const run=RUN && RUN.ph==='run';
@@ -543,9 +548,13 @@ function frame(now){ requestAnimationFrame(frame); const dt=last?Math.min(.05,(n
     if(carHere() && RUN.t>=RUN_T) endRun(true);
     netTick(dt); }
   if(R3) draw3(dt);
-  drawFX(dt); hudTick(); engineTick(dt, !!R3); }
+  drawFX(dt); hudTick(); engineTick(dt, !!R3 && !PAUSED); }
 requestAnimationFrame(frame);
-lobbyUI();
+$('#rot').textContent=T('Turn your phone sideways','请把手机横过来')+' · 横にしてね';
+$('#hpBar span').textContent=T('TRUCK','车况'); $('#boBar span').textContent=T('BOOST','加速');
+if(HUB) hubInit(); else lobbyUI();
+// the hub calls this before it removes the frame, so the phone gets its WebGL context back
+window.__bye=()=>{ try{ if(R3){ R3.renderer.dispose(); R3.renderer.forceContextLoss(); } }catch(e){} };
 // build the 3D scene once the fonts are in, so signs and lanterns draw with them
 Promise.race([document.fonts ? Promise.all(['400 40px "Dela Gothic One"','400 40px "Yuji Syuku"','700 20px "Zen Kaku Gothic New"'].map(f=>document.fonts.load(f,'渋谷新宿らーめんカラオケあいうえお守札'))) : Promise.resolve(), new Promise(r=>setTimeout(r,2500))]).then(initThree);
 window.__night={ RUN:()=>RUN, CAR, T:()=>TRAFFIC, CH:()=>CHARMS, Y:()=>YOKAI, B:()=>BOARD, CALL:()=>CALL, role:()=>ROLE, mode:()=>MODE, IN, three:()=>R3,
