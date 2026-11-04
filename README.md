@@ -1,5 +1,7 @@
 # 真夜中の地下鉄 Midnight Rail Crew
 
+> **New prototype: [深夜ラーメン Midnight Ramen](https://lachende.github.io/midnight-rail-crew/ramen/)** (`ramen/`). A two-player busy-hands kitchen at a ramen stall under the train tracks: one cooks, one runs the counter, and customers order in real Japanese. Practise either station with しばBot, then play it with a friend.
+
 A co-op Japanese-learning game for two players: the last train of the night, lost in the secret tunnels under Tokyo.
 
 - **🚂 Driver (3D cab):** you see only as far as your headlight, and you never see the map.
