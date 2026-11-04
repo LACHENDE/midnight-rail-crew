@@ -380,7 +380,8 @@ function scrOf(x,y,z){ const v=(R3.v3||(R3.v3=new THREE.Vector3())).set(x,y,z).p
 const fxc=$('#fx'), fg=fxc.getContext('2d'); let FW=0, FH=0;
 function fxResize(){ FW=innerWidth; FH=innerHeight; fxc.width=FW; fxc.height=FH; } addEventListener('resize', fxResize); fxResize();
 const DROPS=Array.from({length:110},()=>({x:Math.random(), y:Math.random(), s:rnd(.6,1.4)}));
-const pop=(txt,col)=>FX.pops.push({txt,col,t:0,scr:true});
+// driver pops sit under the back camera + call strip; pops at the same moment fan out sideways
+const pop=(txt,col)=>{ if(ROLE==='gunner') return; const n=FX.pops.filter(p=>p.scr&&p.t<.8).length%3; FX.pops.push({txt,col,t:0,scr:true,dx:[0,-.2,.2][n]}); };
 const popAt=(x,y,z,txt,col)=>FX.pops.push({txt,col,t:0,w:{x,y,z}});
 function drawFX(dt){ fg.clearRect(0,0,FW,FH); const sp=CAR.v/V1;
   fg.strokeStyle='rgba(180,200,255,.22)'; fg.lineWidth=1; fg.beginPath();
@@ -393,7 +394,7 @@ function drawFX(dt){ fg.clearRect(0,0,FW,FH); const sp=CAR.v/V1;
       if(s.t<.2){ fg.strokeStyle='rgba(255,255,255,.8)'; fg.lineWidth=2; fg.beginPath(); fg.arc(s.x,s.y,10+s.t*120,0,TAU); fg.stroke(); } }
     FX.shots=FX.shots.filter(s=>s.t<.25);
     fg.save(); fg.translate(bx,by); fg.rotate(-.55); fg.fillStyle='rgba(18,20,26,.92)'; rr(fg,-16,-118,32,128,8); fg.fill(); fg.strokeStyle='rgba(201,161,74,.8)'; fg.lineWidth=2; fg.strokeRect(-16,-118,32,14); fg.fillStyle='#F4EEDF'; fg.fillRect(-8,-138,16,26); fg.fillStyle='#B5281E'; fg.fillRect(-8,-138,16,4); fg.fillRect(-8,-116,16,4); fg.restore(); }
-  for(const p of FX.pops){ p.t+=dt; let x=FW/2, y=FH*.32-p.t*30; if(p.w){ const s=scrOf(p.w.x,p.w.y,p.w.z); if(!s.ok) continue; x=s.x; y=s.y-p.t*40; }
+  for(const p of FX.pops){ p.t+=dt; let x=FW*(.5+(p.dx||0)), y=FH*.45-p.t*22; if(p.w){ const s=scrOf(p.w.x,p.w.y,p.w.z); if(!s.ok) continue; x=s.x; y=s.y-p.t*40; }
     const a=Math.min(1,(1.1-p.t)*2.5); if(a<=0) continue; fg.globalAlpha=a; fg.font=`400 ${p.scr?26:22}px "Dela Gothic One"`; fg.textAlign='center'; fg.lineWidth=5; fg.strokeStyle='rgba(0,0,0,.7)'; fg.strokeText(p.txt,x,y); fg.fillStyle=p.col; fg.fillText(p.txt,x,y); }
   fg.globalAlpha=1; FX.pops=FX.pops.filter(p=>p.t<1.1); }
 
