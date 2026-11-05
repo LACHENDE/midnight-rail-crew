@@ -128,15 +128,15 @@ const GAMES=[
   {id:'night', path:'night/', jp:'百鬼夜行', en:'Night Parade', zh:'百鬼夜行', roles:['driver','gunner'],
    vb:{driver:['drive','drives','开车'], gunner:['shoot','shoots','射击']},
    line:['Car chase on the expressway. One drives through traffic; one shoots the yokai carrying the called kana.','高速公路上的飙车。一人开车躲避车流，一人射击提着被点名假名的妖怪。']},
-  {id:'ramen', path:'ramen/', jp:'深夜ラーメン', en:'Midnight Ramen', zh:'深夜拉面', roles:['cook','server'],
-   vb:{cook:['cook','cooks','煮面'], server:['serve','serves','招呼客人']},
-   line:['A ramen stall under the tracks. One cooks; one greets guests and takes their orders in Japanese.','铁路桥下的拉面摊。一人煮面，一人招呼客人、用日语点单。']},
+  {id:'restaurant', path:'../midnight-restaurant/', jp:'まよなか屋', en:'Midnight Restaurant', zh:'午夜拉面摊', roles:['cook','counter'],
+   vb:{cook:['cook','cooks','煮面'], counter:['run the counter','runs the counter','管柜台']},
+   line:['A little ramen stall on a rainy night. One cooks; one seats the guests, hears their orders in Japanese and serves.','雨夜里的小拉面摊。一人煮面，一人招呼客人、听日语点单、上菜。']},
   {id:'tunnels', path:'tunnels/', jp:'真夜中の地下鉄', en:'Midnight Subway', zh:'午夜地铁', roles:['driver','nav'],
    vb:{driver:['drive','drives','开车'], nav:['route','routes','指挥路线']},
    line:['The last train under Tokyo. One drives and reads the tickets; one throws the switches on the map.','东京地下的末班车。一人开车读车票，一人在地图上扳道岔。']}];
 const GI=Object.fromEntries(GAMES.map(g=>[g.id,g]));
 const gName=g=>T(GI[g].en, GI[g].zh);
-const freshHS=()=>({v:0, scr:'menu', g:null, sid:0, seats:{night:'h', ramen:'g', tunnels:'g'}, night:{id:'', games:[]}});
+const freshHS=()=>({v:0, scr:'menu', g:null, sid:0, seats:{night:'h', restaurant:'g', tunnels:'g'}, night:{id:'', games:[]}});
 let HS=freshHS(), GOT_ST=false;
 const roleOf=(g,side)=>GI[g].roles[HS.seats[g]===side?0:1];
 
@@ -167,7 +167,7 @@ function onHi(m){ const fresh=!!L.pinst && L.pinst!==m.inst;
   if(L.side==='h'){ if(fresh && HS.scr==='game'){ HS.scr='menu'; HS.v++; saveHS(); } lsend({t:'st', st:HS}, true); }
   render(); }
 function route(m){
-  if(m.t==='st'){ if(L.side!=='g') return; HS=m.st; GOT_ST=true; tally();
+  if(m.t==='st'){ if(L.side!=='g') return; HS=m.st; HS.seats=Object.assign(freshHS().seats, HS.seats); GOT_ST=true; tally();
     if(LEFT_SID && HS.scr==='game' && HS.sid===LEFT_SID) request('menu'); else if(HS.scr==='menu' || HS.sid!==LEFT_SID) LEFT_SID=0;
     render(); return; }
   if(m.t==='req'){ if(L.side==='h') apply(m.a, m.arg); return; }
@@ -220,7 +220,8 @@ const dayKey=()=>{ const d=new Date(Date.now()-6*3600e3); return d.getFullYear()
 const saveSess=()=>{ if(L.code) LS.set('sess',{code:L.code, side:L.side, at:Date.now()}); };
 const saveHS=()=>{ if(L.side==='h') LS.set('hs',{code:L.code, hs:HS}); };
 function start(side, code, rejoin){ L.side=side; L.code=code; L.rejoin=!!rejoin; L.everUp=false; L.up=false; L.pinst=null; L.tx=0; L.rx=0; L.outQ=[]; L.err=''; GOT_ST=false;
-  if(side==='h'){ const saved=LS.get('hs',null); HS=rejoin && saved && saved.code===code ? Object.assign(freshHS(), saved.hs, {scr:'menu'}) : freshHS(); if(!HS.night.id) HS.night={id:code+':'+dayKey(), games:[]}; }
+  // a night saved before a game was added still gets a seat for it
+  if(side==='h'){ const saved=LS.get('hs',null); HS=rejoin && saved && saved.code===code ? Object.assign(freshHS(), saved.hs, {scr:'menu'}) : freshHS(); HS.seats=Object.assign(freshHS().seats, HS.seats); if(!GI[HS.g]) HS.g=null; if(!HS.night.id) HS.night={id:code+':'+dayKey(), games:[]}; }
   else HS=freshHS();
   newPeer(); render(); }
 function leave(quiet){ if(!quiet && L.up) lraw({t:'bye'}); const P=L.peer; setTimeout(()=>{ try{ P && P.destroy(); }catch(e){} }, 400);
@@ -296,14 +297,14 @@ function welcomeUI(msg){ const sess=LS.get('sess',null), recent=sess && Date.now
   <div class="wel"><div>
     <div class="kicker">${T('Three games for two · after midnight','两人三款游戏 · 午夜之后')}</div>
     <h1>夜ふかし</h1><div class="sub">${T('Up All Night','熬夜')}</div>
-    <p class="lead">${T('A yokai car chase, a ramen stall under the tracks, the last train under Tokyo. One room code, three co-op games, and Japanese you shout at each other.','妖怪飙车、铁路桥下的拉面摊、东京地下的末班车。一个房间码，三款合作游戏，一边喊日语一边玩。')}</p>
+    <p class="lead">${T('A yokai car chase, a little ramen stall in the rain, the last train under Tokyo. One room code, three co-op games, and Japanese you say to each other.','妖怪飙车、雨夜里的小拉面摊、东京地下的末班车。一个房间码，三款合作游戏，一边说日语一边玩。')}</p>
     ${msg?`<p class="err">${esc(msg)}</p>`:''}
     <label class="nm">${T('Your name','你的名字')}<input id="nameIn" maxlength="12" autocomplete="off" placeholder="${T('optional','可不填')}" value="${esc(myName())}"></label>
     ${recent?`<div class="row"><button class="btn red" data-a="rejoin">${T(`Rejoin room ${esc(sess.code)}`,`回到房间 ${esc(sess.code)}`)}</button></div>`:''}
     <div class="row"><button class="btn ${recent?'':'red'}" data-a="create">${T('Start a night','开一局')}</button>
       <input class="codein" id="codeIn" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" aria-label="${T('Room code','房间码')}"><button class="btn ghost" data-a="join">${T('Join','加入')}</button></div>
   </div><div><div class="collage">${GAMES.map((G,i)=>`<div class="c${i}" style="background-image:${thumb(G.id)}"><b>${G.jp}</b></div>`).join('')}</div>
-    <p class="small solo">${T('Practise alone with しばBot:','和 しばBot 单人练习：')} <a href="night/">${T('Night Parade','百鬼夜行')}</a> · <a href="ramen/">${T('Ramen','拉面')}</a> · <a href="tunnels/">${T('Subway','地铁')}</a></p></div></div>`; }
+    <p class="small solo">${T('Practise alone with しばBot:','和 しばBot 单人练习：')} <a href="night/">${T('Night Parade','百鬼夜行')}</a> · <a href="../midnight-restaurant/">${T('Restaurant','拉面摊')}</a> · <a href="tunnels/">${T('Subway','地铁')}</a></p></div></div>`; }
 function pairUI(){ const host=L.side==='h';
   if(host && !L.opened) return `<div class="top"><div class="sp"></div>${langBtn()}</div><div class="pair"><div class="kicker">${T('Your room','你的房间')}</div><h2><span class="spin"></span>${T('Opening a room…','正在开房间…')}</h2><div class="row"><button class="btn ghost" data-a="cancel">${T('Cancel','取消')}</button></div></div>`;
   if(host) return `<div class="top"><div class="sp"></div>${langBtn()}</div><div class="pair">
