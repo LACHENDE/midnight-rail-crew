@@ -257,7 +257,7 @@ function deliverGame(sid, d){ if(sid<HS.sid) return;
   if(GH && GH.sid===sid){ try{ GH.on(d); }catch(e){ setTimeout(()=>{ throw e; }); } }
   else { GBUF.push({sid, d}); if(GBUF.length>400) GBUF.shift(); } }
 function mount(g, sid){ if(FRAME && FRAME.sid===sid) return; unmount(); GBUF=GBUF.filter(x=>x.sid>=sid);
-  const f=document.createElement('iframe'); f.src=`${GI[g].path}?hub=1&sid=${sid}`; f.title=gName(g); f.setAttribute('allow','autoplay; fullscreen; screen-wake-lock');
+  const f=document.createElement('iframe'); f.src=`${GI[g].path}?hub=1&sid=${sid}`; f.title=gName(g); f.setAttribute('allow','autoplay; fullscreen; screen-wake-lock; microphone');   // microphone: the restaurant listens for the 接客 lines
   $('#stage').appendChild(f); $('#stage').hidden=false; $('#app').hidden=true; FRAME={el:f, sid, g}; wake(); }
 function unmount(){ if(!FRAME) return; try{ const w=FRAME.el.contentWindow; if(w && w.__bye) w.__bye(); }catch(e){} FRAME.el.remove(); FRAME=null; GH=null; $('#stage').hidden=true; $('#app').hidden=false; }
 const gameLive=()=>L.up && !RES;
